@@ -1,0 +1,12 @@
+# Environment
+.env
+
+# Virtual environment
+venv/
+
+# Logs
+logs/*.log
+
+# Cache
+*.pyc
+__pycache__/
