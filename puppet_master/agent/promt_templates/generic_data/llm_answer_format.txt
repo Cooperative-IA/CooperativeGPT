@@ -1,0 +1,21 @@
+Your answer must to be formated as the next following, where in <future goal> you must to write only current goal based only on observations of the agent and in <valid action> you must to write a valid action from the list of actions of the role that was previously mentioned (remember choose only one direction when moving).  : 
+
+{
+    agent_id: 
+    {
+        'Future Goals': ['<future goal>'],
+        'Action': ['<valid action>']  
+    } 
+}
+
+Example: 
+
+{
+    'agent_1': 
+    {
+        'Future Goals': ['get to the apple tree 0'],
+        'Action': ['move upward']  
+    } 
+}
+
+Answer "Right" if you understand the task and ready to solve it.

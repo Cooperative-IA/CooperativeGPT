@@ -1,0 +1,5 @@
+{
+  "meltingpot_path": "~/MeltingPot/meltingpot",
+  "SYSTEM_CONTEXT_PATH":"data/formats/current_game_data",
+  "GENERIC_DATA":"data/formats/generic_data"
+}

@@ -1,0 +1,7 @@
+This is the whole description for the agent you will control:
+
+- Agent id: {agent_id}
+- Name: {agent_name}
+- Role: {agent_role}
+- Bio: {agent_bio}
+
