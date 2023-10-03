@@ -7,6 +7,9 @@ venv/
 # Logs
 logs/*.log
 
+# Data
+data/*/*
+
 # Cache
 *.pyc
 __pycache__/
