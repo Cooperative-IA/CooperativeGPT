@@ -1,0 +1,111 @@
+from abc import ABC, abstractmethod
+import logging
+import os
+
+from utils.llm_cost import CostManager
+
+class BaseLLM(ABC):
+    """Base class for all LLM classes. It defines the api to use the LLMs"""
+
+    def __init__(self, prompt_token_cost: float, response_token_cost: float, max_tokens: int, max_tokens_ratio_per_input: float = 0.7):
+        """Constructor for the BaseLLM class
+        Args:
+            prompt_token_cost (float): Cost of a token in the prompt
+            response_token_cost (float): Cost of a token in the response
+            max_tokens (int): Maximum number of tokens
+            max_tokens_ratio_per_input (int): Maximum ratio of tokens per input in the prompt, to avoid the LLM to use all the tokens in the prompt for just the input
+        """
+        self.cost_manager = CostManager(prompt_token_cost, response_token_cost)
+        self.max_tokens = max_tokens
+        self.max_tokens_ratio_per_input = max_tokens_ratio_per_input
+        self.logger = logging.getLogger(__name__)
+
+    @abstractmethod
+    def _calculate_tokens(self, prompt:str) -> int:
+        """Abstract method for calculating the number of tokens in the prompt
+        Args:
+            prompt (str): Prompt
+        Returns:
+            int: Number of tokens in the prompt
+        """
+        pass
+
+    
+    def _update_costs(self, prompt_tokens: int, response_tokens: int):
+        """Update the cost of the prompt and response
+        Args:
+            prompt_tokens (int): Number of tokens in the prompt
+            response_tokens (int): Number of tokens in the response
+        Returns:
+            tuple(int, int): Tuple containing the tokens number of the prompt and response
+        """
+        self.cost_manager.update_costs(prompt_tokens, response_tokens)
+    
+    @abstractmethod
+    def _completion(self, prompt: str, **kwargs) -> tuple[str, int, int]:
+        """Abstract method for the completion api
+        Args:
+            prompt (str): Prompt for the completion
+        Returns:
+            tuple(str, int, int): A tuple with the completed text, the number of tokens in the prompt and the number of tokens in the response
+        """
+        pass
+
+    def _load_prompt(self, prompt: str) -> str:
+        """Load the prompt from a file or return the prompt if it is a string
+        Args:
+            prompt_file (str): Prompt file or string
+        Returns:
+            str: Prompt
+        """
+        prompt_file = os.path.join("prompts", prompt)
+
+        # Check if the prompt is a string or a file
+        if not os.path.isfile(prompt_file):
+            return prompt
+        
+        with open(prompt_file, "r") as f:
+            prompt = f.read()
+        return prompt
+    
+    def _replace_inputs_in_prompt(self, prompt: str, inputs: list[str] = []) -> str:
+        """Replace the inputs in the prompt. The inputs are replaced in the order they are passed in the list.
+        Args:
+            prompt (str): Prompt. For example: "This is a <input> prompt with <input> inputs"
+            inputs (list[str]): List of inputs
+        Returns:
+            str: Prompt with the inputs
+        """
+        for input in inputs:
+            prompt = prompt.replace("<input>", input, 1)
+
+        # Check if there are any <input> left
+        if "<input>" in prompt:
+            raise ValueError("Not enough inputs passed to the prompt")
+        return prompt
+
+    def completion(self, prompt: str, **kwargs) -> str:
+        """Method for the completion api. It updates the cost of the prompt and response and log the tokens and prompts
+        Args:
+            prompt (str): Prompt for the completion
+        Returns:
+            str: Completed text
+        """
+
+        prompt = self._load_prompt(prompt)
+        prompt = self._replace_inputs_in_prompt(prompt, kwargs.get("inputs", []))
+
+        # Check that the prompt is not too long
+        if self._calculate_tokens(prompt) > self.max_tokens * self.max_tokens_ratio_per_input:
+            raise ValueError("Prompt is too long")
+        
+        self.logger.info(f"Prompt: {prompt}")
+        kwargs.pop("inputs", None) # Remove the inputs from the kwargs to avoid passing them to the completion api
+        response, prompt_tokens, response_tokens = self._completion(prompt, **kwargs)
+        self.logger.info(f"Response: {response}")
+
+        self._update_costs(prompt_tokens, response_tokens)
+        self.logger.info(f"Prompt tokens: {prompt_tokens}")
+        self.logger.info(f"Response tokens: {response_tokens}")
+
+        return response
