@@ -71,23 +71,24 @@ class BaseLLM(ABC):
     def _replace_inputs_in_prompt(self, prompt: str, inputs: list[str] = []) -> str:
         """Replace the inputs in the prompt. The inputs are replaced in the order they are passed in the list.
         Args:
-            prompt (str): Prompt. For example: "This is a <input> prompt with <input> inputs"
+            prompt (str): Prompt. For example: "This is a <input1> prompt with <input2> two inputs"
             inputs (list[str]): List of inputs
         Returns:
             str: Prompt with the inputs
         """
-        for input in inputs:
-            prompt = prompt.replace("<input>", input, 1)
+        for i, input in enumerate(inputs):
+            prompt = prompt.replace(f"<input{i+1}>", input)
 
         # Check if there are any <input> left
-        if "<input>" in prompt:
+        if "<input" in prompt:
             raise ValueError("Not enough inputs passed to the prompt")
         return prompt
 
     def completion(self, prompt: str, **kwargs) -> str:
         """Method for the completion api. It updates the cost of the prompt and response and log the tokens and prompts
         Args:
-            prompt (str): Prompt for the completion
+            prompt (str): Prompt file or string for the completion
+            inputs (list[str]): List of inputs to replace the <input{number}> in the prompt. For example: ["This is the first input", "This is the second input"]
         Returns:
             str: Completed text
         """

@@ -1,6 +1,6 @@
 {
-    "Agent_id": "agent_2",
-    "Name": "Laura",
-    "Role": "Consumer",
-    "Bio": "Laura is a collaborative person with a passion for gathering apples. She thrives on working with others, often rallying friends and neighbors to join her in apple-picking adventures. "
+    "id": "agent_2",
+    "name": "Laura",
+    "role": "Consumer",
+    "bio": "Laura is a collaborative person with a passion for gathering apples. She thrives on working with others, often rallying friends and neighbors to join her in apple-picking adventures. "
 }
