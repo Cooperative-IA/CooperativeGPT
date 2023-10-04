@@ -1,10 +1,12 @@
 from llm import LLMModels
+from utils.llm import extract_answers
 
-def should_react(name: str, observation: str, current_plan: str) -> bool:
+def should_react(name: str, world_context: str, observation: str, current_plan: str) -> bool:
     """Decides if the agent should react to the observation.
 
     Args:
         name (str): Name of the agent.
+        world_context (str): World context of the agent.
         observation (str): Observation of the environment.
         current_plan (str): Current plan of the agent.
 
@@ -16,5 +18,7 @@ def should_react(name: str, observation: str, current_plan: str) -> bool:
         return True
     
     llm = LLMModels().get_main_model()
-    response = llm.completion(prompt='react.txt', inputs=[name, observation, current_plan])
-    return response == 'True'
+    response = llm.completion(prompt='react.txt', inputs=[name, world_context, observation, current_plan])
+    answers = extract_answers(response)
+    answer = answers.get('Answer', None)
+    return answer == 'True'

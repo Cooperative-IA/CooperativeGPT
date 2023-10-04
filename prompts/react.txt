@@ -1,12 +1,15 @@
 You have this information about an agent called <input1>:
 
 <input1>'s world understanding: <input2>
-Current observations: <input2>
-Current plan: <input3>
+Current observations: <input3>
+Current plan: <input4>
 
-Review the plan and decide if <input1> should continue with its plan given the new informatio that it's seeing in the observations.
+Review the plan and decide if <input1> should continue with its plan given the new information that it's seeing in the observations.
 
-Answer only in the following format as if you were <input1>:
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
 
-Reasoning: <Step by step thinking and analysis of all the observations and the current plan to decide if the plan should be changed or not>
-Answer: <Answer True if the plan should be changed or False otherwise>
+```json
+{
+ "Reasoning": string \\ Step by step thinking and analysis of all the observations and the current plan to decide if the plan should be changed or not
+ "Answer": string \\ Answer True if the plan should be changed or False otherwise
+}```

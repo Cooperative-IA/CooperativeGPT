@@ -43,6 +43,8 @@ class LongTermMemory:
             memory (str | list[str]): Memory or memories to add.
             metadata (dict | list[dict], optional): Metadata for the memory or memories. Defaults to None.
         """
+
+        self.logger.info(f"Adding memory to long term memory, Metadata: {metadata}. Memory: {memory}")
         # Check if memory is a list
         if isinstance(memory, list):
             self.collection.add(documents=memory, metadatas=metadata, ids=[str(uuid.uuid4()) for _ in range(len(memory))])

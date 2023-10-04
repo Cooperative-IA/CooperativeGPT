@@ -1,0 +1,16 @@
+You have this information about an agent called <input1>:
+
+<input1>'s world understanding: <input2>
+Current observations: <input3>
+Current plan: <input4>
+
+With the information given above, generate a new plan and new objectives to persuit.
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
+
+```json
+{
+ "Reasoning": string \\ Step by step thinking and analysis of all the observations and the current plan to create the new plan and the new goals
+ "Goals": string \\ The new goals for <input1>
+ "Plan": string \\ The new plan for <input1>
+}```

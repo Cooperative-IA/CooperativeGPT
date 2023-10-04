@@ -4,6 +4,7 @@ from datetime import datetime
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.cognitive_modules.perceive import should_react
+from agent.cognitive_modules.plan import plan
 
 class Agent:
     """Agent class.
@@ -34,20 +35,44 @@ class Agent:
         Returns:
             str: Action to take.
         """
-        self.perceive(observation)
+        react = self.perceive(observation)
+
+        if react:
+            self.plan()
 
     def perceive(self, observation: str) -> None:
-        """Perceives the environment and stores the observation in the long term memory.
+        """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
 
         Args:
             perception (str): Perception of the environment.
+        
+        Returns:
+            bool: True if the agent should react to the observation, False otherwise.
         """
         
         now = datetime.now()
         timestamp = datetime.timestamp(now)
         self.ltm.add_memory(observation, {'type': 'perception', 'agent': self.name, 'timestamp': timestamp})
+        self.stm.add_memory(observation, 'current_observation')
 
         # Decide if the agent should react to the observation
         current_plan = self.stm.get_memory('current_plan')
-        react = should_react(self.name, observation, current_plan)
+        world_context = self.stm.get_memory('world_context')
+        react = should_react(self.name, world_context, observation, current_plan)
         self.logger.info(f'{self.name} should react to the observation: {react}')
+        return react
+    
+    def plan(self,) -> None:
+        """Plans the next actions of the agent and its main goals.
+        """
+
+        current_observation = self.stm.get_memory('current_observation')
+        current_plan = self.stm.get_memory('current_plan')
+        world_context = self.stm.get_memory('world_context')
+        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan)
+        self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
+
+        # Update the short term memory
+        self.stm.add_memory(new_plan, 'current_plan')
+        self.stm.add_memory(new_goals, 'current_goals')
+

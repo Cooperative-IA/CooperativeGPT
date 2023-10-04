@@ -77,6 +77,8 @@ class BaseLLM(ABC):
             str: Prompt with the inputs
         """
         for i, input in enumerate(inputs):
+            if input is None:
+                input = 'None'
             prompt = prompt.replace(f"<input{i+1}>", input)
 
         # Check if there are any <input> left
