@@ -5,6 +5,8 @@ from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.cognitive_modules.perceive import should_react
 from agent.cognitive_modules.plan import plan
+from agent.cognitive_modules.reflect import reflect_questions
+from agent.cognitive_modules.reflect import reflect_insights
 
 class Agent:
     """Agent class.
@@ -24,7 +26,7 @@ class Agent:
         self.name = name
         self.ltm = LongTermMemory(agent_name=name, data_folder=data_folder)
         self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
-        self.stm.add_memory(self.name, 'name')
+        self.stm.add_memory(memory = self.name, key = 'name')
 
     def move(self, observation: str) -> str:
         """Use all the congnitive sequence of the agent to decide an action to take
@@ -39,6 +41,7 @@ class Agent:
 
         if react:
             self.plan()
+            self.reflect(observation)
 
     def perceive(self, observation: str) -> None:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
@@ -75,4 +78,28 @@ class Agent:
         # Update the short term memory
         self.stm.add_memory(new_plan, 'current_plan')
         self.stm.add_memory(new_goals, 'current_goals')
+
+
+    def reflect(self, observations:str) -> None:
+        """Reflects on the agent's observations and stores the insights reflections in the long term memory.
+        """
+        
+        world_context = self.stm.get_memory('world_context')
+        relevant_questions = reflect_questions(self.name, world_context, observations)
+        self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
+        
+        relevant_memories = []
+        for question in relevant_questions:
+            retrieved_memories = self.ltm.get_relevant_memories(query=question, n_results=5)
+            # adds the retrieved memories to the relevant memories, checks for duplicates
+            relevant_memories = list(set(relevant_memories + retrieved_memories))
+            
+        self.logger.info(f'{self.name} relevant memories: {relevant_memories}')
+        
+        relevant_memories_str = '\n'.join([str(memory) for memory in relevant_memories])
+        reflections = reflect_insights(self.name, world_context, relevant_memories_str)
+        self.logger.info(f'{self.name} reflections: {reflections}')
+        self.ltm.add_memory(reflections, [{'type': 'reflection', 'agent': self.name}]*len(reflections))
+  
+
 

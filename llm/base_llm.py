@@ -62,6 +62,9 @@ class BaseLLM(ABC):
 
         # Check if the prompt is a string or a file
         if not os.path.isfile(prompt_file):
+            if prompt_file.endswith(".txt"):
+                logging.error(f"Prompt file: {prompt_file} not found, using the prompt as a string")
+                raise ValueError("Prompt file not found")
             return prompt
         
         with open(prompt_file, "r") as f:
