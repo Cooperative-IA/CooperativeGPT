@@ -1,12 +1,20 @@
 import re
 import numpy as np
-from utils import generate_name, parse_string_to_matrix, matrix_to_string
+import logging
+from game_environment.utils import parse_string_to_matrix, matrix_to_string
 
+logger = logging.getLogger(__name__)
 
 class Avatar:
+    def __init__(self, name:str, avatar_config):
+        """
+        Avatar class to store information about the player in the game
 
-    def __init__(self, avatar_config):
-        self.name = generate_name()
+        Args:
+            name (str): Name of the player
+            avatar_config (dict): Avatar configuration
+        """
+        self.name = name
         self.avatar_component = list(filter(lambda component: component["component"] == "Avatar",
                                             avatar_config["components"]))[0]
         self.avatar_view = self.avatar_component["kwargs"]["view"]
@@ -55,14 +63,14 @@ class SceneDescriptor:
     def __init__(self, substrate_config):
         self.substrate_config = substrate_config
         self.n_players = substrate_config.lab2d_settings.numPlayers
-        self.avatars = self.get_avatars()
+        self.avatars = self.get_avatars(substrate_config.player_names)
         for avatar_id, avatar in self.avatars.items():
-            print(f"{avatar.name} is player {avatar_id}")
+            logger.info(f"{avatar.name} is player {avatar_id}")
 
-    def get_avatars(self):
+    def get_avatars(self, names):
         avatars = {}
         for i, config in enumerate(self.substrate_config.lab2d_settings.simulation.gameObjects):
-            avatars[i] = Avatar(config)
+            avatars[i] = Avatar(names[i], config)
         return avatars
 
     def describe_scene(self, timestep):
@@ -73,8 +81,11 @@ class SceneDescriptor:
 
         result = {}
         for avatar_id, avatar in self.avatars.items():
+            logger.info(f"Avatar {avatar_id} is in position {avatar.avatar_state}")
             result[avatar_id] = {"observation": avatar.partial_observation,
-                                 "agents_in_observation": avatar.agents_in_observation}
+                                 "agents_in_observation": avatar.agents_in_observation,
+                                 "global_position": avatar.position,
+                                 "orientation": int(avatar.orientation)}
         return result
 
     def parse_zaps(self, zaps):
