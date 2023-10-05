@@ -12,7 +12,7 @@ There are 1 kind of roles in this scenario : (Consumer). Each role has its own v
 Agents:
 There are exactly 3 agents, their names, rol and social description are the following:
  - agent_1: {{Name: Juan; Role: Consumer; Description: Juan is a collaborative person}}
- - agent_2: {{Name: Lilian; Role: Consumer; Description: Lilian is a collaborative person}}
+ - agent_2: {{Name: Laura; Role: Consumer; Description: Laura is a collaborative person}}
  - agent_3: {{Name: Pedro; Role: Consumer; Description: Pedro is a selfish person}}
 
 

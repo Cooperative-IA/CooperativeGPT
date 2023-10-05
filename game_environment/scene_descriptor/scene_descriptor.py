@@ -65,7 +65,7 @@ class SceneDescriptor:
         self.n_players = substrate_config.lab2d_settings.numPlayers
         self.avatars = self.get_avatars(substrate_config.player_names)
         for avatar_id, avatar in self.avatars.items():
-            print(f"{avatar.name} is player {avatar_id}")
+            logger.info(f"{avatar.name} is player {avatar_id}")
 
     def get_avatars(self, names):
         avatars = {}

@@ -17,9 +17,13 @@ if __name__ == "__main__":
 
     logger.info("Program started")
 
-    # juan = Agent(name="Juan", data_folder="data", agent_context_file="juan_context.json", world_context_file="world_context.txt")
-    # juan.move("An apple has grown, there are 6 apples nearby in a patch of grass.")
+    # Define players
     players = ["Juan", "Laura", "Pedro"]
+    players_context = ["juan_context.json", "laura_context.json", "pedro_context.json"]
+    # Create agents
+    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file="world_context.txt") for player, player_context in zip(players, players_context)]
+
+    # Start the game server
     env = start_server(players)
 
     # Game loop
@@ -27,8 +31,14 @@ if __name__ == "__main__":
     while True:
         observations = env.step(actions)
         logger.info('Observations: %s', observations)
+
+        # Get the actions of the agents
+        for agent in agents:
+            agent.move(observations[agent.name])
+            break # TODO: Remove this break, just for testing one agent
+
         # wait for 10 seconds
-        time.sleep(10)
+        time.sleep(10) # TODO: Remove this, just for testing one step
         break
 
     env.end_game()
