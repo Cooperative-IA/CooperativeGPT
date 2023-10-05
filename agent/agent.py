@@ -1,18 +1,21 @@
 import logging
 from datetime import datetime
+from queue import Queue
 
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
+from agent.memory_structures.spatial_memory import SpatialMemory
 from agent.cognitive_modules.perceive import should_react
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
+from agent.cognitive_modules.act import *
 
 class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, map_info:dict) -> None:
         """Initializes the agent.
 
         Args:
@@ -26,9 +29,17 @@ class Agent:
         self.name = name
         self.ltm = LongTermMemory(agent_name=name, data_folder=data_folder)
         self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
+        self.spatial_memory = SpatialMemory(initial_pos=map_info['initial_pos'])
         self.stm.add_memory(memory = self.name, key = 'name')
+        
+        # Initialize steps sequence in empty queue
+        self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
 
-    def move(self, observation: str) -> str:
+        ## TODO REMOVE THIS FROM HERE
+        valid_actions = ['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId)']
+        self.stm.add_memory(memory=valid_actions, key='valid_actions')
+
+    def move(self, current_observations: str) -> str:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
@@ -37,11 +48,17 @@ class Agent:
         Returns:
             str: Action to take.
         """
+
+        observation = "\n".join(current_observations)
         react = self.perceive(observation)
 
         if react:
             self.plan()
-            self.reflect(observation)
+            self.generate_new_actions(current_observations)
+        
+        self.reflect(observation)
+
+        self.execute_current_actions()
 
     def perceive(self, observation: str) -> None:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
@@ -103,3 +120,62 @@ class Agent:
   
 
 
+    def generate_new_actions(self, observations: list[str]) -> list[str]:
+        """Acts in the environment given the observations.
+
+        Args:
+            observations (list[str]): Observations of the environment.
+
+        Returns:
+            list[str]: Actions to take.
+        """
+        world_context = self.stm.get_memory('world_context')
+        current_plan = self.stm.get_memory('current_plan')
+        valid_actions = self.stm.get_memory('valid_actions') 
+        memory_statements = self.ltm.get_relevant_memories(query=self.name, n_results=10)
+        # Generate new actions sequence and add it to the short term memory
+        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, memory_statements, observations, valid_actions)
+        self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
+        
+        self.stm.add_memory(actions_sequence_queue, 'actions_sequence')
+
+
+
+
+    def execute_current_actions(self) -> None:
+        """
+        Executes the current actions of the agent. 
+
+        Returns:
+            str: Next action step to execute.
+        """
+
+        if self.stm.get_memory('current_steps_sequence').empty():
+            # If the current gameloop is empty, we need to generate a new one
+
+            # If the actions sequence is empty, we generate actions sequence
+            if self.stm.get_memory('actions_sequence').empty():
+                self.generate_new_actions()
+
+            # We get next action from the actions sequence
+            current_action = self.stm.get_memory('actions_sequence').get()
+            self.stm.add_memory(current_action, 'current_action')
+            
+            # Now defines a gameloop for the current action
+            steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
+            self.stm.add_memory(steps_sequence, 'current_steps_sequence')
+            logging.info(f'{self.name} is grabbing an apple, the steps sequence  is: {list(steps_sequence.queue)}')
+           
+
+       
+        # We execute the current action
+        if self.stm.get_memory('current_steps_sequence').empty():
+            logging.warn(f'{self.name} current gameloop is empty, but it should not be.')
+            raise Exception(f'{self.name} current gameloop is empty, but it should not be.')
+    
+        agent_step = self.stm.get_memory('current_steps_sequence').get()
+        
+        self.logger.info(f'{self.name} is executing the action: {self.stm.get_memory("current_action")} with the gameloop { self.stm.get_memory("current_steps_sequence").queue}\
+                          and the next instant step is {agent_step}. Remaining actions: {self.stm.get_memory("actions_sequence").queue}')
+        return agent_step
+    

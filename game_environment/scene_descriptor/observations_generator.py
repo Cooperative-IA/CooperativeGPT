@@ -99,7 +99,7 @@ class ObservationsGenerator (object):
     
 
 
-    def get_all_observations_descritions(self,  agents_observations_str: str):
+    def get_all_observations_descriptions(self,  agents_observations_str: str):
         """
         Description: Returns a dictionary with the descriptions of the observations of the agents
 
