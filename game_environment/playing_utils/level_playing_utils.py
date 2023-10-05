@@ -22,6 +22,7 @@ import threading
 import collections
 import enum
 import time
+import logging
 
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple
 import dm_env
@@ -31,10 +32,10 @@ import numpy as np
 import pygame
 
 import dmlab2d
-from recorder.recorder import Recorder
+from game_environment.recorder.recorder import Recorder
 from meltingpot.python.utils.substrates import builder
-from scene_descriptor.scene_descriptor import SceneDescriptor
-from agent_mediator.action_planner import ActionPlanner
+from game_environment.scene_descriptor.scene_descriptor import SceneDescriptor
+from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
 
 import sys
 import ast
@@ -193,8 +194,7 @@ class ActionReader(object):
         return actions
 
 
-
-    def llm_step(self, new_action_map, player_prefixes)-> Mapping[str, int]:
+    def various_agents_step(self, new_action_map, player_prefixes)-> Mapping[str, int]:
         """Update the actions of player `player_prefix`."""
         #print("--------------------NEW ACTION MAP-------------\n", new_action_map)
         actions = {action_key: 0 for action_key in self._action_spec.keys()}
@@ -202,112 +202,125 @@ class ActionReader(object):
             for action_name in self._action_names:
                 actions[f'{player_prefix}.{action_name}'] = new_action_map[i][ action_name]
         return actions
+    
+logger = logging.getLogger(__name__)
 
-async def run_episode(
-        render_observation: str,
-        config_overrides: Dict[str, Any],
-        action_map: ActionMap,
-        full_config: config_dict.ConfigDict,
-        interactive: RenderType = RenderType.PYGAME,
-        screen_width: int = 800,
-        screen_height: int = 600,
-        fps: int = 8,
-        verbose_fn: Optional[Callable[[dm_env.TimeStep, int, int], None]] = None,
-        text_display_fn: Optional[Callable[[dm_env.TimeStep, int], str]] = None,
-        text_font_size: int = 36,
-        text_x_pos: int = 20,
-        text_y_pos: int = 20,
-        text_color: Tuple[int, ...] = WHITE,
-        env_builder: EnvBuilder = builder.builder,
-        print_events: Optional[bool] = False,
-        player_prefixes: Optional[Sequence[str]] = None,
-        default_observation: str = 'WORLD.RGB',
-        reset_env_when_done: bool = False,
-        initial_player_index: int = 0,
-        record: bool = False,
-) -> None:
-    """Run multiplayer environment, with per player rendering and actions.
+class Game:
+    """Run multiplayer environment, with per player rendering and actions. This class is used to run the game Commons Harvest Open from Meltingpot."""
 
-    This function initialises a Melting Pot environment with the given
-    configuration (including possible config overrides), and optionally launches
-    the episode as an interactive game using pygame.  The controls are described
-    in the action_map, whose keys correspond to discrete actions of the
-    environment.
+    def __init__(self,
+                 render_observation: str,
+            config_overrides: Dict[str, Any],
+            action_map: ActionMap,
+            full_config: config_dict.ConfigDict,
+            game_ascii_map: str,
+            interactive: RenderType = RenderType.PYGAME,
+            screen_width: int = 800,
+            screen_height: int = 600,
+            fps: int = 8,
+            verbose_fn: Optional[Callable[[dm_env.TimeStep, int, int], None]] = None,
+            text_display_fn: Optional[Callable[[dm_env.TimeStep, int], str]] = None,
+            text_font_size: int = 36,
+            text_x_pos: int = 20,
+            text_y_pos: int = 20,
+            text_color: Tuple[int, ...] = WHITE,
+            env_builder: EnvBuilder = builder.builder,
+            print_events: Optional[bool] = False,
+            player_prefixes: Optional[Sequence[str]] = None,
+            default_observation: str = 'WORLD.RGB',
+            reset_env_when_done: bool = False,
+            initial_player_index: int = 0,
+            record: bool = False,):
+        """Run multiplayer environment, with per player rendering and actions.
 
-    Args:
-      render_observation: A string consisting of the observation name to render.
-          Usually 'RGB' for the third person world view.
-      config_overrides: A dictionary of settings to override from the original
-          `full_config.lab2d_settings`. Typically these are used to set the number
-          of players.
-      action_map: A dictionary of (discrete) action names to functions that detect
-          the keys that correspond to its possible action values.  For example,
-          for movement, we might want to have WASD navigation tied to the 'move'
-          action name using `get_direction_pressed`.  See examples in the various
-          play_*.py scripts.
-      full_config: The full configuration for the Melting Pot environment.  These
-          usually come from meltingpot/python/configs/environments.
-      interactive: A RenderType representing whether the episode should be run
-          with PyGame, or without any interface.  Setting interactive to false
-          enables running e.g. a random agent via the action_map returning actions
-          without polling PyGame (or any human input).  Non interactive runs
-          ignore the screen_width, screen_height and fps parameters.
-      screen_width: Width, in pixels, of the window to render the game.
-      screen_height: Height, in pixels, of the window to render the game.
-      fps: Frames per second of the game.
-      verbose_fn: An optional function that will be executed for every step of
-          the environment.  It receives the environment timestep, a player index
-          (will be called for every index), and the current player index. This is
-          typically used to print extra information that would be useful for
-          debugging a running episode.
-      text_display_fn: An optional function for displaying text on screen. It
-          receives the environment and the player index, and returns a string to
-          display on the pygame screen.
-      text_font_size: the font size of onscreen text (from `text_display_fn`)
-      text_x_pos: the x position of onscreen text (from `text_display_fn`)
-      text_y_pos: the x position of onscreen text (from `text_display_fn`)
-      text_color: RGB color of onscreen text (from `text_display_fn`)
-      env_builder: The environment builder function to use. By default it is
-        meltingpot.builder.
-      print_events: An optional bool that if enabled will print events captured
-        from the dmlab2d events API on any timestep where they occur.
-      player_prefixes: If given, use these as the prefixes of player actions.
-        Pressing TAB will cycle through these. If not given, use the standard
-        ('1', '2', ..., numPlayers).
-      default_observation: Default observation to render if 'render_observation'
-        or '{player_prefix}.{render_observation}' is not found in the dict.
-      reset_env_when_done: if True, reset the environment once the episode has
-        terminated; useful for playing multiple episodes in a row. Note this
-        will cause this function to loop infinitely.
-      initial_player_index: Initial index of the player to play as. Defaults to 0.
-        (Players are always switchable via the tab key.)
-    """
-    full_config.lab2d_settings.update(config_overrides)
-    descriptor = SceneDescriptor(full_config)
+        This function initialises a Melting Pot environment with the given
+        configuration (including possible config overrides), and optionally launches
+        the episode as an interactive game using pygame.  The controls are described
+        in the action_map, whose keys correspond to discrete actions of the
+        environment.
 
+        Args:
+        render_observation: A string consisting of the observation name to render.
+            Usually 'RGB' for the third person world view.
+        config_overrides: A dictionary of settings to override from the original
+            `full_config.lab2d_settings`. Typically these are used to set the number
+            of players.
+        action_map: A dictionary of (discrete) action names to functions that detect
+            the keys that correspond to its possible action values.  For example,
+            for movement, we might want to have WASD navigation tied to the 'move'
+            action name using `get_direction_pressed`.  See examples in the various
+            play_*.py scripts.
+        full_config: The full configuration for the Melting Pot environment.  These
+            usually come from meltingpot/python/configs/environments.
+        game_ascii_map: The ascii map of the game.
+        interactive: A RenderType representing whether the episode should be run
+            with PyGame, or without any interface.  Setting interactive to false
+            enables running e.g. a random agent via the action_map returning actions
+            without polling PyGame (or any human input).  Non interactive runs
+            ignore the screen_width, screen_height and fps parameters.
+        screen_width: Width, in pixels, of the window to render the game.
+        screen_height: Height, in pixels, of the window to render the game.
+        fps: Frames per second of the game.
+        verbose_fn: An optional function that will be executed for every step of
+            the environment.  It receives the environment timestep, a player index
+            (will be called for every index), and the current player index. This is
+            typically used to print extra information that would be useful for
+            debugging a running episode.
+        text_display_fn: An optional function for displaying text on screen. It
+            receives the environment and the player index, and returns a string to
+            display on the pygame screen.
+        text_font_size: the font size of onscreen text (from `text_display_fn`)
+        text_x_pos: the x position of onscreen text (from `text_display_fn`)
+        text_y_pos: the x position of onscreen text (from `text_display_fn`)
+        text_color: RGB color of onscreen text (from `text_display_fn`)
+        env_builder: The environment builder function to use. By default it is
+            meltingpot.builder.
+        print_events: An optional bool that if enabled will print events captured
+            from the dmlab2d events API on any timestep where they occur.
+        player_prefixes: If given, use these as the prefixes of player actions.
+            Pressing TAB will cycle through these. If not given, use the standard
+            ('1', '2', ..., numPlayers).
+        default_observation: Default observation to render if 'render_observation'
+            or '{player_prefix}.{render_observation}' is not found in the dict.
+        reset_env_when_done: if True, reset the environment once the episode has
+            terminated; useful for playing multiple episodes in a row. Note this
+            will cause this function to loop infinitely.
+        initial_player_index: Initial index of the player to play as. Defaults to 0.
+            (Players are always switchable via the tab key.)
+        """
+        # Update the config with the overrides.
+        full_config.lab2d_settings.update(config_overrides)
+        # Create a descriptor to get the raw observations from the game environment
+        descriptor = SceneDescriptor(full_config)
 
-    if player_prefixes is None:
-        player_count = full_config.lab2d_settings.get('numPlayers', 1)
-        # By default, we use lua indices (which start at 1) as player prefixes.
-        player_prefixes = [f'{i + 1}' for i in range(player_count)]
-    else:
-        player_count = len(player_prefixes)
-    print(f'Running an episode with {player_count} players: {player_prefixes}.')
+        # Define the player ids
+        if player_prefixes is None:
+            player_count = full_config.lab2d_settings.get('numPlayers', 1)
+            # By default, we use lua indices (which start at 1) as player prefixes.
+            player_prefixes = [f'{i + 1}' for i in range(player_count)]
+        else:
+            player_count = len(player_prefixes)
+        logger.info(f'Running an episode with {player_count} players: {player_prefixes}.')
+        
+        # Create the game environment
+        env = env_builder(**full_config)
 
-    # Define the Action Planner
-    action_planner =  ActionPlanner(agents_count=player_count, agents_bio_path="data/agents/agents_bio_0.json")
-
-    with env_builder(**full_config) as env:
-
+        # Check that the number of player prefixes matches the number of players.
         if len(player_prefixes) != player_count:
+            logger.error('Player prefixes, when specified, must be of the same length as the number of players.')
             raise ValueError('Player prefixes, when specified, must be of the same '
-                             'length as the number of players.')
-        player_index = initial_player_index
+                                'length as the number of players.')
+        
+        # Reset the game environment
         timestep = env.reset()
 
-        score = collections.defaultdict(float)
-        #action_reader = ActionReader(env, action_map)
+        # Set the initial player index
+        player_index = initial_player_index
 
+        # Create a dictionary to store the score of each player
+        score = collections.defaultdict(float)
+
+        # Set the pygame variables
         if interactive == RenderType.PYGAME:
             pygame.init()
             pygame.display.set_caption('Melting Pot: {}'.format(
@@ -335,104 +348,167 @@ async def run_episode(
             game_display = pygame.display.set_mode(
                 (observation_width * scale, observation_height * scale))
             clock = pygame.time.Clock()
-        stop = False
 
+        # Create the game recorder
         if record:
             game_recorder = Recorder("logs", full_config)
             record_counter = 0
-        # Game loop
-        while True:
 
-            # Check for pygame controls
-            if interactive == RenderType.PYGAME:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        stop = True
-
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_TAB:
-                            player_index = (player_index + 1) % player_count
-                        break
-            player_prefix = player_prefixes[player_index] if player_prefixes else ''
-
-            if stop:
-                break
-
-
-            description = descriptor.describe_scene(timestep)
-            #print(description)
-            action_reader = ActionReader(env, action_map)
-            
-            newest_action_map = await action_planner.transform_obs_into_actions(str(description))
-            new_actions = action_reader.llm_step(newest_action_map, player_prefixes)
-            print("LLM ACTIONS\n ", new_actions)
-            timestep = env.step(new_actions)
-            
-            # Compute next timestep
-            #actions = action_reader.step(player_prefix) if player_count else []
-
-
-            #timestep = env.step(actions)
-            if record:
-                if record_counter % 5 == 0:
-                    game_recorder.record(timestep, description)
-                record_counter += 1
-            if timestep.step_type == dm_env.StepType.LAST:
-                if reset_env_when_done:
-                    timestep = env.reset()
-                else:
-                    break
-
-            rewards = _get_rewards(timestep)
-            for i, prefix in enumerate(player_prefixes):
-                if verbose_fn:
-                    verbose_fn(timestep, i, player_index)
-                score[prefix] += rewards[prefix]
-                if i == player_index and rewards[prefix] != 0:
-                    print(f'Player {prefix} Score: {score[prefix]}')
-
-            # Print events if applicable
-            if print_events and hasattr(env, 'events'):
-                events = env.events()
-                # Only print events on timesteps when there are events to print.
-                if events:
-                    print(events)
-
-            # pygame display
-            if interactive == RenderType.PYGAME:
-                # show visual observation
-                if render_observation in timestep.observation:
-                    obs = timestep.observation[render_observation]
-                elif f'{player_prefix}.{render_observation}' in timestep.observation:
-                    obs = timestep.observation[f'{player_prefix}.{render_observation}']
-                else:
-                    # Fall back to default_observation.
-                    obs = timestep.observation[default_observation]
-                obs = np.transpose(obs, (1, 0, 2))  # PyGame is column major!
-
-                surface = pygame.surfarray.make_surface(obs)
-                rect = surface.get_rect()
-
-                surf = pygame.transform.scale(
-                    surface, (rect[2] * scale, rect[3] * scale))
-                game_display.blit(surf, dest=(0, 0))
-
-                # show text
-                if text_display_fn:
-                    if player_count == 1:
-                        text_str = text_display_fn(timestep, 0)
-                    else:
-                        text_str = text_display_fn(timestep, player_index)
-                    img = font.render(text_str, True, text_color)
-                    game_display.blit(img, (text_x_pos, text_y_pos))
-
-                # tick
-                pygame.display.update()
-                clock.tick(fps)
-
+        self.env = env
+        self.pygame = pygame
         if record:
-            game_recorder.save_log()
-        if interactive == RenderType.PYGAME:
-            pygame.quit()
-        for prefix in player_prefixes:
-            print('Player %s: score is %g' % (prefix, score[prefix]))
+            self.game_recorder = game_recorder
+            self.record_counter = record_counter
+        else:
+            self.game_recorder = None
+            self.record_counter = None
+
+        self.first_move = True
+        self.interactive = interactive
+        self.player_prefixes = player_prefixes
+        self.player_index = player_index
+        self.player_count = player_count
+        self.action_map = action_map
+        self.descriptor = descriptor
+        self.timestep = timestep
+        self.reset_env_when_done = reset_env_when_done
+        self.verbose_fn = verbose_fn
+        self.text_display_fn = text_display_fn
+        self.font = font
+        self.text_font_size = text_font_size
+        self.text_x_pos = text_x_pos
+        self.text_y_pos = text_y_pos
+        self.text_color = text_color
+        self.print_events = print_events
+        self.default_observation = default_observation
+        self.score = score
+        self.render_observation = render_observation
+        self.scale = scale
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.fps = fps
+        self.game_display = game_display
+        self.clock = clock
+        self.record = record
+        self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes)
+
+    def end_game(self):
+        """Ends the game. This function is called when the game is finished."""
+        self.env.close()
+        self.env = None
+        self.pygame.quit()
+        self.pygame = None
+        if self.record:
+            self.game_recorder.save_log()
+
+        for prefix in self.player_prefixes:
+            logger.info('Player %s: score is %g' % (prefix, self.score[prefix]))
+
+    def step(self, actions) -> dict[int, list[str]] | None:
+        """Run one step of the game.
+        
+        Args:
+            actions: A dictionary of actions for each player.
+        Returns:
+            A dictionary with the observations of each player.
+        """
+        stop = False
+
+        # Check for pygame controls
+        if self.interactive == RenderType.PYGAME:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    stop = True
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_TAB:
+                        self.player_index = (self.player_index + 1) % self.player_count
+                    break
+        player_prefix = self.player_prefixes[self.player_index] if self.player_prefixes else ''
+
+        if stop:
+            return None
+
+        # Get the raw observations from the environment
+        description = self.descriptor.describe_scene(self.timestep)
+        
+        if not self.first_move:
+            # TODO: Execute the actions
+            # Get the next action map
+            # next_action_map = await action_planner.transform_obs_into_actions(str(description))
+            pass
+        else:
+            self.first_move = False
+        
+        # Compute next timestep
+        # new_actions = action_reader.various_agents_step(next_action_map, player_prefixes)
+        #print("LLM ACTIONS\n ", new_actions)
+
+        # Execute the old actions map
+        # timestep = env.step(new_actions)
+        ## --------- END OF OUR CODE ---------
+
+        # Record the game
+        if self.record:
+            if self.record_counter % 5 == 0:
+                self.game_recorder.record(self.timestep, description)
+            self.record_counter += 1
+
+        # Check if the game is finished
+        if self.timestep.step_type == dm_env.StepType.LAST:
+            if self.reset_env_when_done:
+                self.timestep = self.env.reset()
+            else:
+                return None
+
+        # Get the rewards
+        rewards = _get_rewards(self.timestep)
+        reward = rewards[str(self.player_index + 1)]
+        for i, prefix in enumerate(self.player_prefixes):
+            if self.verbose_fn:
+                self.verbose_fn(self.timestep, i, self.player_index)
+            self.score[prefix] += reward
+            if i == self.player_index and reward != 0:
+                logger.info(f'Player {prefix} Score: {self.score[prefix]}')
+
+        # Print events if applicable
+        if self.print_events and hasattr(self.env, 'events'):
+            events = self.env.events()
+            # Only print events on timesteps when there are events to print.
+            if events:
+                logger.info('Env events: %s', events)
+
+        # pygame display
+        if self.interactive == RenderType.PYGAME:
+            # show visual observation
+            if self.render_observation in self.timestep.observation:
+                obs = self.timestep.observation[self.render_observation]
+            elif f'{player_prefix}.{self.render_observation}' in self.timestep.observation:
+                obs = self.timestep.observation[f'{player_prefix}.{self.render_observation}']
+            else:
+                # Fall back to default_observation.
+                obs = self.timestep.observation[self.default_observation]
+            obs = np.transpose(obs, (1, 0, 2))  # PyGame is column major!
+
+            surface = pygame.surfarray.make_surface(obs)
+            rect = surface.get_rect()
+
+            surf = pygame.transform.scale(
+                surface, (rect[2] * self.scale, rect[3] * self.scale))
+            self.game_display.blit(surf, dest=(0, 0))
+
+            # show text
+            if self.text_display_fn:
+                if self.player_count == 1:
+                    text_str = self.text_display_fn(self.timestep, 0)
+                else:
+                    text_str = self.text_display_fn(self.timestep, self.player_index)
+                img = self.font.render(text_str, True, self.text_color)
+                self.game_display.blit(img, (self.text_x_pos, self.text_y_pos))
+
+            # tick
+            pygame.display.update()
+            self.clock.tick(self.fps)
+
+        # Return the observations of each player
+        return self.observationsGenerator.get_all_observations_descriptions(str(description).strip())

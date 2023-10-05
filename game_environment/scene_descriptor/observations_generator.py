@@ -19,16 +19,18 @@ class ObservationsGenerator (object):
             scene descriptor module which provides the observations in ascci format
     """
 
-    def __init__(self, global_map:str):
+    def __init__(self, global_map:str, players_names: list):
         """
         Description: Initializes the observations generator
 
         Args:
             global_map (str): Global map in ascci format
+            players_names (list): List with the names of the players
         """
         
         self.global_map = global_map
         self.global_trees = self.connected_elems_map(self.global_map, ['A', 'G'])
+        self.players_names = players_names
 
 
     def connected_elems_map(self, ascci_map, elements_to_find):
@@ -44,7 +46,7 @@ class ObservationsGenerator (object):
         """
 
         # Convierte la matriz en una matriz numpy
-        matrix = np.array([list(row) for row in ascci_map.split('\n')])
+        matrix = np.array([list(row) for row in ascci_map.split('\n') if row != ''])
 
         # Generate mask
         mask = (matrix == elements_to_find[0]) 
@@ -99,7 +101,7 @@ class ObservationsGenerator (object):
     
 
 
-    def get_all_observations_descritions(self,  agents_observations_str: str):
+    def get_all_observations_descriptions(self,  agents_observations_str: str) -> dict[str, list[str]]:
         """
         Description: Returns a dictionary with the descriptions of the observations of the agents
 
@@ -107,11 +109,12 @@ class ObservationsGenerator (object):
             agents_observations_str (str): Observations of the agents in ascci format
             
         Returns:
-            dict: Dictionary with the descriptions of the observations of the agents
+            dict[str, list[str]]: Dictionary with the descriptions of the observations in a list by agent name
         """
         agents_observations = ast.literal_eval(agents_observations_str)
         observations_description_per_agent = {}
-        for agent, agent_dict in agents_observations.items():
+        for agent_id, agent_dict in agents_observations.items():
+            agent = self.players_names[agent_id]
             observations_description_per_agent[agent] = self.get_observations_per_agent(agent_dict)
             
         return observations_description_per_agent
