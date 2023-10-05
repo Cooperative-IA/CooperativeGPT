@@ -26,25 +26,25 @@ class Agent:
         self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
         self.stm.add_memory(self.name, 'name')
 
-    def move(self, observation: str) -> str:
+    def move(self, observations: list[str]) -> str:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
-            observation (str): Observation of the environment.
+            observations (list[str]): List of observations of the environment.
 
         Returns:
             str: Action to take.
         """
-        react = self.perceive(observation)
+        react = self.perceive(observations)
 
         if react:
             self.plan()
 
-    def perceive(self, observation: str) -> None:
+    def perceive(self, observations: list[str]) -> None:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
 
         Args:
-            perception (str): Perception of the environment.
+            observations (list[str]): List of observations of the environment.
         
         Returns:
             bool: True if the agent should react to the observation, False otherwise.
@@ -52,13 +52,14 @@ class Agent:
         
         now = datetime.now()
         timestamp = datetime.timestamp(now)
-        self.ltm.add_memory(observation, {'type': 'perception', 'agent': self.name, 'timestamp': timestamp})
-        self.stm.add_memory(observation, 'current_observation')
+        self.ltm.add_memory(observations, [{'type': 'perception', 'agent': self.name, 'timestamp': timestamp}] * len(observations))
+        current_observation = ', '.join(observations)
+        self.stm.add_memory(current_observation, 'current_observation')
 
         # Decide if the agent should react to the observation
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
-        react = should_react(self.name, world_context, observation, current_plan)
+        react = should_react(self.name, world_context, observations, current_plan)
         self.logger.info(f'{self.name} should react to the observation: {react}')
         return react
     

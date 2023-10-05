@@ -44,6 +44,7 @@ Neural Information Processing Systems (pp. 3646-3655).
 """
 
 from typing import Any, Dict, Mapping, Sequence
+import logging
 
 from ml_collections import config_dict
 import numpy as np
@@ -51,6 +52,8 @@ import numpy as np
 from meltingpot.python.utils.substrates import colors
 from meltingpot.python.utils.substrates import shapes
 from meltingpot.python.utils.substrates import specs
+
+logger = logging.getLogger(__name__)
 
 # Warning: setting `_ENABLE_DEBUG_OBSERVATIONS = True` may cause slowdown.
 _ENABLE_DEBUG_OBSERVATIONS = False
@@ -574,8 +577,19 @@ def create_avatar_objects(num_players):
   return avatar_objects
 
 
-def get_config():
-  """Default configuration for training on the commons_harvest level."""
+def get_config(players: list[str]) -> config_dict.ConfigDict:
+  """Default configuration for training on the commons_harvest level.
+  
+    Args:
+        players: List with the player names to run the game with
+    Returns:
+        (config_dict.ConfigDict): A game configuration
+  """
+  # Error if the player list is empty.
+  if not players:
+    logger.error("Must pass a list of players.")
+    raise ValueError("Must specify at least one player.")   
+
   config = config_dict.ConfigDict()
 
   # Action set configuration.
@@ -600,35 +614,41 @@ def get_config():
 
   # The roles assigned to each player.
   config.valid_roles = frozenset({"default"})
-  config.default_player_roles = ("default",) * 7
+  config.default_player_roles = ("default",) * len(players)
+  config.num_players = len(players)
+  config.player_names = players
 
   return config
 
 
 def build(
-    roles: Sequence[str],
     config: config_dict.ConfigDict,
 ) -> Mapping[str, Any]:
-  """Build substrate definition given player roles."""
-  del config
-  #num_players = len(roles)
-  num_players = 3
-  # Build the rest of the substrate definition.
-  substrate_definition = dict(
-      levelName="commons_harvest_language",
-      levelDirectory="meltingpot/lua/levels",
-      numPlayers=num_players,
-      # Define upper bound of episode length since episodes end stochastically.
-      maxEpisodeLengthFrames=5000,
-      spriteSize=8,
-      topology="BOUNDED",  # Choose from ["BOUNDED", "TORUS"],
-      simulation={
-          "map": ASCII_MAP,
-          "gameObjects": create_avatar_objects(num_players),
-          "prefabs": create_prefabs(APPLE_RESPAWN_RADIUS,
-                                    REGROWTH_PROBABILITIES),
-          "charPrefabMap": CHAR_PREFAB_MAP,
-          "scene": create_scene(num_players),
-      },
-  )
-  return substrate_definition
+    """
+    Build substrate definition given player roles.
+    
+        Args:
+            config: A game configuration
+        Returns:
+            (Mapping[str, Any]): A substrate definition
+    """
+    num_players = config.num_players
+    # Build the rest of the substrate definition.
+    substrate_definition = dict(
+        levelName="commons_harvest_language",
+        levelDirectory="meltingpot/lua/levels",
+        numPlayers=num_players,
+        # Define upper bound of episode length since episodes end stochastically.
+        maxEpisodeLengthFrames=5000,
+        spriteSize=8,
+        topology="BOUNDED",  # Choose from ["BOUNDED", "TORUS"],
+        simulation={
+            "map": ASCII_MAP,
+            "gameObjects": create_avatar_objects(num_players),
+            "prefabs": create_prefabs(APPLE_RESPAWN_RADIUS,
+                                        REGROWTH_PROBABILITIES),
+            "charPrefabMap": CHAR_PREFAB_MAP,
+            "scene": create_scene(num_players),
+        },
+    )
+    return substrate_definition
