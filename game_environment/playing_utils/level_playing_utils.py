@@ -202,8 +202,6 @@ class ActionReader(object):
         Returns:
             A dictionary with the actions of each player. Keys are combination of player indices starting from 1 and action names        
         """
-
-        #print("--------------------NEW ACTION MAP-------------\n", new_action_map)
         actions = {action_key: 0 for action_key in self._action_spec.keys()}
         for i, player_prefix in enumerate(player_prefixes):
             for action_name in self._action_names:
@@ -442,8 +440,6 @@ class Game:
             # Get the next action map
             game_actions = action_reader.various_agents_step(current_actions_map, self.player_prefixes)
             self.timestep = self.env.step(game_actions)
-            print("------------Generated action : ", game_actions)
-            print("------------------------------------\n")
         else:
             self.first_move_done = True
         ## --------- END OF OUR CODE ---------

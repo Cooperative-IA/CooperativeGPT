@@ -118,3 +118,10 @@ def start_server(players: list[str], game_name: str = "commons_harvest_language"
         A game environment
     """
     return run_episode(game_name, record, players)
+
+def get_scenario_map  ()-> str:
+    """Get the scenario map from the game environment
+    Returns:
+        A string of the scenario map, rows are separed by '\n'
+    """
+    return ASCII_MAP

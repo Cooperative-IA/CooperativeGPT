@@ -9,15 +9,13 @@ from agent.cognitive_modules.perceive import should_react
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
-from agent.cognitive_modules.act import *
-from utils.queue_utils import *
-from utils.game_actions_handler import *
+from agent.cognitive_modules.act import actions_sequence
 
 class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, map_info:dict) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict) -> None:
         """Initializes the agent.
 
         Args:
@@ -25,21 +23,19 @@ class Agent:
             data_folder (str): Path to the data folder.
             agent_context_file (str): Path to the json agent context file. Initial info about the agent.
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to.
+            scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
         """
         self.logger = logging.getLogger(__name__)
 
         self.name = name
         self.ltm = LongTermMemory(agent_name=name, data_folder=data_folder)
         self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
-        self.spatial_memory = SpatialMemory(initial_pos=map_info['initial_pos'])
+        self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.stm.add_memory(memory = self.name, key = 'name')
         
         # Initialize steps sequence in empty queue
         self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
-
-        ## TODO REMOVE THIS FROM HERE
-        valid_actions = ['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId) at (x,y)']
-        self.stm.add_memory(memory=valid_actions, key='valid_actions')
+        self.stm.add_memory(memory=scenario_info['valid_actions'], key='valid_actions')
 
 
 
@@ -64,7 +60,7 @@ class Agent:
         
         self.reflect(observations)
 
-        step_action = self.execute_current_actions()
+        step_action = self.get_actions_to_execute()
 
         return step_action
 
@@ -160,7 +156,7 @@ class Agent:
 
 
 
-    def execute_current_actions(self) -> None:
+    def get_actions_to_execute(self) -> None:
         """
         Executes the current actions of the agent. 
 

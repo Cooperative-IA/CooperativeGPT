@@ -3,13 +3,15 @@
 
 from collections import deque
 def get_shortest_valid_route(matriz: list[list[str]], start: tuple[int, int], end: tuple[int, int], 
-                             invalid_symbols: list[str] = ['W','$']):
+                             invalid_symbols: list[str] = ['W','$'], orientation:int = 0):
     """Gets the shortest valid route between two points in a matrix.
 
     Args:
         matriz (list[list[str]]): Matrix.
         start (tuple[int, int]): Start point.
         end (tuple[int, int]): End point.
+        invalid_symbols (list[str], optional): Invalid symbols. Defaults to ['W','$'].
+        orientation (int, optional): Orientation of the agent. 0: North, 1: East, 2: South, 3: West. Defaults to 0.
 
     Returns:
         list[str]: Shortest valid route.
@@ -18,6 +20,9 @@ def get_shortest_valid_route(matriz: list[list[str]], start: tuple[int, int], en
     dx = [-1, 0, 1, 0]
     dy = [0, 1, 0, -1]
     directions = ['move up', 'move right', 'move down', 'move left']
+    #Rotate directions according to the orientation of the agent
+    orientation = 1 if orientation == 3 else 3 if orientation == 1 else orientation # Changes 1 to 3 and 3 to 1 (right and left)
+    directions = directions[orientation:] + directions[:orientation]
     
     def bfs(start, end):
         visited = [[False for _ in range(len(matriz[0]))] for _ in range(len(matriz))]
