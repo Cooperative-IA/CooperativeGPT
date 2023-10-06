@@ -195,12 +195,17 @@ class ActionReader(object):
 
 
     def various_agents_step(self, new_action_map, player_prefixes)-> Mapping[str, int]:
-        """Update the actions of player `player_prefix`."""
-        #print("--------------------NEW ACTION MAP-------------\n", new_action_map)
+        """Update the actions of player `player_prefix`.
+        Args:
+            new_action_map: A dictionary with the actions of each player. Keys are player prefixes
+            player_prefixes: A list with the player prefixes
+        Returns:
+            A dictionary with the actions of each player. Keys are combination of player indices starting from 1 and action names        
+        """
         actions = {action_key: 0 for action_key in self._action_spec.keys()}
         for i, player_prefix in enumerate(player_prefixes):
             for action_name in self._action_names:
-                actions[f'{player_prefix}.{action_name}'] = new_action_map[i][ action_name]
+                actions[f'{i+1}.{action_name}'] = new_action_map[player_prefix][ action_name]
         return actions
     
 logger = logging.getLogger(__name__)
@@ -363,7 +368,7 @@ class Game:
             self.game_recorder = None
             self.record_counter = None
 
-        self.first_move = True
+        self.first_move_done = False
         self.interactive = interactive
         self.player_prefixes = player_prefixes
         self.player_index = player_index
@@ -404,7 +409,7 @@ class Game:
         for prefix in self.player_prefixes:
             logger.info('Player %s: score is %g' % (prefix, self.score[prefix]))
 
-    def step(self, actions) -> dict[int, list[str]] | None:
+    def step(self, current_actions_map:dict) -> dict[int, list[str]] | None:
         """Run one step of the game.
         
         Args:
@@ -413,7 +418,6 @@ class Game:
             A dictionary with the observations of each player.
         """
         stop = False
-
         # Check for pygame controls
         if self.interactive == RenderType.PYGAME:
             for event in pygame.event.get():
@@ -428,26 +432,17 @@ class Game:
 
         if stop:
             return None
-
+        action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
         description = self.descriptor.describe_scene(self.timestep)
         
-        if not self.first_move:
-            # TODO: Execute the actions
+        if self.first_move_done :
             # Get the next action map
-            # next_action_map = await action_planner.transform_obs_into_actions(str(description))
-            pass
+            game_actions = action_reader.various_agents_step(current_actions_map, self.player_prefixes)
+            self.timestep = self.env.step(game_actions)
         else:
-            self.first_move = False
-        
-        # Compute next timestep
-        # new_actions = action_reader.various_agents_step(next_action_map, player_prefixes)
-        #print("LLM ACTIONS\n ", new_actions)
-
-        # Execute the old actions map
-        # timestep = env.step(new_actions)
+            self.first_move_done = True
         ## --------- END OF OUR CODE ---------
-
         # Record the game
         if self.record:
             if self.record_counter % 5 == 0:
@@ -510,5 +505,5 @@ class Game:
             pygame.display.update()
             self.clock.tick(self.fps)
 
-        # Return the observations of each player
-        return self.observationsGenerator.get_all_observations_descriptions(str(description).strip())
+        # Return the observations of each player and the descriptions
+        return self.observationsGenerator.get_all_observations_descriptions(str(description).strip()), description
