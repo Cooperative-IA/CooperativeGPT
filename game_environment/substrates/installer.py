@@ -2,12 +2,12 @@ import os
 import shutil
 import logging
 from distutils.dir_util import copy_tree
-import game_environment.utils as utils
+from utils.files import load_config
 
 logger = logging.getLogger(__name__)
 
 def install_substrate(substrate_name):
-    config = utils.load_config()
+    config = load_config()
     meltingpot_dir = os.getenv("MELTING_POT_DIR")
     substrates_suffix = "meltingpot/lua/levels/"
     source_dir = os.path.join(config["game_folder"], "substrates", "lua", substrate_name)

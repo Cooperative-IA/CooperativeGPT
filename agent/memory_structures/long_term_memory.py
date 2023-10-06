@@ -65,3 +65,27 @@ class LongTermMemory:
         # Formats the results to list of strings
         results = [r[0] for r in results['documents'] if r]
         return results
+    
+    def get_memories(self, limit: int = 50, filter: dict = None) -> dict:
+        """Gets memories from the long term memory.
+
+        Args:
+            limit (int, optional): Number of results to return. Defaults to 50.
+            filter (dict, optional):  A dictionary with the metadata to filter the memories. Defaults to None. This filter must be specified as the "where" filter for the query as defined for chromadb: https://docs.trychroma.com/usage-guide#using-where-filters.
+
+        Returns:
+            dict: List of memories. The memories are returned as a dictionary with the following structure: {"ids": list[str], "documents": list[str], "metadatas": list[dict], "embeddings": list[list[float]]}
+        """
+        results = self.collection.get(limit=limit, where=filter, include=['documents', 'metadatas', 'embeddings'])
+        return results
+    
+    def create_embedding(self, text: str) -> list[float]:
+        """Creates an embedding for the given text.
+
+        Args:
+            text (str): Text to create the embedding for.
+
+        Returns:
+            list[float]: Embedding for the text.
+        """
+        return self.collection._embedding_function([text])[0]
