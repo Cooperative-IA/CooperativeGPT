@@ -17,7 +17,7 @@ def get_shortest_valid_route(matriz: list[list[str]], start: tuple[int, int], en
 
     dx = [-1, 0, 1, 0]
     dy = [0, 1, 0, -1]
-    directions = ['up', 'right', 'down', 'left']
+    directions = ['move up', 'move right', 'move down', 'move left']
     
     def bfs(start, end):
         visited = [[False for _ in range(len(matriz[0]))] for _ in range(len(matriz))]

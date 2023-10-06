@@ -10,6 +10,8 @@ from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
 from agent.cognitive_modules.act import *
+from utils.queue_utils import *
+from utils.game_actions_handler import *
 
 class Agent:
     """Agent class.
@@ -36,18 +38,24 @@ class Agent:
         self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
 
         ## TODO REMOVE THIS FROM HERE
-        valid_actions = ['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId)']
+        valid_actions = ['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId) at (x,y)']
         self.stm.add_memory(memory=valid_actions, key='valid_actions')
 
-    def move(self, observations: list[str]) -> str:
+
+
+    def move(self, observations: list[str], agent_position: tuple, agent_orientation: int) -> str:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
             observations (list[str]): List of observations of the environment.
+            agent_position (tuple): Current position of the agent.
+            agent_orientation (int): Current orientation of the agent. 0: North, 1: East, 2: South, 3: West.
 
         Returns:
             str: Action to take.
         """
+        #Updates the position of the agent in the spatial memory 
+        self.spatial_memory.updatePosition(agent_position, agent_orientation)
         react = self.perceive(observations)
 
         if react:
@@ -56,7 +64,9 @@ class Agent:
         
         self.reflect(observations)
 
-        self.execute_current_actions()
+        step_action = self.execute_current_actions()
+
+        return step_action
 
     def perceive(self, observations: list[str]) -> None:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
@@ -70,7 +80,12 @@ class Agent:
         
         now = datetime.now()
         timestamp = datetime.timestamp(now)
-        self.ltm.add_memory(observations, [{'type': 'perception', 'agent': self.name, 'timestamp': timestamp}] * len(observations))
+        # Open AI Only allows 16 observations per request
+        batch_size = 16
+        for i in range(0, len(observations), batch_size):
+            batch = observations[i:i+batch_size]
+            self.ltm.add_memory(batch, [{'type': 'perception', 'agent': self.name, 'timestamp': timestamp}] * len(batch))
+
         current_observation = ', '.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
 
@@ -96,12 +111,16 @@ class Agent:
         self.stm.add_memory(new_goals, 'current_goals')
 
 
-    def reflect(self, observations:str) -> None:
+    def reflect(self, observations:list[str]) -> None:
         """Reflects on the agent's observations and stores the insights reflections in the long term memory.
+
+        Args:
+            observations (list[str]): List of observations of the environment.
         """
-        
+        observations_str = '\n'.join(observations)
+
         world_context = self.stm.get_memory('world_context')
-        relevant_questions = reflect_questions(self.name, world_context, observations)
+        relevant_questions = reflect_questions(self.name, world_context, observations_str)
         self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
         
         relevant_memories = []

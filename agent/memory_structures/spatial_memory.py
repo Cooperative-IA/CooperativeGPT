@@ -42,13 +42,15 @@ class SpatialMemory:
         #self.exploredMap = ["$"*mapSize[1] for _ in range(mapSize[0])]
         self.exploredMap = real_map # CHANGE THIS TO LINE ABOVE
         self.position = initial_pos
+        self.orientation = 0
         self.mapSize = (len(real_map), len(real_map[0]))
 
-    def updatePosition(self, new_position: tuple) -> None:
+    def updatePosition(self, new_position: tuple, orientation:int) -> None:
         """
         Updates the current position of the agent.
         """
         self.position = new_position
+        self.orientation = orientation
 
 
     def updateExploredMap(self, pos: tuple) -> None:
@@ -68,26 +70,46 @@ class SpatialMemory:
     
 
 
-    def get_steps_sequence(self, current_action) -> int:
+    def get_steps_sequence(self, current_action) -> Queue(str):
         """
-        Returns a new se
+        Returns a new steps sequence for the current action.
+
+        Args:
+            current_action (str): Current action of the agent.
+
+        Returns:
+            Queue(str): Steps sequence for the current action.
         """
 
-        if current_action.startswith('grab apple'):
+        if current_action.startswith(('grab ', 'go to ')):
             end_position = self.get_position_from_action(current_action)
-            gameloop = self.find_route_to_position(end_position)
-            logging.info(f' grabbing an apple, the steps sequence is: {list(gameloop.queue)}')
+            sequence_steps = self.find_route_to_position(end_position)
+            logging.info(f' grabbing an apple, the steps sequence is: {list(sequence_steps.queue)}')
 
-            return gameloop
+            return sequence_steps
         
-        else: # DELETE THIS ELSE
-            end_position = (12,8)
-            gameloop = self.find_route_to_position(end_position)
-            logging.info(f'NOT an apple, the sequence  is: {list(gameloop.queue)}')  
-            return gameloop
+        elif current_action.startswith('attack '):
+            sequence_steps = new_empty_queue()
+            sequence_steps.put('attack')
+            return sequence_steps
         
         return new_empty_queue() # DELETE THIS LINE
 
 
 
 
+    def get_position_from_action(self, action: str) -> tuple:
+        """
+        Returns the position of the object in the action.
+
+        Args:
+            action (str): Action of the agent.
+
+        Returns:
+            tuple: Position of the object in the action.
+        """
+        # Finds the substring "(x,y)" in the action string
+        position_str = re.search(r'\((.*?)\)', action).group(1)
+        # Splits the substring into a tuple
+        position = tuple(map(int, position_str.split(',')))
+        return position

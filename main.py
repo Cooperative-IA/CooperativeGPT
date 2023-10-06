@@ -3,30 +3,9 @@ import time
 from dotenv import load_dotenv
 
 from utils.logging import setup_logging
+from utils.game_actions_handler import *
 from agent.agent import Agent
 from game_environment.server import start_server
-
-# TODO delete  this
-current_observations = [
-        'Observed an apple at position [1, 15]. This apple belongs to tree 3',
-        'Observed an apple at position [2, 14]. This apple belongs to tree 3',
-        'Observed an apple at position [2, 15]. This apple belongs to tree 3',
-        'Observed an apple at position [2, 16]. This apple belongs to tree 3',
-        'Observed an apple at position [3, 13]. This apple belongs to tree 3',
-        'Observed an apple at position [3, 14]. This apple belongs to tree 3',
-        'Observed an apple at position [3, 15]. This apple belongs to tree 3',
-        'Observed an apple at position [3, 16]. This apple belongs to tree 3',
-        'Observed an apple at position [3, 17]. This apple belongs to tree 3',
-        'Observed an apple at position [4, 14]. This apple belongs to tree 3',
-        'Observed an apple at position [4, 15]. This apple belongs to tree 3',
-        'Observed an apple at position [4, 16]. This apple belongs to tree 3',
-        'Observed an apple at position [5, 15]. This apple belongs to tree 3',
-        'Observed tree 3 at position [3, 15]. This tree has 13 apples remaining and 0 grass for apples growing',
-        'Observed an apple at position [1, 20]. This apple belongs to tree 4',
-        'Observed an apple at position [1, 21]. This apple belongs to tree 4',
-        'Observed an apple at position [2, 21]. This apple belongs to tree 4',
-        'Observed tree 4 at position [1, 20]. This tree has 3 apples remaining and 0 grass for apples growing'
-    ]
 
 # load environment variables
 load_dotenv(override=True)
@@ -34,7 +13,7 @@ load_dotenv(override=True)
 if __name__ == "__main__":
     # TODO delete this
     map_info = {}
-    map_info['initial_pos'] = (8,8) # TODO delete this
+    map_info['initial_pos'] = (0,0) # TODO delete this
 
 
     setup_logging()
@@ -54,17 +33,26 @@ if __name__ == "__main__":
     # Game loop
     actions = None
     while True:
-        observations = env.step(actions)
-        logger.info('Observations: %s', observations)
+        observations, scene_descriptions = env.step(actions)
+        input("Press Enter to continue...") # TODO: Remove this, just for testing one step
+
+        scene_descriptions = {players[i] : scene_descriptions[i] for i in range(len(players))}
+        logger.info('Observations: %s', observations, 'Scene descriptions: %s', scene_descriptions)
 
         # Get the actions of the agents
+        agents_map_actions = {}
         for agent in agents:
-            agent.move(observations[agent.name])
-            break # TODO: Remove this break, just for testing one agent
+            agent_position, agent_orientation = scene_descriptions[agent.name]['global_position'], scene_descriptions[agent.name]['orientation']
+            step_action = agent.move(observations[agent.name], agent_position, agent_orientation)
+            agents_map_actions[agent.name] = generate_agent_actions_map(step_action)
+            logger.info('Agent %s action map: %s', agent.name, agents_map_actions[agent.name] )
 
-        # wait for 10 seconds
-        time.sleep(10) # TODO: Remove this, just for testing one step
-        break
+            break # TODO: Remove this, just for testing one agent
+        for agent in agents[1:]:
+            agents_map_actions[agent.name] = default_agent_actions_map()
+
+        logger.info('Calculated all Agents actions for this step: %s', agents_map_actions)
+        actions = agents_map_actions
 
     env.end_game()
 

@@ -63,5 +63,5 @@ class LongTermMemory:
         """
         results = self.collection.query(query_texts=[query], n_results=n_results)
         # Formats the results to list of strings
-        results = [r[0] for r in results['documents']] 
+        results = [r[0] for r in results['documents'] if r]
         return results
