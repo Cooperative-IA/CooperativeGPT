@@ -19,7 +19,7 @@ def should_react(name: str, world_context: str, observations: list[str], current
     
     llm = LLMModels().get_main_model()
 
-    observation = ', '.join(observations)
+    observation = '.\n'.join(observations)
     response = llm.completion(prompt='react.txt', inputs=[name, world_context, observation, current_plan])
     answers = extract_answers(response)
     answer = answers.get('Answer', None)

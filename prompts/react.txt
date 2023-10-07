@@ -1,7 +1,10 @@
 You have this information about an agent called <input1>:
 
 <input1>'s world understanding: <input2>
-Current observations: <input3>
+
+Current observations:
+<input3>
+
 Current plan: <input4>
 
 Review the plan and decide if <input1> should continue with its plan given the new information that it's seeing in the observations.

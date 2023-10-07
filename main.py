@@ -30,8 +30,6 @@ if __name__ == "__main__":
     # Start the game server
     env = start_server(players)
 
-    game_time = env.get_time()
-
     # Game loop
     actions = None
     step_count, max_steps = 0, 100
@@ -44,11 +42,13 @@ if __name__ == "__main__":
         scene_descriptions = {players[i] : scene_descriptions[i] for i in range(len(players))}
         logger.info('Observations: %s', observations, 'Scene descriptions: %s', scene_descriptions)
 
+        game_time = env.get_time()
+
         # Get the actions of the agents
         agents_map_actions = {}
         for agent in agents:
             agent_position, agent_orientation = scene_descriptions[agent.name]['global_position'], scene_descriptions[agent.name]['orientation']
-            step_action = agent.move(observations[agent.name], agent_position, agent_orientation)
+            step_action = agent.move(observations[agent.name], agent_position, agent_orientation, game_time)
             agents_map_actions[agent.name] = generate_agent_actions_map(step_action)
             logger.info('Agent %s action map: %s', agent.name, agents_map_actions[agent.name] )
 
