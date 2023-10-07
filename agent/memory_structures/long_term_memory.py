@@ -36,7 +36,7 @@ class LongTermMemory:
 
         self.collection = self.chroma_client.create_collection(agent_name, embedding_function=openai_ef)
 
-    def add_memory(self, memory: str | list[str], created_at: str | list[str], poignancy: str | list[str], additional_metadata: dict | list[dict] = None):
+    def add_memory(self, memory: str | list[str], created_at: str | list[str], poignancy: int | list[int], additional_metadata: dict | list[dict] = None):
         """Adds a memory to the long term memory.
 
         Args:
@@ -48,6 +48,25 @@ class LongTermMemory:
 
         # Create metadata
         if isinstance(memory, list):
+            # Check if created_at and poignancy are lists. If they are, they must have the same length as memory
+            if (isinstance(created_at, list) or isinstance(poignancy, list)) and (len(memory) != len(created_at) or len(memory) != len(poignancy)):
+                self.logger.error(f"If memory is a list, created_at and poignancy must be lists with the same length or single values. Memory(len): {len(memory)}, created_at(len): {len(created_at)}, poignancy(len): {len(poignancy)}")
+                raise ValueError(f"If memory is a list, created_at and poignancy must be lists with the same length or single values. Memory(len): {len(memory)}, created_at(len): {len(created_at)}, poignancy(len): {len(poignancy)}")
+            # If created_at and poignancy are not lists, create lists with the same value for all memories
+            if isinstance(created_at, str):
+                created_at = [created_at for _ in range(len(memory))]
+            if not isinstance(poignancy, list):
+                poignancy = [poignancy for _ in range(len(memory))]
+
+            # Check if additional_metadata is a list. If it is, it must have the same length as memory
+            if isinstance(additional_metadata, list) and len(memory) != len(additional_metadata):
+                self.logger.error(f"If memory is a list, additional_metadata must be a list with the same length or a single value. Memory(len): {len(memory)}, additional_metadata(len): {len(additional_metadata)}")
+                raise ValueError(f"If memory is a list, additional_metadata must be a list with the same length or a single value. Memory(len): {len(memory)}, additional_metadata(len): {len(additional_metadata)}")
+            # If additional_metadata is not a list, create a list with the same value for all memories
+            elif isinstance(additional_metadata, dict):
+                additional_metadata = [additional_metadata for _ in range(len(memory))]
+
+            # Create metadata for each memory
             metadata = [{"created_at": c, "poignancy": p, **additional_metadata[i]} for i, (c, p) in enumerate(zip(created_at, poignancy))]
         else:
             metadata = additional_metadata if additional_metadata else {}
