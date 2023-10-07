@@ -23,6 +23,7 @@ import collections
 import enum
 import time
 import logging
+import datetime
 
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple
 import dm_env
@@ -36,6 +37,7 @@ from game_environment.recorder.recorder import Recorder
 from meltingpot.python.utils.substrates import builder
 from game_environment.scene_descriptor.scene_descriptor import SceneDescriptor
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
+from utils.files import load_config
 
 import sys
 import ast
@@ -396,6 +398,8 @@ class Game:
         self.clock = clock
         self.record = record
         self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes)
+        self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
+        self.dateFormat = load_config()['date_format']
 
     def end_game(self):
         """Ends the game. This function is called when the game is finished."""
@@ -505,5 +509,12 @@ class Game:
             pygame.display.update()
             self.clock.tick(self.fps)
 
+            # Update the time: One hour per step
+            self.time += datetime.timedelta(hours=1)
+
         # Return the observations of each player and the descriptions
         return self.observationsGenerator.get_all_observations_descriptions(str(description).strip()), description
+    
+    def get_time(self) -> str:
+        """Returns the current time of the game. The time will be formatted as specified in the config file."""
+        return self.time.strftime(self.dateFormat)

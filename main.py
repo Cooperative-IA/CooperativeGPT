@@ -1,5 +1,4 @@
 import logging
-import time
 from dotenv import load_dotenv
 
 from utils.logging import setup_logging
@@ -30,6 +29,8 @@ if __name__ == "__main__":
 
     # Start the game server
     env = start_server(players)
+
+    game_time = env.get_time()
 
     # Game loop
     actions = None

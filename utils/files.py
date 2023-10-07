@@ -25,3 +25,14 @@ def load_world_context(world_context_file: str) -> str:
     with open(world_context_file, "r", encoding="utf-8", errors='replace') as file:
         world_context = file.read().strip()
     return world_context
+
+def load_config() -> dict:
+    """Loads the global config file.
+
+    Returns:
+        dict: Dictionary with the config file.
+    """
+    
+    with open("config/config.json") as json_file:
+        config_file = json.load(json_file)
+    return config_file
