@@ -118,18 +118,20 @@ class Agent:
         world_context = self.stm.get_memory('world_context')
         relevant_questions = reflect_questions(self.name, world_context, observations_str)
         self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
-        
-        relevant_memories = []
+        # Get the relevant memories for each question, relevant memories is a list of lists
+        relevant_memories_list = [] 
         for question in relevant_questions:
             retrieved_memories = self.ltm.get_relevant_memories(query=question, n_results=5)
-            # adds the retrieved memories to the relevant memories, checks for duplicates
-            relevant_memories = list(set(relevant_memories + retrieved_memories))
-            
-        self.logger.info(f'{self.name} relevant memories: {relevant_memories}')
+            # adds the retrieved memories to the relevant memories list
+            relevant_memories_list = relevant_memories_list.append(retrieved_memories)
         
-        relevant_memories_str = '\n'.join([str(memory) for memory in relevant_memories])
+        # Convert the relevant memories list to a list of strings
+        relevant_memories_str = ['\n'.join([str(memory) for memory in retrieved_memory]) for retrieved_memory in relevant_memories_list] 
+        self.logger.info(f'{self.name} relevant memories: {relevant_memories_str}')
+        # Get the insights reflections
         reflections = reflect_insights(self.name, world_context, relevant_memories_str)
         self.logger.info(f'{self.name} reflections: {reflections}')
+        # Add the reflections to the long term memory
         self.ltm.add_memory(reflections, [{'type': 'reflection', 'agent': self.name}]*len(reflections))
   
 
