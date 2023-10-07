@@ -93,7 +93,8 @@ class LongTermMemory:
         """
         results = self.collection.query(query_texts=[query], n_results=n_results)
         # Formats the results to list of strings
-        results = [r[0] for r in results['documents'] if r]
+        #results = [r[0] for r in results['documents'] if r]
+        results = results['documents'][0] if results['documents'] else []
         return results
     
     def get_memories(self, limit: int = 50, filter: dict = None) -> dict:

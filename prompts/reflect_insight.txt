@@ -2,12 +2,11 @@ You have this information about an agent called <input1>:
 
 <input1>'s world understanding: <input2>
 
-Here you have a list of memory statements:
+Here you have a list of memory statements separated in groups of memories:
 <input3>
 
-According to the information above, 
-what are the 3 most salient high-level insights you can infer about <input1>'s memories?
-
+Given Juan's memories, for each one of the group of memories, what is the best insight you can provide based on the information you have? 
+Express your answer in the JSON format provided, and remember to explain the reasoning behind each insight.
 
 The output should be a markdown code snippet formatted in the following schema, 
 including the leading and trailing "```json" and "```", answer as if you were <input1>:
@@ -15,15 +14,15 @@ including the leading and trailing "```json" and "```", answer as if you were <i
 ```json
 {
     "Insight_1": {
-        "Reasoning": string \\ Reasoning behind the insight
+        "Reasoning": string \\ Reasoning behind the insight of the group of memories 1
         "Insight": string \\ The insight itself
     },
     "Insight_2": {
-        "Reasoning": string \\ Reasoning behind the insight
+        "Reasoning": string \\ Reasoning behind the insight of the group of memories 2
         "Insight": string \\ The insight itself
     },
-    "Insight_3": {
-        "Reasoning": string \\ Reasoning behind the insight
+    "Insight_n": {
+        "Reasoning": string \\ Reasoning behind the insight of the group of memories n
         "Insight": string \\ The insight itself
     }
 }```

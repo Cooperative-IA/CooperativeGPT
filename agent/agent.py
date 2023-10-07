@@ -61,7 +61,7 @@ class Agent:
             self.plan()
             self.generate_new_actions(observations)
         
-        self.reflect(observations)
+        self.reflect(observations, game_time)
 
         step_action = self.get_actions_to_execute()
 
@@ -114,11 +114,12 @@ class Agent:
         self.stm.add_memory(new_goals, 'current_goals')
 
 
-    def reflect(self, observations:list[str]) -> None:
+    def reflect(self, observations:list[str],  game_time: str) -> None:
         """Reflects on the agent's observations and stores the insights reflections in the long term memory.
 
         Args:
             observations (list[str]): List of observations of the environment.
+            game_time (str): Current game time.
         """
         observations_str = '\n'.join(observations)
 
@@ -128,9 +129,9 @@ class Agent:
         # Get the relevant memories for each question, relevant memories is a list of lists
         relevant_memories_list = [] 
         for question in relevant_questions:
-            retrieved_memories = self.ltm.get_relevant_memories(query=question, n_results=5)
+            retrieved_memories = self.ltm.get_relevant_memories(query=question, n_results=10)
             # adds the retrieved memories to the relevant memories list
-            relevant_memories_list = relevant_memories_list.append(retrieved_memories)
+            relevant_memories_list.append(retrieved_memories)
         
         # Convert the relevant memories list to a list of strings
         relevant_memories_str = ['\n'.join([str(memory) for memory in retrieved_memory]) for retrieved_memory in relevant_memories_list] 
@@ -139,7 +140,7 @@ class Agent:
         reflections = reflect_insights(self.name, world_context, relevant_memories_str)
         self.logger.info(f'{self.name} reflections: {reflections}')
         # Add the reflections to the long term memory
-        self.ltm.add_memory(reflections, [{'type': 'reflection', 'agent': self.name}]*len(reflections))
+        self.ltm.add_memory(reflections, game_time, 1, [{'type': 'reflection', 'agent': self.name}]*len(reflections))
   
 
 

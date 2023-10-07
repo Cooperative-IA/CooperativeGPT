@@ -23,7 +23,6 @@ class SpatialMemory:
         self.scenario_map = scenario_map.split('\n')[1:-1]
         #self.exploredMap = ["$"*mapSize[1] for _ in range(mapSize[0])]
         self.explored_map = self.scenario_map # CHANGE THIS TO LINE ABOVE
-        print(self.explored_map)
         self.position = (-1,-1) # Inits the position of the agent
         self.orientation = 0
         self.mapSize = (len(self.scenario_map), len(self.scenario_map[0]))
@@ -117,11 +116,12 @@ class SpatialMemory:
             matches = re.findall(pattern, action)
             for match in matches:
                 x, y = match[0] or match[2], match[1] or match[3]
+            
+            return  (int(x), int(y))
         except AttributeError:
             logging.error(f'Action {action} does not contain a position')
-            raise ValueError(f'Action {action} does not contain a position')
+            return (-1,-1)
         
-        return  (int(x), int(y))
     
     def sort_observations_by_distance(self, observations: list[str]) -> list[str]:
         """

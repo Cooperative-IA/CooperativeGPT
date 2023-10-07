@@ -47,7 +47,7 @@ def get_shortest_valid_route(matriz: list[list[str]], start: tuple[int, int], en
         at = end
         while at != start:
             if prev[at[0]][at[1]] is None:
-                return None  # No hay camino
+                return []  # No hay camino
             x, y, d = prev[at[0]][at[1]]
             path.append(d)
             at = (x, y)
