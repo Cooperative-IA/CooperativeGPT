@@ -5,6 +5,7 @@ import numpy as np
 
 from agent.agent import Agent
 from utils.files import load_config
+from utils.math import normalize_values, cosine_similarity
 
 logger = logging.getLogger(__name__)
 
@@ -113,27 +114,9 @@ def get_similarity_scores(agent: Agent, memories: list[list], query: str) -> lis
     # Create the embedding for the query
     query_embedding = agent.ltm.create_embedding(query)
     # Calculate the similarity between the query and each memory
-    similarities = [np.dot(query_embedding, embedding) / (np.linalg.norm(query_embedding) * np.linalg.norm(embedding)) for embedding in embeddings]
+    similarities = [cosine_similarity(query_embedding, embedding) for embedding in embeddings]
     # Normalize the similarities between 0 and 1
     similarity_scores = normalize_values(similarities)
 
     return similarity_scores
-
-def normalize_values(values: list[float]) -> list[float]:
-    """Normalize the values between 0 and 1.
-
-    Args:
-        values (list[float]): List of values to normalize.
-
-    Returns:
-        list[float]: List of normalized values.
-    """
-    range_ = max(values) - min(values)
-
-    if range_ == 0:
-       return [0 for _ in values]
-
-    normalized_values = [(v - min(values)) / range_ for v in values]
-
-    return normalized_values
     
