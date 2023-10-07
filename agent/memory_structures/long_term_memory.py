@@ -36,13 +36,24 @@ class LongTermMemory:
 
         self.collection = self.chroma_client.create_collection(agent_name, embedding_function=openai_ef)
 
-    def add_memory(self, memory: str | list[str], metadata: dict | list[dict] = None):
+    def add_memory(self, memory: str | list[str], created_at: str | list[str], poignancy: str | list[str], additional_metadata: dict | list[dict] = None):
         """Adds a memory to the long term memory.
 
         Args:
             memory (str | list[str]): Memory or memories to add.
-            metadata (dict | list[dict], optional): Metadata for the memory or memories. Defaults to None.
+            created_at (str | list[str]): Date when the memory was created.
+            poignancy (str | list[str]): Poignancy of the memory.
+            additional_metadata (dict | list[dict], optional): Addictional metadata for the memory or memories. Defaults to None.
         """
+
+        # Create metadata
+        if isinstance(memory, list):
+            metadata = [{"created_at": c, "poignancy": p, **additional_metadata[i]} for i, (c, p) in enumerate(zip(created_at, poignancy))]
+        else:
+            metadata = additional_metadata if additional_metadata else {}
+            metadata["created_at"] = created_at
+            metadata["poignancy"] = poignancy
+
 
         self.logger.info(f"Adding memory to long term memory, Metadata: {metadata}. Memory: {memory}")
         # Check if memory is a list
