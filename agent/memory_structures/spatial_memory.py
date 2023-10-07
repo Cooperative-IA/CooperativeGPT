@@ -52,24 +52,28 @@ class SpatialMemory:
 
 
 
-    def find_route_to_position(self, position_end: tuple, orientation:int) -> Queue(str):
+    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False) -> Queue[str] | list[str]:
         """
         Finds the shortest route to a position.
 
         Args:
             position_end (tuple): End position of the route.
             orientation (int): Orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+            return_list (bool, optional): If True, returns a list instead of a queue. Defaults to False.
 
         Returns:
             Queue(str): Steps sequence for the route.
         """
         logging.info(f'Finding route from {self.position} to {position_end}')
         route = get_shortest_valid_route(self.explored_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
+
+        if return_list:
+            return route
         return queue_from_list(route)
     
 
 
-    def get_steps_sequence(self, current_action) -> Queue(str):
+    def get_steps_sequence(self, current_action) -> Queue[str]:
         """
         Returns a new steps sequence for the current action.
 
@@ -118,3 +122,19 @@ class SpatialMemory:
             raise ValueError(f'Action {action} does not contain a position')
         
         return  (int(x), int(y))
+    
+    def sort_observations_by_distance(self, observations: list[str]) -> list[str]:
+        """
+        Sorts the observations by distance to the agent in ascending order.
+
+        Args:
+            observations (list[str]): List of observations.
+
+        Returns:
+            list[str]: Sorted list of observations.
+        """
+
+        observations_positions = [self.get_position_from_action(observation) for observation in observations]
+        observations_distances = [len(self.find_route_to_position(position, self.orientation, True)) for position in observations_positions]
+
+        return sorted(observations, key=lambda x: observations_distances[observations.index(x)])

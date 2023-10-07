@@ -15,7 +15,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10) -> None:
         """Initializes the agent.
 
         Args:
@@ -24,6 +24,7 @@ class Agent:
             agent_context_file (str): Path to the json agent context file. Initial info about the agent.
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to.
             scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
+            att_bandwidth (int, optional): Attention bandwidth. The attention bandwidth is the number of observations that the agent can attend to at the same time. Defaults to 10.
         """
         self.logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class Agent:
         self.ltm = LongTermMemory(agent_name=name, data_folder=data_folder)
         self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
+        self.att_bandwidth = att_bandwidth
         self.stm.add_memory(memory = self.name, key = 'name')
         
         # Initialize steps sequence in empty queue
@@ -39,20 +41,21 @@ class Agent:
 
 
 
-    def move(self, observations: list[str], agent_position: tuple, agent_orientation: int) -> str:
+    def move(self, observations: list[str], agent_position: tuple, agent_orientation: int, game_time: str) -> str:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
             observations (list[str]): List of observations of the environment.
             agent_position (tuple): Current position of the agent.
             agent_orientation (int): Current orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+            game_time (str): Current game time.
 
         Returns:
             str: Action to take.
         """
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.updatePosition(agent_position, agent_orientation)
-        react = self.perceive(observations)
+        react = self.perceive(observations, game_time)
 
         if react:
             self.plan()
@@ -64,23 +67,27 @@ class Agent:
 
         return step_action
 
-    def perceive(self, observations: list[str]) -> None:
+    def perceive(self, observations: list[str], game_time: str) -> None:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
+        It also filters the observations to only store the closest ones, and asign a poignancy to the observations.
 
         Args:
             observations (list[str]): List of observations of the environment.
+            game_time (str): Current game time.
         
         Returns:
             bool: True if the agent should react to the observation, False otherwise.
         """
+
+        # Observations are filtered to only store the closest ones. The att_bandwidth defines the number of observations that the agent can attend to at the same time
+        sorted_observations = self.spatial_memory.sort_observations_by_distance(observations)
+        observations = sorted_observations[:self.att_bandwidth]
         
-        now = datetime.now()
-        timestamp = datetime.timestamp(now)
         # Open AI Only allows 16 observations per request
         batch_size = 16
         for i in range(0, len(observations), batch_size):
             batch = observations[i:i+batch_size]
-            self.ltm.add_memory(batch, [{'type': 'perception', 'agent': self.name, 'timestamp': timestamp}] * len(batch))
+            self.ltm.add_memory(batch, game_time, 1, {'type': 'perception'}) # For now we set the poignancy to 1 to all observations
 
         current_observation = ', '.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
