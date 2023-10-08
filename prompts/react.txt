@@ -13,6 +13,6 @@ The output should be a markdown code snippet formatted in the following schema, 
 
 ```json
 {
- "Reasoning": string \\ Step by step thinking and analysis of all the observations and the current plan to decide if the plan should be changed or not
- "Answer": string \\ Answer True if the plan should be changed or False otherwise
+ "Reasoning": #reasoning \\ Step by step thinking and analysis of all the observations and the current plan to decide if the plan should be changed or not
+ "Answer": #answer \\ Answer True if the plan should be changed or False otherwise
 }```

@@ -10,7 +10,7 @@ def extract_answers(response: str) -> dict[str, str]:
     Returns:
         dict[str, str]: Dictionary with the answers.
     """
-    patt = re.compile(r'```json([\w\W\n\r]*?)```', re.MULTILINE)
+    patt = re.compile(r'\s*```json\s*([\w\W\n\r\t]*?)\s*```\s*', re.MULTILINE)
     try:
         answers = re.findall(patt, response)[0].strip()
         parsed_answers = json.loads(answers)

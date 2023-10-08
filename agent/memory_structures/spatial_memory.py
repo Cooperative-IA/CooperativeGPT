@@ -118,7 +118,7 @@ class SpatialMemory:
                 x, y = match[0] or match[2], match[1] or match[3]
             
             return  (int(x), int(y))
-        except AttributeError:
+        except :
             logging.error(f'Action {action} does not contain a position')
             return (-1,-1)
         

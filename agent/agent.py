@@ -59,9 +59,9 @@ class Agent:
 
         if react:
             self.plan()
-            self.generate_new_actions(observations)
+            self.generate_new_actions()
         
-        self.reflect(observations, game_time)
+        self.reflect()
 
         step_action = self.get_actions_to_execute()
 
@@ -70,7 +70,7 @@ class Agent:
     def perceive(self, observations: list[str], game_time: str) -> None:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
         It also filters the observations to only store the closest ones, and asign a poignancy to the observations.
-
+        Game time is also stored in the short term memory.
         Args:
             observations (list[str]): List of observations of the environment.
             game_time (str): Current game time.
@@ -79,6 +79,8 @@ class Agent:
             bool: True if the agent should react to the observation, False otherwise.
         """
 
+        # Add the game time to the short term memory
+        self.stm.add_memory(game_time, 'game_time')
         # Observations are filtered to only store the closest ones. The att_bandwidth defines the number of observations that the agent can attend to at the same time
         sorted_observations = self.spatial_memory.sort_observations_by_distance(observations)
         observations = sorted_observations[:self.att_bandwidth]
@@ -114,16 +116,15 @@ class Agent:
         self.stm.add_memory(new_goals, 'current_goals')
 
 
-    def reflect(self, observations:list[str],  game_time: str) -> None:
+    def reflect(self) -> None:
         """Reflects on the agent's observations and stores the insights reflections in the long term memory.
-
-        Args:
-            observations (list[str]): List of observations of the environment.
-            game_time (str): Current game time.
         """
-        observations_str = '\n'.join(observations)
-
+        # Extract the relevant memories, game time and world context from the short term memory
+        observations_str = self.stm.get_memory('current_observation')
+        game_time = self.stm.get_memory('game_time')
         world_context = self.stm.get_memory('world_context')
+
+        # Get the relevant questions
         relevant_questions = reflect_questions(self.name, world_context, observations_str)
         self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
         # Get the relevant memories for each question, relevant memories is a list of lists
@@ -144,11 +145,9 @@ class Agent:
   
 
 
-    def generate_new_actions(self, observations: list[str]) -> list[str]:
-        """Acts in the environment given the observations.
-
-        Args:
-            observations (list[str]): Observations of the environment.
+    def generate_new_actions(self) -> list[str]:
+        """
+        Acts in the environment given the observations, the current plan and the current goals.
 
         Returns:
             list[str]: Actions to take.
@@ -156,9 +155,10 @@ class Agent:
         world_context = self.stm.get_memory('world_context')
         current_plan = self.stm.get_memory('current_plan')
         valid_actions = self.stm.get_memory('valid_actions') 
+        observations = self.stm.get_memory('current_observation')
         memory_statements = self.ltm.get_relevant_memories(query=self.name, n_results=10)
         # Generate new actions sequence and add it to the short term memory
-        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, memory_statements, observations, valid_actions)
+        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, memory_statements, observations, self.spatial_memory.position, valid_actions)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
         
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')
