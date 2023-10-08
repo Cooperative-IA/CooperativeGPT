@@ -10,12 +10,13 @@ from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
 from agent.cognitive_modules.act import actions_sequence
+from utils.time import str_to_timestamp
 
 class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30) -> None:
         """Initializes the agent.
 
         Args:
@@ -25,6 +26,7 @@ class Agent:
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to.
             scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
             att_bandwidth (int, optional): Attention bandwidth. The attention bandwidth is the number of observations that the agent can attend to at the same time. Defaults to 10.
+            reflection_umbral (int, optional): Reflection umbral. The reflection umbral is the sum of the poignancy of the observations that the agent needs to reflect on. Defaults to 30.
         """
         self.logger = logging.getLogger(__name__)
 
@@ -33,6 +35,8 @@ class Agent:
         self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.att_bandwidth = att_bandwidth
+        self.reflection_umbral = reflection_umbral
+        self.observations_poignancy = 1
         self.stm.add_memory(memory = self.name, key = 'name')
         
         # Initialize steps sequence in empty queue
@@ -55,13 +59,13 @@ class Agent:
         """
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.updatePosition(agent_position, agent_orientation)
-        react = self.perceive(observations, game_time)
+        react, filtered_observations = self.perceive(observations, game_time)
 
         if react:
             self.plan()
-            self.generate_new_actions(observations)
+            self.generate_new_actions(filtered_observations)
         
-        self.reflect(observations, game_time)
+        self.reflect(filtered_observations, game_time)
 
         step_action = self.get_actions_to_execute()
 
@@ -76,7 +80,7 @@ class Agent:
             game_time (str): Current game time.
         
         Returns:
-            bool: True if the agent should react to the observation, False otherwise.
+           tuple(bool, list[str]): Tuple with the first element indicating if the agent should react to the observation, and the second element the filtered observations.
         """
 
         # Observations are filtered to only store the closest ones. The att_bandwidth defines the number of observations that the agent can attend to at the same time
@@ -87,7 +91,7 @@ class Agent:
         batch_size = 16
         for i in range(0, len(observations), batch_size):
             batch = observations[i:i+batch_size]
-            self.ltm.add_memory(batch, game_time, 1, {'type': 'perception'}) # For now we set the poignancy to 1 to all observations
+            self.ltm.add_memory(batch, game_time, self.observations_poignancy, {'type': 'perception'}) # For now we set the poignancy to 1 to all observations
 
         current_observation = ', '.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
@@ -97,7 +101,7 @@ class Agent:
         world_context = self.stm.get_memory('world_context')
         react = should_react(self.name, world_context, observations, current_plan)
         self.logger.info(f'{self.name} should react to the observation: {react}')
-        return react
+        return react, observations
     
     def plan(self,) -> None:
         """Plans the next actions of the agent and its main goals.
@@ -121,6 +125,21 @@ class Agent:
             observations (list[str]): List of observations of the environment.
             game_time (str): Current game time.
         """
+        # Decide if the agent should reflect on the observations
+        poignancy_of_current_observations = len(observations) * self.observations_poignancy
+        accumulated_poignancy = (self.stm.get_memory('accumulated_poignancy') or 0) + poignancy_of_current_observations
+        if accumulated_poignancy < self.reflection_umbral:
+            self.stm.add_memory(accumulated_poignancy, 'accumulated_poignancy')
+            self.logger.info(f'{self.name} should not reflect on the observations. Accumulated poignancy: {accumulated_poignancy}')
+            return
+
+        # Get observations to reflect on
+        last_reflection = self.stm.get_memory('last_reflection')
+        filter = {'type': 'perception', 'timestamp': {'$gt': last_reflection}}
+        if last_reflection is None:
+            filter = {'type': 'perception'}
+        observations = self.ltm.get_memories(filter=filter)['documents']
+
         observations_str = '\n'.join(observations)
 
         world_context = self.stm.get_memory('world_context')
@@ -140,7 +159,11 @@ class Agent:
         reflections = reflect_insights(self.name, world_context, relevant_memories_str)
         self.logger.info(f'{self.name} reflections: {reflections}')
         # Add the reflections to the long term memory
-        self.ltm.add_memory(reflections, game_time, 1, [{'type': 'reflection', 'agent': self.name}]*len(reflections))
+        self.ltm.add_memory(reflections, game_time, 1, {'type': 'reflection'})
+
+        # Update the short term memory
+        self.stm.add_memory(0, 'accumulated_poignancy')
+        self.stm.add_memory(str_to_timestamp(game_time), 'last_reflection')
   
 
 
