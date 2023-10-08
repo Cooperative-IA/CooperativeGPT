@@ -55,15 +55,15 @@ class Agent:
         """
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.updatePosition(agent_position, agent_orientation)
-        react = self.perceive(observations, game_time)
+        react, filtered_observations = self.perceive(observations, game_time)
 
         if react:
             self.plan()
-            self.generate_new_actions()
+            self.generate_new_actions(filtered_observations)
         
-        self.reflect()
+        self.reflect(filtered_observations)
 
-        step_action = self.get_actions_to_execute()
+        step_action = self.get_actions_to_execute(filtered_observations)
 
         return step_action
 
@@ -89,7 +89,7 @@ class Agent:
         batch_size = 16
         for i in range(0, len(observations), batch_size):
             batch = observations[i:i+batch_size]
-            self.ltm.add_memory(batch, game_time, 1, {'type': 'perception'}) # For now we set the poignancy to 1 to all observations
+            self.ltm.add_memory(batch, game_time, self.observations_poignancy, {'type': 'perception'}) # For now we set the poignancy to 1 to all observations
 
         current_observation = ', '.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
@@ -99,7 +99,7 @@ class Agent:
         world_context = self.stm.get_memory('world_context')
         react = should_react(self.name, world_context, observations, current_plan)
         self.logger.info(f'{self.name} should react to the observation: {react}')
-        return react
+        return react, observations
     
     def plan(self,) -> None:
         """Plans the next actions of the agent and its main goals.
@@ -116,12 +116,29 @@ class Agent:
         self.stm.add_memory(new_goals, 'current_goals')
 
 
-    def reflect(self) -> None:
+    def reflect(self, observations:list[str]) -> None:
         """Reflects on the agent's observations and stores the insights reflections in the long term memory.
         """
         # Extract the relevant memories, game time and world context from the short term memory
         observations_str = self.stm.get_memory('current_observation')
         game_time = self.stm.get_memory('game_time')
+        # Decide if the agent should reflect on the observations
+        poignancy_of_current_observations = len(observations) * self.observations_poignancy
+        accumulated_poignancy = (self.stm.get_memory('accumulated_poignancy') or 0) + poignancy_of_current_observations
+        if accumulated_poignancy < self.reflection_umbral:
+            self.stm.add_memory(accumulated_poignancy, 'accumulated_poignancy')
+            self.logger.info(f'{self.name} should not reflect on the observations. Accumulated poignancy: {accumulated_poignancy}')
+            return
+
+        # Get observations to reflect on
+        last_reflection = self.stm.get_memory('last_reflection')
+        filter = {'type': 'perception', 'timestamp': {'$gt': last_reflection}}
+        if last_reflection is None:
+            filter = {'type': 'perception'}
+        observations = self.ltm.get_memories(filter=filter)['documents']
+
+        observations_str = '\n'.join(observations)
+
         world_context = self.stm.get_memory('world_context')
 
         # Get the relevant questions
@@ -140,23 +157,24 @@ class Agent:
         # Get the insights reflections
         reflections = reflect_insights(self.name, world_context, relevant_memories_str)
         self.logger.info(f'{self.name} reflections: {reflections}')
-        # Add the reflections to the long term memory
-        self.ltm.add_memory(reflections, game_time, 1, [{'type': 'reflection', 'agent': self.name}]*len(reflections))
+        # Add the reflections to the long term memory, checks if the reflection  is not empty
+        for reflection in reflections:
+            if reflection:
+                self.ltm.add_memory(reflection, game_time, 1, {'type': 'reflection'})
   
 
 
-    def generate_new_actions(self) -> list[str]:
+    def generate_new_actions(self, filtered_observations: list[str]) -> None:
         """
         Acts in the environment given the observations, the current plan and the current goals.
+        Stores the actions sequence in the short term memory.
 
-        Returns:
-            list[str]: Actions to take.
         """
         world_context = self.stm.get_memory('world_context')
         current_plan = self.stm.get_memory('current_plan')
         valid_actions = self.stm.get_memory('valid_actions') 
         observations = self.stm.get_memory('current_observation')
-        memory_statements = self.ltm.get_relevant_memories(query=self.name, n_results=10)
+        memory_statements = ', '.join(filtered_observations)
         # Generate new actions sequence and add it to the short term memory
         actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, memory_statements, observations, self.spatial_memory.position, valid_actions)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
@@ -166,7 +184,7 @@ class Agent:
 
 
 
-    def get_actions_to_execute(self) -> None:
+    def get_actions_to_execute(self, filtered_observations: list[str]) -> str:
         """
         Executes the current actions of the agent. 
 
@@ -179,7 +197,7 @@ class Agent:
 
             # If the actions sequence is empty, we generate actions sequence
             if self.stm.get_memory('actions_sequence').empty():
-                self.generate_new_actions()
+                self.generate_new_actions(filtered_observations)
 
             # We get next action from the actions sequence
             current_action = self.stm.get_memory('actions_sequence').get()
