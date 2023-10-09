@@ -1,10 +1,16 @@
 You have this information about an agent called <input1>:
 
 <input1>'s world understanding: <input2>
+
+Recent analysis of past observations:
+<input5>
+
 Current observations: <input3>
+
 Current plan: <input4>
 
-With the information given above, generate a new plan and new objectives to persuit.
+With the information given above, generate a new plan and new objectives to persuit. The plan should be a description of how <input1> should behave in the long-term to maximize its wellbeing.
+The plan should include how to act to different situations observed in past experiences.
 
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
 
