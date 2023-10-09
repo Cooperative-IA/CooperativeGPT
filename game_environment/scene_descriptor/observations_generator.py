@@ -146,7 +146,7 @@ class ObservationsGenerator (object):
 
             # Get agents observed descriptions
             i = 0
-            for row in local_observation_map:
+            for row in local_observation_map.split('\n'):
                 j=0
                 for char in row:
                     if re.match(r'^[0-9]$', char):
@@ -200,7 +200,7 @@ class ObservationsGenerator (object):
                                                         .format(apple_global_pos, global_tree_id ))
                             apple_count += 1
                     
-                    list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remainding and {} grass for apples growing"
+                    list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remaining and {} grass for apples growing"
                                                 .format(global_tree_id, local_center_real_pos, apple_count, grass_count))
                     break
         return list_trees_observations
