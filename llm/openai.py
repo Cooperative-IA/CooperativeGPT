@@ -13,7 +13,7 @@ class GPT35(BaseLLM):
             prompt_token_cost (float): Cost of a token in the prompt
             response_token_cost (float): Cost of a token in the response
         """
-        super().__init__(0.0015, 0.002, 4000, 0.7)
+        super().__init__(0.0015/1000, 0.002/1000, 4000, 0.7)
 
         self.logger.info("Loading GPT-3.5 model...")
         # Load the GPT-3.5 model

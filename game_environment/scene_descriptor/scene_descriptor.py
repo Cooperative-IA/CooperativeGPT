@@ -81,7 +81,7 @@ class SceneDescriptor:
 
         result = {}
         for avatar_id, avatar in self.avatars.items():
-            logger.info(f"Avatar {avatar_id} is in position {avatar.avatar_state}")
+            logger.info(f"Avatar {avatar_id} is in position {avatar.position}")
             result[avatar_id] = {"observation": avatar.partial_observation,
                                  "agents_in_observation": avatar.agents_in_observation,
                                  "global_position": avatar.position,
