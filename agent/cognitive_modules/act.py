@@ -35,9 +35,9 @@ def actions_sequence(name:str, world_context:str, current_plan:str, memory_state
 
     for i in range(actions_seq_len):
         try:
-            actions_seq_queue.put(response_dict['actions'][f'action_{i+1}'])
+            actions_seq_queue.put(response_dict['actions'].values())
         except:
-            logger.warning(f'Could not find action_{i+1} in response_dict')
+            logger.warning(f'Could not find actions in the response_dict')
             break
 
     return actions_seq_queue

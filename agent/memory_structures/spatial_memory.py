@@ -4,7 +4,7 @@ import random
 from utils.route_plan import get_shortest_valid_route
 import re
 from utils.queue_utils import queue_from_list, new_empty_queue
-
+from game_environment.utils import get_element_global_pos
 
 class SpatialMemory:
     """
