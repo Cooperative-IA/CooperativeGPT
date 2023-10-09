@@ -26,15 +26,9 @@ def actions_sequence(name:str, world_context:str, current_plan:str, memory_state
     if isinstance(current_observations, list):
         current_observations = "\n".join(current_observations)
     valid_actions = str(valid_actions)
-    print('------------------------------------------------------------------------------------------------------------------------')
-    print(f"Actions sequence: Name: {name}, World context: {world_context}, Current plan: {current_plan}, Memory statements: {memory_statements}, Current observations: {current_observations}, Valid actions: {valid_actions}, Actions sequence len: {actions_seq_len}")
-    print('------------------------------------------------------------------------------------------------------------------------')
     response = llm.completion(prompt='act.txt', inputs=[name, world_context, str(current_plan), memory_statements, current_observations, str(current_position), str(actions_seq_len), valid_actions])
 
     response_dict = extract_answers(response.lower())
-    print('------------------------------------------------------------------------------------------------------------------------')
-    print(response_dict)
-    print('------------------------------------------------------------------------------------------------------------------------')
     actions_seq_queue= Queue() 
 
     for i in range(actions_seq_len):
