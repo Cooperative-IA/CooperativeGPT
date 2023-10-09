@@ -159,7 +159,7 @@ class SpatialMemory:
         current_map_matrix = self.current_observed_map.split('\n')[1:-1]
         max_y, max_x  = len(current_map_matrix), len(current_map_matrix[0])
         random_x, random_y = 0, 0
-        # Will check for the valird elements
+        # Will check for the valid elements
 
         while current_map_matrix[random_y][random_x] not in ['F', 'A']:
             random_x, random_y = random.randint(0, max_x-1), random.randint(0, max_y-1)

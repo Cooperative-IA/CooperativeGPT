@@ -224,7 +224,7 @@ class Agent:
             # Now defines a gameloop for the current action
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
-            logging.info(f'{self.name} is grabbing an apple, the steps sequence  is: {list(steps_sequence.queue)}')
+            self.logger.info(f'{self.name} is grabbing an apple, the steps sequence  is: {list(steps_sequence.queue)}')
            
 
        
@@ -233,16 +233,16 @@ class Agent:
         # If actions sequence were all invalid, we send an explore sequence
         while self.stm.get_memory('current_steps_sequence').empty() :
             if self.stm.get_memory('actions_sequence').empty():
-                logging.warn(f'{self.name} current gameloop is empty and there are no more actions to execute, agent will explore')
+                self.logger.warn(f'{self.name} current gameloop is empty and there are no more actions to execute, agent will explore')
                 steps_sequence = self.spatial_memory.generate_explore_sequence()
                 self.stm.add_memory(steps_sequence, 'current_steps_sequence')
                 break 
-            logging.warn(f'{self.name} current gameloop is empty, getting the next action')
+            self.logger.warn(f'{self.name} current gameloop is empty, getting the next action')
             current_action = self.stm.get_memory('actions_sequence').get()
             self.stm.add_memory(current_action, 'current_action')
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
-            logging.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
+            self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
     
         agent_step = self.stm.get_memory('current_steps_sequence').get()
         
