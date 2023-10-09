@@ -115,7 +115,8 @@ class Agent:
         current_observation = self.stm.get_memory('current_observation')
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
-        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan)
+        reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
+        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections)
         self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
 
         # Update the short term memory
