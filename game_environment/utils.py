@@ -61,3 +61,33 @@ def default_agent_actions_map():
     """
 
     return deepcopy(_BASE_ACTION_MAP)
+
+
+def get_element_global_pos( element_local_pos, local_position, global_position, agent_orientation=0):
+    """
+    Description: Returns the global position of an element given its local position and the global position of the agent
+
+    Args:
+        element_local (tuple): Local position of the element
+        local_position (tuple): Local position of the agent 
+        global_position (tuple): Global position of the agent
+        agent_orientation (int, optional): Orientation of the agent. Defaults to 0.
+
+    Returns:
+        tuple: Global position of the element
+    """
+    if agent_orientation == 0:
+        element_global = (element_local_pos[0] - local_position[0]) + global_position[0],\
+                            (element_local_pos[1] - local_position[1]) + global_position[1]
+    elif agent_orientation == 1:
+        element_global = (element_local_pos[1] - local_position[1]) + global_position[0],\
+                            (local_position[0] - element_local_pos[0]) + global_position[1]
+    elif agent_orientation == 2:
+        element_global = -1 * (element_local_pos[0] - local_position[0]) + global_position[0],\
+                            -1 * (element_local_pos[1] - local_position[1]) + global_position[1]
+    elif agent_orientation == 3:
+        element_global = -1 * (element_local_pos[1] - local_position[1]) + global_position[0],\
+                            (element_local_pos[0] - local_position[0]) + global_position[1]
+
+    return list(element_global)
+

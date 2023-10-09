@@ -5,7 +5,7 @@ import random
 from utils.route_plan import get_shortest_valid_route
 import re
 from utils.queue_utils import queue_from_list, new_empty_queue
-
+from game_environment.utils import get_element_global_pos
 
 class SpatialMemory:
     """
@@ -165,7 +165,9 @@ class SpatialMemory:
             random_x, random_y = random.randint(0, max_x-1), random.randint(0, max_y-1)
         
         # Finds the shortest route to that position
-        end_position = (random_y, random_x)
+        global_x, global_y = get_element_global_pos(element_local_pos=(random_y, random_x), local_position=(9,5),\
+                                                     global_position=self.position, agent_orientation=self.orientation)
+        end_position = (global_x, global_y)
         sequence_steps = self.find_route_to_position(end_position, self.orientation)
         logging.info(f'The steps sequence is: {list(sequence_steps.queue)}')
 

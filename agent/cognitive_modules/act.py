@@ -31,6 +31,6 @@ def actions_sequence(name:str, world_context:str, current_plan:str, memory_state
     response_dict = extract_answers(response.lower())
     actions_seq_queue= Queue() 
 
-    for i in range(actions_seq_len):
-        actions_seq_queue.put(response_dict['actions'][f'action_{i+1}']) 
+    for action in response_dict['actions'].values():
+        actions_seq_queue.put(action)
     return actions_seq_queue
