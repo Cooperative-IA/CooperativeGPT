@@ -29,7 +29,7 @@ def retrieve_relevant_memories(agent: Agent, query: str, max_memories: int = 10,
     factor_weights = [1, 1, 1]
 
     # Get the memories from the database
-    memories = agent.ltm.get_memories(limit=100, filter=metadata_filter)
+    memories = agent.ltm.get_memories(limit=100, filter=metadata_filter, include_embeddings=True)
     # Create a list of memories with the following structure: (memory, recency, poignancy, similarity)
     try:
         memories = [[m[0], m[1]['created_at'], m[1]['poignancy'], m[2]] for m in zip(memories['documents'], memories['metadatas'], memories['embeddings'])]
