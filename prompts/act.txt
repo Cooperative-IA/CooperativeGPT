@@ -8,29 +8,32 @@ Current observations: <input5>
 With the information given above, asign to each observation of the environment an importance factor
 from 1-10, where 1 is the least important and 10 is the most important. The importance factor should
 be based on the current relevant memories and what you consider will reflect a better
-rewarding outcome for <input1> to achieve the plan. 
+rewarding outcome for <input1> to achieve the plan, take in account also the agent position, which is <input6>. 
 
-Then, using only the observations with the higher importance value, 
-create a sequence of <input7> actions that <input1> should take to get closer to achieve the plan.
+Then, using only the observations with an importance factor of greater or equal than 7,
+create a sequence of <input7> actions that <input1> should take to get closer to achieve the plan. 
 Each action you determinate can only be one of the following, make sure you assign a valid position from memories or observations and a valid name for each action:
 
 Valid actions: 
-<input6>
+<input8>
 
+Important: if you consider there is not enough information to create a sequence of actions,
+your answer should be one only action, and it must to be "explore".
 
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
+
 
 ```json
 {
     "observations": {
-        "observation_1": "importance value #num",
-        "observation_2": "importance value #num",
-        "observation_3": "importance value #num",
-        "observation_n": "importance value #num",
+        "observation_1": "the importance value is #num",
+        "observation_2": "the importance value is #num",
+        "observation_3": "the importance value is #num",
+        "observation_n": "the importance value is #num"
     },
     "actions": {
         "action_1":"#action",
         "action_2":"#action",
-        "action_<input7>":"#action",
+        "action_<input7>":"#action"
     }
 }```
