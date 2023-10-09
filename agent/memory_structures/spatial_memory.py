@@ -1,5 +1,4 @@
 import logging
-import os
 from queue import Queue
 import random
 from utils.route_plan import get_shortest_valid_route
@@ -67,7 +66,7 @@ class SpatialMemory:
         Returns:
             Queue(str): Steps sequence for the route.
         """
-        logging.info(f'Finding route from {self.position} to {position_end}')
+        self.logger.info(f'Finding route from {self.position} to {position_end}')
         route = get_shortest_valid_route(self.explored_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
 
         if return_list:
@@ -99,7 +98,7 @@ class SpatialMemory:
         elif current_action.startswith('explore'):
             sequence_steps = self.generate_explore_sequence()
     
-        logging.info(f'The steps sequence is: {list(sequence_steps.queue)}')
+        self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')
         return sequence_steps
         
 
@@ -125,7 +124,7 @@ class SpatialMemory:
             
             return  (int(x), int(y))
         except :
-            logging.error(f'Action {action} does not contain a position')
+            self.logger.error(f'Action {action} does not contain a position')
             return (-1,-1)
         
     
@@ -155,18 +154,21 @@ class SpatialMemory:
         Returns:
             Queue[str]: Sequence of steps to explore the map.
         """
+        while True:
         # Take a random position from the current_observed map
-        current_map_matrix = self.current_observed_map.split('\n')[1:-1]
-        max_y, max_x  = len(current_map_matrix), len(current_map_matrix[0])
-        random_x, random_y = 0, 0
-        # Will check for the valid elements
-
-        while current_map_matrix[random_y][random_x] not in ['F', 'A']:
+            current_map_matrix = self.current_observed_map.split('\n')[1:-1]
+            max_y, max_x  = len(current_map_matrix), len(current_map_matrix[0])
             random_x, random_y = random.randint(0, max_x-1), random.randint(0, max_y-1)
-        
-        # Finds the shortest route to that position
-        end_position = (random_y, random_x)
-        sequence_steps = self.find_route_to_position(end_position, self.orientation)
-        logging.info(f'The steps sequence is: {list(sequence_steps.queue)}')
+            # Will check for the valid elements
+
+            while current_map_matrix[random_y][random_x] not in ['F', 'A']:
+                random_x, random_y = random.randint(0, max_x-1), random.randint(0, max_y-1)
+            
+            # Finds the shortest route to that position
+            end_position = (random_y, random_x)
+            sequence_steps = self.find_route_to_position(end_position, self.orientation)
+            if sequence_steps.qsize() > 0:
+                break
+        self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')
 
         return sequence_steps

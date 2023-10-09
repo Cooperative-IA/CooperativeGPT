@@ -78,6 +78,8 @@ if __name__ == "__main__":
         game_loop(agents)
     except KeyboardInterrupt:
         logger.info("Program interrupted. %s steps executed.", step_count)
+    except Exception as e:
+        logger.exception("Exception: %s", e)
     
     env.end_game()
        
