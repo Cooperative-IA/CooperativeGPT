@@ -5,6 +5,9 @@ import chromadb
 import uuid
 from chromadb.utils import embedding_functions
 
+from utils.files import load_config
+from utils.time import str_to_timestamp
+
 class LongTermMemory:
     """Class for long term memory. Memories are stored in the chromadb database.
     """
@@ -20,6 +23,8 @@ class LongTermMemory:
         self.chroma_client = chromadb.PersistentClient(path=db_path)
 
         self.logger = logging.getLogger(__name__)
+
+        self.date_format = load_config()['date_format']
 
         # Delete collection if it already exists
         if agent_name in [c.name for c in self.chroma_client.list_collections()]:
@@ -67,11 +72,12 @@ class LongTermMemory:
                 additional_metadata = [additional_metadata for _ in range(len(memory))]
 
             # Create metadata for each memory
-            metadata = [{"created_at": c, "poignancy": p, **additional_metadata[i]} for i, (c, p) in enumerate(zip(created_at, poignancy))]
+            metadata = [{"created_at": c, "poignancy": p, **additional_metadata[i], "timestamp": str_to_timestamp(c, self.date_format)} for i, (c, p) in enumerate(zip(created_at, poignancy))]
         else:
             metadata = additional_metadata if additional_metadata else {}
             metadata["created_at"] = created_at
             metadata["poignancy"] = poignancy
+            metadata["timestamp"] = str_to_timestamp(created_at, self.date_format)
 
 
         self.logger.info(f"Adding memory to long term memory, Metadata: {metadata}. Memory: {memory}")
@@ -93,7 +99,8 @@ class LongTermMemory:
         """
         results = self.collection.query(query_texts=[query], n_results=n_results)
         # Formats the results to list of strings
-        results = [r[0] for r in results['documents'] if r]
+        #results = [r[0] for r in results['documents'] if r]
+        results = results['documents'][0] if results['documents'] else []
         return results
     
     def get_memories(self, limit: int = 50, filter: dict = None) -> dict:

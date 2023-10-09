@@ -41,7 +41,7 @@ class ShortTermMemory:
             key (str): Key to access the memory.
 
         Returns:
-            str: Memory.
+            str or None: Memory if it exists, None otherwise.
         """
         return self.memory.get(key, None)
         
