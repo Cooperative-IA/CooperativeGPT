@@ -125,6 +125,9 @@ class Agent:
 
     def reflect(self, filtered_observations:list[str]) -> None:
         """Reflects on the agent's observations and stores the insights reflections in the long term memory.
+
+        Args:
+            filtered_observations (list[str]): List of filtered observations.
         """
         # Extract the relevant memories, game time and world context from the short term memory
         observations_str = self.stm.get_memory('current_observation')
@@ -238,7 +241,7 @@ class Agent:
             self.stm.add_memory(current_action, 'current_action')
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
-            logging.info(f'{self.name} is grabbing an apple, the steps sequence  is: {list(steps_sequence.queue)}')
+            logging.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
     
         agent_step = self.stm.get_memory('current_steps_sequence').get()
         

@@ -8,7 +8,7 @@ def should_react(name: str, world_context: str, observations: list[str], current
         name (str): Name of the agent.
         world_context (str): World context of the agent.
         observations (list[str]): List of observations of the environment.
-        current_plan (dict): Current plan of the agent.
+        current_plan (str): Current plan of the agent.
 
     Returns:
         bool: True if the agent should react to the observation, False otherwise.
@@ -20,7 +20,7 @@ def should_react(name: str, world_context: str, observations: list[str], current
     llm = LLMModels().get_main_model()
 
     observation = '.\n'.join(observations)
-    response = llm.completion(prompt='react.txt', inputs=[name, world_context, observation, str(current_plan)])
+    response = llm.completion(prompt='react.txt', inputs=[name, world_context, observation, current_plan])
     answers = extract_answers(response)
     answer = answers.get('Answer', None)
     return answer == 'True'
