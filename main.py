@@ -42,17 +42,21 @@ def game_loop(agents: list[Agent]) -> None:
             scene_descriptions = {agents[i].name : scene_descriptions[i] for i in range(len(agents))}
             agent_current_scene = scene_descriptions[agent.name]
             logger.info('%s Observations: %s, Scene descriptions: %s', agent.name, observations[agent.name], scene_descriptions[agent.name])
-            # Get the action for the agent
-            step_action = agent.move(observations[agent.name], agent_current_scene, game_time)
-            agents_map_actions[agent.name] = generate_agent_actions_map(step_action)
-            logger.info('Agent %s action map: %s', agent.name, agents_map_actions[agent.name] )
-            # Execute actions
-            actions = agents_map_actions
-            observations, scene_descriptions = env.step(actions)
-            actions[agent.name] = default_agent_actions_map() # Reset actions for the agent until the next step to avoid executing the same action twice      
+            # Get the steps for the agent to execute a high level action
+            step_actions = agent.move(observations[agent.name], agent_current_scene, game_time)
+            while not step_actions.empty():
+                step_action = step_actions.get()
+                # Update the actions map for the agent
+                agents_map_actions[agent.name] = generate_agent_actions_map(step_action)
+                logger.info('Agent %s action map: %s', agent.name, agents_map_actions[agent.name] )
+                # Execute each step one by one until the agent has executed all the steps for the high level action
+                actions = agents_map_actions
+                observations, scene_descriptions = env.step(actions)
+            # Reset actions for the agent until its next turn
+            actions[agent.name] = default_agent_actions_map()      
 
-        logger.info('Calculated all Agents actions for this step: %s', agents_map_actions)
         step_count += 1
+        logger.info('Round %s completed. Executed all the high level actions for each agent.', step_count)
         time.sleep(0.01)
 
 if __name__ == "__main__":

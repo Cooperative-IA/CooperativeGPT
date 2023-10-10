@@ -33,11 +33,11 @@ def actions_sequence(name:str, world_context:str, current_plan:str, memory_state
     response_dict = extract_answers(response.lower())
     actions_seq_queue= Queue() 
 
-    for i in range(actions_seq_len):
-        try:
-            actions_seq_queue.put(response_dict['actions'].values())
-        except:
-            logger.warning(f'Could not find actions in the response_dict')
-            break
+    try:
+        actions = list(response_dict['actions'].values())
+        for i in range(actions_seq_len):
+            actions_seq_queue.put(actions[i])
+    except:
+        logger.warning(f'Could not find action {i} in the response_dict')
 
     return actions_seq_queue

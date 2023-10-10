@@ -45,7 +45,7 @@ class Agent:
 
 
 
-    def move(self, observations: list[str], agent_current_scene:dict, game_time: str) -> str:
+    def move(self, observations: list[str], agent_current_scene:dict, game_time: str) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
@@ -57,7 +57,7 @@ class Agent:
             game_time (str): Current game time.
 
         Returns:
-            str: Action to take.
+            Queue: Steps sequence for the current action.
         """
 
         #Updates the position of the agent in the spatial memory 
@@ -70,9 +70,9 @@ class Agent:
         
         self.reflect(filtered_observations)
 
-        step_action = self.get_actions_to_execute(filtered_observations)
+        step_actions = self.get_actions_to_execute(filtered_observations)
 
-        return step_action
+        return step_actions
 
     def perceive(self, observations: list[str], game_time: str) -> None:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
@@ -198,7 +198,7 @@ class Agent:
 
 
 
-    def get_actions_to_execute(self, filtered_observations: list[str]) -> str:
+    def get_actions_to_execute(self, filtered_observations: list[str]) -> Queue:
         """
         Executes the current actions of the agent. 
         If the current gameloop is empty, it generates a new one.
@@ -207,7 +207,7 @@ class Agent:
             filtered_observations (list[str]): List of filtered observations.
             
         Returns:
-            str: Next action step to execute.
+            Queue: Steps sequence for the current action.
         """
 
         if self.stm.get_memory('current_steps_sequence').empty():
@@ -224,7 +224,6 @@ class Agent:
             # Now defines a gameloop for the current action
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
-            self.logger.info(f'{self.name} is grabbing an apple, the steps sequence  is: {list(steps_sequence.queue)}')
            
 
        
@@ -244,9 +243,9 @@ class Agent:
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
             self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
     
-        agent_step = self.stm.get_memory('current_steps_sequence').get()
+        agent_steps = self.stm.get_memory('current_steps_sequence')
         
-        self.logger.info(f'{self.name} is executing the action: {self.stm.get_memory("current_action")} with the gameloop { self.stm.get_memory("current_steps_sequence").queue}\
-                          and the next instant step is {agent_step}. Remaining actions: {self.stm.get_memory("actions_sequence").queue}')
-        return agent_step
+        self.logger.info(f'{self.name} is executing the action: {self.stm.get_memory("current_action")} with the steps sequence {agent_steps.queue}')
+
+        return agent_steps
     
