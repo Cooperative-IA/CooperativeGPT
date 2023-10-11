@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # Define players
     players = ["Juan", "Laura", "Pedro"]
     players_context = ["juan_context.json", "laura_context.json", "pedro_context.json"]
-    valid_actions = ['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId) at (x,y)','explore'] # TODO : Change this.
+    valid_actions = ['grab apple (x,y)', 'attack player (player_name)','explore'] # TODO : Change this.
     scenario_obstacles  = ['W', '$'] # TODO : Change this.
     scenario_info = {'scenario_map': get_scenario_map(), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
     # Create agents

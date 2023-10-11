@@ -10,6 +10,7 @@ from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
 from agent.cognitive_modules.act import actions_sequence
+from utils.queue_utils import list_from_queue
 
 class Agent:
     """Agent class.
@@ -66,7 +67,7 @@ class Agent:
         react, filtered_observations = self.perceive(observations, game_time)
         if react:
             self.plan()
-            self.generate_new_actions(filtered_observations)
+            self.generate_new_actions()
         
         self.reflect(filtered_observations)
 
@@ -98,13 +99,14 @@ class Agent:
             batch = observations[i:i+batch_size]
             self.ltm.add_memory(batch, game_time, self.observations_poignancy, {'type': 'perception'}) # For now we set the poignancy to 1 to all observations
 
-        current_observation = ', '.join(observations)
+        current_observation = '.\n'.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
 
         # Decide if the agent should react to the observation
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
-        react = should_react(self.name, world_context, observations, current_plan)
+        actions_sequence = list_from_queue(self.stm.get_memory('actions_sequence'))
+        react = should_react(self.name, world_context, observations, current_plan, actions_sequence)
         self.logger.info(f'{self.name} should react to the observation: {react}')
         return react, observations
     
@@ -116,6 +118,8 @@ class Agent:
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
+        reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
+
         new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections)
         self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
 
@@ -175,21 +179,20 @@ class Agent:
   
 
 
-    def generate_new_actions(self, memory_statements: list[str]) -> None:
+    def generate_new_actions(self) -> None:
         """
         Acts in the environment given the observations, the current plan and the current goals.
         Stores the actions sequence in the short term memory.
-
-        Args:
-            memory_statements (list[str]): List of memory statements. It will be the filtered memories of the agent.
-
         """
         world_context = self.stm.get_memory('world_context')
         current_plan = self.stm.get_memory('current_plan')
         valid_actions = self.stm.get_memory('valid_actions') 
         observations = self.stm.get_memory('current_observation')
+        current_goals = self.stm.get_memory('current_goals')
+        reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
+        reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
         # Generate new actions sequence and add it to the short term memory
-        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, memory_statements, observations, self.spatial_memory.position, valid_actions)
+        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations, self.spatial_memory.position, valid_actions, current_goals)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
         
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')
@@ -215,7 +218,7 @@ class Agent:
 
             # If the actions sequence is empty, we generate actions sequence
             if self.stm.get_memory('actions_sequence').empty():
-                self.generate_new_actions(filtered_observations)
+                self.generate_new_actions()
 
             # We get next action from the actions sequence
             current_action = self.stm.get_memory('actions_sequence').get()
