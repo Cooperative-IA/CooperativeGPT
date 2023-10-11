@@ -4,7 +4,7 @@ import random
 from utils.route_plan import get_shortest_valid_route
 import re
 from utils.queue_utils import queue_from_list, new_empty_queue
-from game_environment.utils import get_element_global_pos
+from utils.math import manhattan_distance
 
 class SpatialMemory:
     """
@@ -140,9 +140,49 @@ class SpatialMemory:
         """
 
         observations_positions = [self.get_position_from_action(observation) for observation in observations]
-        observations_distances = [len(self.find_route_to_position(position, self.orientation, True)) for position in observations_positions]
+        observations_distances = [manhattan_distance(self.position, position) for position in observations_positions]
 
         return sorted(observations, key=lambda x: observations_distances[observations.index(x)])
+    
+    def get_global_position(self, local_dest_pos: tuple[int, int], local_self_pos: tuple[int, int]) -> tuple[int, int]:
+        """Get the global position of an element given its local position on the observed map.
+
+        Args:
+            local_dest_pos (tuple[int, int]): Local position of the destination on the observed map.
+            local_self_pos (tuple[int, int]): Local position of the agent on the observed map.
+
+        Returns:
+            tuple[int, int]: Global position of the element.
+        """
+        # North
+        if self.orientation == 0:
+            element_global = (local_dest_pos[0] - local_self_pos[0]) + self.position[0],\
+                                (local_dest_pos[1] - local_self_pos[1]) + self.position[1]
+        # East
+        elif self.orientation == 1:
+            element_global = -1 * (local_dest_pos[1] - local_self_pos[1]) + self.position[0],\
+                             (local_dest_pos[0] - local_self_pos[0]) + self.position[1]
+        # South
+        elif self.orientation == 2:
+            element_global = -1 * (local_dest_pos[0] - local_self_pos[0]) + self.position[0],\
+                             -1 * (local_dest_pos[1] - local_self_pos[1]) + self.position[1]
+        # West
+        elif self.orientation == 3:
+            element_global = (local_dest_pos[1] - local_self_pos[1]) + self.position[0],\
+                                (local_self_pos[0] - local_dest_pos[0]) + self.position[1]
+
+        return element_global
+    
+    def get_local_self_position(self) -> tuple[int, int]:
+        """Get the local position of the agent on the observed map. Yhe agent is represented as # on the observed map.
+
+        Returns:
+            tuple[int, int]: Local position of the agent on the observed map.
+        """
+        observed_map = self.current_observed_map.split('\n')[1:-1]
+        for i, row in enumerate(observed_map):
+            if '#' in row:
+                return (i, row.index('#'))
     
 
     def generate_explore_sequence(self) -> Queue[str]:
@@ -155,18 +195,22 @@ class SpatialMemory:
             Queue[str]: Sequence of steps to explore the map.
         """
         while True:
-        # Take a random position from the current_observed map
+            # Take a random position from the current_observed map
             current_map_matrix = self.current_observed_map.split('\n')[1:-1]
-            max_y, max_x  = len(current_map_matrix), len(current_map_matrix[0])
-            random_x, random_y = random.randint(0, max_x-1), random.randint(0, max_y-1)
-            # Will check for the valid elements
+            max_row, max_col  = len(current_map_matrix), len(current_map_matrix[0])
+            random_row = random.randint(0, max_row - 1)
+            random_col = random.randint(0, max_col - 1)
 
-            while current_map_matrix[random_y][random_x] not in ['F', 'A']:
-                random_x, random_y = random.randint(0, max_x-1), random.randint(0, max_y-1)
+            # Is the destination a valid position?
+            while current_map_matrix[random_row][random_col] not in ['F', 'A']:
+                random_row = random.randint(0, max_row - 1)
+                random_col = random.randint(0, max_col - 1)
             
+            # Get the global position of the destination
+            agent_local_pos = self.get_local_self_position()
+            destination = self.get_global_position((random_row, random_col), agent_local_pos)
             # Finds the shortest route to that position
-            end_position = (random_y, random_x)
-            sequence_steps = self.find_route_to_position(end_position, self.orientation)
+            sequence_steps = self.find_route_to_position(destination, self.orientation)
             if sequence_steps.qsize() > 0:
                 break
         self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')
