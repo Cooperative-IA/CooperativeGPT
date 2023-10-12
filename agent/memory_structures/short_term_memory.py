@@ -2,6 +2,7 @@ import logging
 import os
 
 from utils.files import load_agent_context, load_world_context
+from utils.logger_singleton import LoggerSingleton
 
 class ShortTermMemory:
     """Class for yhe short term memory. Memories are stored in a dictionary.
@@ -15,6 +16,9 @@ class ShortTermMemory:
             agent_context_file (str): Path to the json agent context file. Initial info about the agent. All the keys in the json file will be added to the short term memory.
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to. The world context will be added to the short term memory with the key 'world_context'.
         """
+
+
+        self.logger_instance = LoggerSingleton()
         self.logger = logging.getLogger(__name__)
 
         agent_context_file = os.path.join(data_folder, 'agents_context', agent_context_file)

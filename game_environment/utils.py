@@ -22,7 +22,7 @@ def matrix_to_string(matrix):
 
 
 
-def generate_agent_actions_map( action:str) -> dict:
+async def generate_agent_actions_map( action:str) -> dict:
     """
     Description: Generates the action map for the agent
     

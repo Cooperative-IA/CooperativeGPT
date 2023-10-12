@@ -6,6 +6,9 @@ import numpy as np
 from agent.agent import Agent
 from utils.files import load_config
 from utils.math import normalize_values, cosine_similarity
+from utils.logger_singleton import LoggerSingleton
+
+logger_instance = LoggerSingleton()
 
 logger = logging.getLogger(__name__)
 

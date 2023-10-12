@@ -3,6 +3,8 @@ import ast
 import sys
 import argparse
 import logging
+import threading
+from queue import Queue
 
 from absl import app
 from absl import flags
@@ -71,7 +73,7 @@ def verbose_fn(unused_timestep, unused_player_index: int) -> None:
     pass
 
 
-def run_episode(game_name: str, record: bool, players: list[str]):
+def run_episode(game_name: str, record: bool, players: list[str], q: Queue = None):
     """Create the simulation environment and run an episode of the game
     Args:
         game_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
@@ -103,7 +105,12 @@ def run_episode(game_name: str, record: bool, players: list[str]):
         player_prefixes=players,
         game_ascii_map=ASCII_MAP,
         verbose_fn=verbose_fn if verbose else None,
-        print_events=print_events, record=record)
+        print_events=print_events, 
+        record=record,)
+    
+    if q:
+        q.put(game_env)
+
     return game_env
 
 
@@ -117,7 +124,19 @@ def start_server(players: list[str], game_name: str = "commons_harvest_language"
     Returns:
         A game environment
     """
-    return run_episode(game_name, record, players)
+    # Create a queue to communicate between threads
+    q = Queue()
+
+    # Create a new thread to run the episode
+    thread = threading.Thread(target=run_episode, args=(game_name, record, players, q))
+    thread.start()
+
+    # Get the game_env from the queue
+    game_env = q.get()
+
+    # You now have access to game_env in the start_server function
+    return game_env
+
 
 def get_scenario_map  ()-> str:
     """Get the scenario map from the game environment

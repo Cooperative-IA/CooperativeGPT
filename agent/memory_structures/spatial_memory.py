@@ -4,7 +4,8 @@ import random
 from utils.route_plan import get_shortest_valid_route
 import re
 from utils.queue_utils import queue_from_list, new_empty_queue
-from game_environment.utils import get_element_global_pos
+
+from utils.logger_singleton import LoggerSingleton
 
 class SpatialMemory:
     """
@@ -19,6 +20,7 @@ class SpatialMemory:
             scenario_map (str, optional): Real map of the environment, in ascci format, rows separated by '\n'. 
             scenario_obstacles (list[str], optional): Obstacles of the scenario. Defaults to ['W'] for Walls.
         """
+        self.logger_instance = LoggerSingleton()
         self.logger = logging.getLogger(__name__)
         self.scenario_map = scenario_map.split('\n')[1:-1]
         #self.exploredMap = ["$"*mapSize[1] for _ in range(mapSize[0])]

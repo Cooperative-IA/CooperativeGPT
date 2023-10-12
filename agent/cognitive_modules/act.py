@@ -2,7 +2,9 @@ from queue import Queue
 import logging
 from llm import LLMModels
 from utils.llm import extract_answers
+from utils.logger_singleton import LoggerSingleton
 
+logger_instance = LoggerSingleton()
 logger = logging.getLogger(__name__)
 
 def actions_sequence(name:str, world_context:str, current_plan:str, memory_statements:list[str], current_observations:list[str]|str, current_position:tuple, valid_actions:list[str], actions_seq_len: int = 3) -> Queue:
@@ -32,10 +34,12 @@ def actions_sequence(name:str, world_context:str, current_plan:str, memory_state
 
     response_dict = extract_answers(response.lower())
     actions_seq_queue= Queue() 
-
-    for i in range(actions_seq_len):
+    print('-----------------------------------------------------------------------')
+    print(response_dict)
+    print('-----------------------------------------------------------------------')
+    for action in response_dict['actions'].values():
         try:
-            actions_seq_queue.put(response_dict['actions'].values())
+            actions_seq_queue.put(action)
         except:
             logger.warning(f'Could not find actions in the response_dict')
             break

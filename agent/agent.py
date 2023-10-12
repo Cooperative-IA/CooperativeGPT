@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from queue import Queue
+from utils.logger_singleton import LoggerSingleton
 
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
@@ -27,6 +28,7 @@ class Agent:
             att_bandwidth (int, optional): Attention bandwidth. The attention bandwidth is the number of observations that the agent can attend to at the same time. Defaults to 10.
             reflection_umbral (int, optional): Reflection umbral. The reflection umbral is the number of poignancy that the agent needs to accumulate to reflect on its observations. Defaults to 30.
         """
+        self.logger_instance = LoggerSingleton()
         self.logger = logging.getLogger(__name__)
 
         self.name = name
@@ -45,7 +47,7 @@ class Agent:
 
 
 
-    def move(self, observations: list[str], agent_current_scene:dict, game_time: str) -> str:
+    async def move(self, observations: list[str], agent_current_scene:dict, game_time: str) -> str:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:

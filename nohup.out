@@ -1,0 +1,442 @@
+2023-10-12 01:45:22.096079: E tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:9342] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2023-10-12 01:45:22.096137: E tensorflow/compiler/xla/stream_executor/cuda/cuda_fft.cc:609] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2023-10-12 01:45:22.096172: E tensorflow/compiler/xla/stream_executor/cuda/cuda_blas.cc:1518] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2023-10-12 01:45:22.635009: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+pygame 2.5.2 (SDL 2.28.2, Python 3.10.12)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+2023-10-12 01:45:23,557 - INFO - __main__ - Program started
+2023-10-12 01:45:23,561 - INFO - chromadb.telemetry.posthog - Anonymized telemetry enabled. See https://docs.trychroma.com/telemetry for more information.
+2023-10-12 01:45:23,656 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: name. Memory: Juan
+2023-10-12 01:45:23,656 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_steps_sequence. Memory: <queue.Queue object at 0x7f0449769db0>
+2023-10-12 01:45:23,656 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: valid_actions. Memory: ['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId) at (x,y)', 'explore']
+2023-10-12 01:45:23,656 - INFO - chromadb.telemetry.posthog - Anonymized telemetry enabled. See https://docs.trychroma.com/telemetry for more information.
+2023-10-12 01:45:23,696 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: name. Memory: Laura
+2023-10-12 01:45:23,696 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_steps_sequence. Memory: <queue.Queue object at 0x7f04497a61d0>
+2023-10-12 01:45:23,696 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: valid_actions. Memory: ['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId) at (x,y)', 'explore']
+2023-10-12 01:45:23,696 - INFO - chromadb.telemetry.posthog - Anonymized telemetry enabled. See https://docs.trychroma.com/telemetry for more information.
+2023-10-12 01:45:23,721 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: name. Memory: Pedro
+2023-10-12 01:45:23,722 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_steps_sequence. Memory: <queue.Queue object at 0x7f04497a69b0>
+2023-10-12 01:45:23,722 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: valid_actions. Memory: ['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId) at (x,y)', 'explore']
+2023-10-12 01:45:23,723 - INFO - game_environment.scene_descriptor.scene_descriptor - Juan is player 0
+2023-10-12 01:45:23,723 - INFO - game_environment.scene_descriptor.scene_descriptor - Laura is player 1
+2023-10-12 01:45:23,723 - INFO - game_environment.scene_descriptor.scene_descriptor - Pedro is player 2
+2023-10-12 01:45:23,724 - INFO - game_environment.playing_utils.level_playing_utils - Running an episode with 3 players: ['Juan', 'Laura', 'Pedro'].
+2023-10-12 01:45:24,538 - INFO - llm.base_llm - Loading GPT-3.5 model...
+2023-10-12 01:45:24,796 - INFO - llm.base_llm - GPT-3.5 model loaded
+2023-10-12 01:45:24,797 - INFO - game_environment.scene_descriptor.scene_descriptor - Avatar 0 is in position (7, 16)
+2023-10-12 01:45:24,797 - INFO - game_environment.scene_descriptor.scene_descriptor - Avatar 1 is in position (7, 7)
+2023-10-12 01:45:24,797 - INFO - game_environment.scene_descriptor.scene_descriptor - Avatar 2 is in position (16, 2)
+2023-10-12 01:45:24,930 - INFO - __main__ - Juan Observations: ['Observed an apple at position [4, 7]. This apple belongs to tree 2', 'Observed an apple at position [3, 7]. This apple belongs to tree 2', 'Observed an apple at position [2, 7]. This apple belongs to tree 2', 'Observed an apple at position [5, 8]. This apple belongs to tree 2', 'Observed an apple at position [4, 8]. This apple belongs to tree 2', 'Observed an apple at position [3, 8]. This apple belongs to tree 2', 'Observed an apple at position [2, 8]. This apple belongs to tree 2', 'Observed an apple at position [4, 9]. This apple belongs to tree 2', 'Observed an apple at position [3, 9]. This apple belongs to tree 2', 'Observed an apple at position [2, 9]. This apple belongs to tree 2', 'Observed an apple at position [3, 10]. This apple belongs to tree 2', 'Observed tree 2 at position [4, 8]. This tree has 11 apples remaining and 0 grass for apples growing', 'Observed an apple at position [3, 13]. This apple belongs to tree 3', 'Observed an apple at position [4, 14]. This apple belongs to tree 3', 'Observed an apple at position [3, 14]. This apple belongs to tree 3', 'Observed an apple at position [2, 14]. This apple belongs to tree 3', 'Observed an apple at position [5, 15]. This apple belongs to tree 3', 'Observed an apple at position [4, 15]. This apple belongs to tree 3', 'Observed an apple at position [3, 15]. This apple belongs to tree 3', 'Observed an apple at position [2, 15]. This apple belongs to tree 3', 'Observed an apple at position [4, 16]. This apple belongs to tree 3', 'Observed an apple at position [3, 16]. This apple belongs to tree 3', 'Observed an apple at position [2, 16]. This apple belongs to tree 3', 'Observed an apple at position [3, 17]. This apple belongs to tree 3', 'Observed tree 3 at position [4, 15]. This tree has 12 apples remaining and 0 grass for apples growing', 'Observed agent 1 at position [7, 7]'], Scene descriptions: {'observation': 'FFFFF1FFAAA\nFFFFFFFAAAA\nFFFFFFFFAAA\nFFFFFFFFFAF\nFFFFFFFFFFF\nFFFFFFFFFFF\nFFFFFFFFFAF\nFFFFFFFFAAA\nFFFFFFFAAAA\nFFFFF#FFAAA\nFFFFFFFFFAF', 'agents_in_observation': {'1': 'Laura'}, 'global_position': (7, 16), 'orientation': 3}
+2023-10-12 01:45:24,930 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: game_time. Memory: 2023-10-12 02:00:00
+2023-10-12 01:45:24,930 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 7)
+2023-10-12 01:45:24,931 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 7)
+2023-10-12 01:45:24,931 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (2, 7)
+2023-10-12 01:45:24,932 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (5, 8)
+2023-10-12 01:45:24,933 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 8)
+2023-10-12 01:45:24,933 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 8)
+2023-10-12 01:45:24,934 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (2, 8)
+2023-10-12 01:45:24,934 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 9)
+2023-10-12 01:45:24,935 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 9)
+2023-10-12 01:45:24,935 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (2, 9)
+2023-10-12 01:45:24,936 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 10)
+2023-10-12 01:45:24,937 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 8)
+2023-10-12 01:45:24,937 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 13)
+2023-10-12 01:45:24,938 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 14)
+2023-10-12 01:45:24,938 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 14)
+2023-10-12 01:45:24,939 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (2, 14)
+2023-10-12 01:45:24,940 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (5, 15)
+2023-10-12 01:45:24,940 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 15)
+2023-10-12 01:45:24,941 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 15)
+2023-10-12 01:45:24,941 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (2, 15)
+2023-10-12 01:45:24,942 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 16)
+2023-10-12 01:45:24,942 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 16)
+2023-10-12 01:45:24,943 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (2, 16)
+2023-10-12 01:45:24,944 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (3, 17)
+2023-10-12 01:45:24,944 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 15)
+2023-10-12 01:45:24,945 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (7, 7)
+2023-10-12 01:45:24,946 - INFO - agent.memory_structures.long_term_memory - Adding memory to long term memory, Metadata: [{'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}]. Memory: ['Observed an apple at position [5, 15]. This apple belongs to tree 3', 'Observed an apple at position [4, 16]. This apple belongs to tree 3', 'Observed an apple at position [4, 15]. This apple belongs to tree 3', 'Observed an apple at position [3, 16]. This apple belongs to tree 3', 'Observed tree 3 at position [4, 15]. This tree has 12 apples remaining and 0 grass for apples growing', 'Observed an apple at position [4, 14]. This apple belongs to tree 3', 'Observed an apple at position [3, 15]. This apple belongs to tree 3', 'Observed an apple at position [2, 16]. This apple belongs to tree 3', 'Observed an apple at position [3, 17]. This apple belongs to tree 3', 'Observed an apple at position [3, 14]. This apple belongs to tree 3']
+2023-10-12 01:45:25,687 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_observation. Memory: Observed an apple at position [5, 15]. This apple belongs to tree 3, Observed an apple at position [4, 16]. This apple belongs to tree 3, Observed an apple at position [4, 15]. This apple belongs to tree 3, Observed an apple at position [3, 16]. This apple belongs to tree 3, Observed tree 3 at position [4, 15]. This tree has 12 apples remaining and 0 grass for apples growing, Observed an apple at position [4, 14]. This apple belongs to tree 3, Observed an apple at position [3, 15]. This apple belongs to tree 3, Observed an apple at position [2, 16]. This apple belongs to tree 3, Observed an apple at position [3, 17]. This apple belongs to tree 3, Observed an apple at position [3, 14]. This apple belongs to tree 3
+2023-10-12 01:45:25,688 - INFO - agent.agent - Juan should react to the observation: True
+2023-10-12 01:45:25,691 - INFO - llm.base_llm - Prompt: You have this information about an agent called Juan:
+
+Juan's world understanding: Your are a controller Game Master. Your responsibilities involves overseeing and directing the immediate actions of specific agents. Each decision you make should carefully consider the individual behavior of each agent, the primary objective of each scenario, and the rules of the entire environment.
+
+Scenario: Apples are spread around and can be consumed for a reward of 1. Apples that have been consumed regrow with a per-step probability that depends on the number of current apples in a 𝐿2 norm neighborhood of radius 2. As a consequence, a patch of apples that collectively doesn't have other apples within a distance of 2 from them, can be irrevocably lost if all apples in the patch are consumed. Therefore, agents must exercise restraint when consuming apples within a patch. Each apple tree contains multiple apples.
+
+Roles: 
+There are 1 kind of roles in this scenario : (Consumer). Each role has its own valid actions and an agent have to act according to his role.
+- Consumer role: The primary goal of a Consumer agent is to maximize their reward by efficiently collecting apples and avoiding unnecessary actions.
+
+Considerations and constrains:
+- An agent can only attack another agent if he is at least 3 steps upward from you.
+
+Remember, the goal for each agent in this world is to maximize its rewards (gathered apples).
+
+Recent analysis of past observations:
+
+
+Current observations: Observed an apple at position [5, 15]. This apple belongs to tree 3, Observed an apple at position [4, 16]. This apple belongs to tree 3, Observed an apple at position [4, 15]. This apple belongs to tree 3, Observed an apple at position [3, 16]. This apple belongs to tree 3, Observed tree 3 at position [4, 15]. This tree has 12 apples remaining and 0 grass for apples growing, Observed an apple at position [4, 14]. This apple belongs to tree 3, Observed an apple at position [3, 15]. This apple belongs to tree 3, Observed an apple at position [2, 16]. This apple belongs to tree 3, Observed an apple at position [3, 17]. This apple belongs to tree 3, Observed an apple at position [3, 14]. This apple belongs to tree 3
+
+Current plan: None
+
+With the information given above, generate a new plan and new objectives to persuit. The plan should be a description of how Juan should behave in the long-term to maximize its wellbeing.
+The plan should include how to act to different situations observed in past experiences.
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Juan:
+
+```json
+{
+ "Reasoning": string \\ Step by step thinking and analysis of all the observations and the current plan to create the new plan and the new goals
+ "Goals": string \\ The new goals for Juan
+ "Plan": string \\ The new plan for Juan
+}```
+2023-10-12 01:45:30,456 - INFO - llm.base_llm - Response: ```json
+{
+ "Reasoning": "Based on the observation that apples regrow with a probability depending on the number of current apples in a neighborhood, it is important to exercise restraint when consuming apples to avoid losing patches of apples. Additionally, it is important to maximize rewards by efficiently collecting apples and avoiding unnecessary actions. Taking into consideration the recent analysis of past observations, the following plan and goals are proposed.",
+ "Goals": "1. Maximize reward by efficiently collecting apples\n2. Avoid unnecessary actions\n3. Exercise restraint when consuming apples within a patch to prevent losing patches of apples",
+ "Plan": "1. Identify the nearest apple using the observed positions\n2. Move towards the nearest apple\n3. Assess the number of remaining apples in the tree and the availability of grass for apple regrowth\n4. If there are other apples within a distance of 2 from the patch, consume one apple\n5. If there are no other apples within a distance of 2 from the patch, exercise restraint and do not consume any more apples from the patch\n6. Repeat steps 1-5 until all apples have been collected or no reachable apples remain"
+}
+```
+2023-10-12 01:45:30,456 - INFO - llm.base_llm - Prompt tokens: 655
+2023-10-12 01:45:30,456 - INFO - llm.base_llm - Response tokens: 237
+2023-10-12 01:45:30,457 - INFO - agent.agent - Juan new plan: 1. Identify the nearest apple using the observed positions
+2. Move towards the nearest apple
+3. Assess the number of remaining apples in the tree and the availability of grass for apple regrowth
+4. If there are other apples within a distance of 2 from the patch, consume one apple
+5. If there are no other apples within a distance of 2 from the patch, exercise restraint and do not consume any more apples from the patch
+6. Repeat steps 1-5 until all apples have been collected or no reachable apples remain, new goals: 1. Maximize reward by efficiently collecting apples
+2. Avoid unnecessary actions
+3. Exercise restraint when consuming apples within a patch to prevent losing patches of apples
+2023-10-12 01:45:30,457 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_plan. Memory: 1. Identify the nearest apple using the observed positions
+2. Move towards the nearest apple
+3. Assess the number of remaining apples in the tree and the availability of grass for apple regrowth
+4. If there are other apples within a distance of 2 from the patch, consume one apple
+5. If there are no other apples within a distance of 2 from the patch, exercise restraint and do not consume any more apples from the patch
+6. Repeat steps 1-5 until all apples have been collected or no reachable apples remain
+2023-10-12 01:45:30,457 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_goals. Memory: 1. Maximize reward by efficiently collecting apples
+2. Avoid unnecessary actions
+3. Exercise restraint when consuming apples within a patch to prevent losing patches of apples
+2023-10-12 01:45:30,458 - INFO - llm.base_llm - Prompt: You have this information about an agent called Juan:
+
+Juan's world understanding: Your are a controller Game Master. Your responsibilities involves overseeing and directing the immediate actions of specific agents. Each decision you make should carefully consider the individual behavior of each agent, the primary objective of each scenario, and the rules of the entire environment.
+
+Scenario: Apples are spread around and can be consumed for a reward of 1. Apples that have been consumed regrow with a per-step probability that depends on the number of current apples in a 𝐿2 norm neighborhood of radius 2. As a consequence, a patch of apples that collectively doesn't have other apples within a distance of 2 from them, can be irrevocably lost if all apples in the patch are consumed. Therefore, agents must exercise restraint when consuming apples within a patch. Each apple tree contains multiple apples.
+
+Roles: 
+There are 1 kind of roles in this scenario : (Consumer). Each role has its own valid actions and an agent have to act according to his role.
+- Consumer role: The primary goal of a Consumer agent is to maximize their reward by efficiently collecting apples and avoiding unnecessary actions.
+
+Considerations and constrains:
+- An agent can only attack another agent if he is at least 3 steps upward from you.
+
+Remember, the goal for each agent in this world is to maximize its rewards (gathered apples).
+Current plan: 1. Identify the nearest apple using the observed positions
+2. Move towards the nearest apple
+3. Assess the number of remaining apples in the tree and the availability of grass for apple regrowth
+4. If there are other apples within a distance of 2 from the patch, consume one apple
+5. If there are no other apples within a distance of 2 from the patch, exercise restraint and do not consume any more apples from the patch
+6. Repeat steps 1-5 until all apples have been collected or no reachable apples remain
+Current relevant memories: Observed an apple at position [5, 15]. This apple belongs to tree 3
+Observed an apple at position [4, 16]. This apple belongs to tree 3
+Observed an apple at position [4, 15]. This apple belongs to tree 3
+Observed an apple at position [3, 16]. This apple belongs to tree 3
+Observed tree 3 at position [4, 15]. This tree has 12 apples remaining and 0 grass for apples growing
+Observed an apple at position [4, 14]. This apple belongs to tree 3
+Observed an apple at position [3, 15]. This apple belongs to tree 3
+Observed an apple at position [2, 16]. This apple belongs to tree 3
+Observed an apple at position [3, 17]. This apple belongs to tree 3
+Observed an apple at position [3, 14]. This apple belongs to tree 3 
+Current observations: Observed an apple at position [5, 15]. This apple belongs to tree 3, Observed an apple at position [4, 16]. This apple belongs to tree 3, Observed an apple at position [4, 15]. This apple belongs to tree 3, Observed an apple at position [3, 16]. This apple belongs to tree 3, Observed tree 3 at position [4, 15]. This tree has 12 apples remaining and 0 grass for apples growing, Observed an apple at position [4, 14]. This apple belongs to tree 3, Observed an apple at position [3, 15]. This apple belongs to tree 3, Observed an apple at position [2, 16]. This apple belongs to tree 3, Observed an apple at position [3, 17]. This apple belongs to tree 3, Observed an apple at position [3, 14]. This apple belongs to tree 3
+
+With the information given above, asign to each observation of the environment an importance factor
+from 1-10, where 1 is the least important and 10 is the most important. The importance factor should
+be based on the current relevant memories and what you consider will reflect a better
+rewarding outcome for Juan to achieve the plan, take in account also the agent position, which is (7, 16). 
+
+Then, using only the observations with an importance factor of greater or equal than 7,
+create a sequence of 3 actions that Juan should take to get closer to achieve the plan. 
+Each action you determinate can only be one of the following, make sure you assign a valid position from memories or observations and a valid name for each action:
+
+Valid actions: 
+['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId) at (x,y)', 'explore']
+
+Important: if you consider there is not enough information to create a sequence of actions,
+your answer should be one only action, and it must to be "explore".
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Juan:
+
+
+```json
+{
+    "observations": {
+        "observation_1": "the importance value is #num",
+        "observation_2": "the importance value is #num",
+        "observation_3": "the importance value is #num",
+        "observation_n": "the importance value is #num"
+    },
+    "actions": {
+        "action_1":"#action",
+        "action_2":"#action",
+        "action_3":"#action"
+    }
+}```
+
+2023-10-12 01:45:37,825 - INFO - llm.base_llm - Response: ```json
+{
+    "observations": {
+        "Observed an apple at position [5, 15]. This apple belongs to tree 3": "the importance value is 10",
+        "Observed an apple at position [4, 16]. This apple belongs to tree 3": "the importance value is 9",
+        "Observed an apple at position [4, 15]. This apple belongs to tree 3": "the importance value is 9",
+        "Observed an apple at position [3, 16]. This apple belongs to tree 3": "the importance value is 8",
+        "Observed tree 3 at position [4, 15]. This tree has 12 apples remaining and 0 grass for apples growing": "the importance value is 7"
+    },
+    "actions": {
+        "action_1": "go to the tree 3 at (4, 15)",
+        "action_2": "grab apple (5, 15)",
+        "action_3": "go to the tree 3 at (4, 15)"
+    }
+}
+```
+2023-10-12 01:45:37,830 - INFO - llm.base_llm - Prompt tokens: 1190
+2023-10-12 01:45:37,830 - INFO - llm.base_llm - Response tokens: 233
+-----------------------------------------------------------------------
+{'observations': {'observed an apple at position [5, 15]. this apple belongs to tree 3': 'the importance value is 10', 'observed an apple at position [4, 16]. this apple belongs to tree 3': 'the importance value is 9', 'observed an apple at position [4, 15]. this apple belongs to tree 3': 'the importance value is 9', 'observed an apple at position [3, 16]. this apple belongs to tree 3': 'the importance value is 8', 'observed tree 3 at position [4, 15]. this tree has 12 apples remaining and 0 grass for apples growing': 'the importance value is 7'}, 'actions': {'action_1': 'go to the tree 3 at (4, 15)', 'action_2': 'grab apple (5, 15)', 'action_3': 'go to the tree 3 at (4, 15)'}}
+-----------------------------------------------------------------------
+2023-10-12 01:45:37,830 - INFO - agent.agent - Juan generated new actions sequence: deque(['go to the tree 3 at (4, 15)', 'grab apple (5, 15)', 'go to the tree 3 at (4, 15)'])
+2023-10-12 01:45:37,831 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: actions_sequence. Memory: <queue.Queue object at 0x7f04dbafdc30>
+2023-10-12 01:45:37,831 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_steps_sequence. Memory: <queue.Queue object at 0x7f03fef51cc0>
+2023-10-12 01:45:37,831 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: accumulated_poignancy. Memory: 10
+2023-10-12 01:45:37,831 - INFO - agent.agent - Juan should not reflect on the observations. Accumulated poignancy: 10
+2023-10-12 01:45:37,831 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_action. Memory: go to the tree 3 at (4, 15)
+2023-10-12 01:45:37,831 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 16) to (4, 15)
+2023-10-12 01:45:37,833 - INFO - agent.memory_structures.spatial_memory - The steps sequence is: ['move right', 'move right', 'move right', 'move up']
+2023-10-12 01:45:37,833 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_steps_sequence. Memory: <queue.Queue object at 0x7f03fef51750>
+2023-10-12 01:45:37,833 - INFO - agent.agent - Juan is grabbing an apple, the steps sequence  is: ['move right', 'move right', 'move right', 'move up']
+2023-10-12 01:45:37,833 - INFO - agent.agent - Juan is executing the action: go to the tree 3 at (4, 15) with the gameloop deque(['move right', 'move right', 'move up'])                          and the next instant step is move right. Remaining actions: deque(['grab apple (5, 15)', 'go to the tree 3 at (4, 15)'])
+2023-10-12 01:45:37,833 - INFO - __main__ - Agent Juan action map: {'move': 2, 'turn': 0, 'fireZap': 0}
+2023-10-12 01:45:37,833 - INFO - __main__ - Laura Observations: ['Observed an apple at position [1, 2]. This apple belongs to tree 1', 'Observed an apple at position [1, 3]. This apple belongs to tree 1', 'Observed an apple at position [2, 2]. This apple belongs to tree 1', 'Observed tree 1 at position [1, 2]. This tree has 3 apples remaining and 0 grass for apples growing', 'Observed an apple at position [1, 8]. This apple belongs to tree 2', 'Observed an apple at position [2, 7]. This apple belongs to tree 2', 'Observed an apple at position [2, 8]. This apple belongs to tree 2', 'Observed an apple at position [2, 9]. This apple belongs to tree 2', 'Observed an apple at position [3, 6]. This apple belongs to tree 2', 'Observed an apple at position [3, 7]. This apple belongs to tree 2', 'Observed an apple at position [3, 8]. This apple belongs to tree 2', 'Observed an apple at position [3, 9]. This apple belongs to tree 2', 'Observed an apple at position [3, 10]. This apple belongs to tree 2', 'Observed an apple at position [4, 7]. This apple belongs to tree 2', 'Observed an apple at position [4, 8]. This apple belongs to tree 2', 'Observed an apple at position [4, 9]. This apple belongs to tree 2', 'Observed an apple at position [5, 8]. This apple belongs to tree 2', 'Observed tree 2 at position [3, 8]. This tree has 13 apples remaining and 0 grass for apples growing', 'Observed an apple at position [6, 3]. This apple belongs to tree 5', 'Observed an apple at position [7, 2]. This apple belongs to tree 5', 'Observed an apple at position [7, 3]. This apple belongs to tree 5', 'Observed an apple at position [7, 4]. This apple belongs to tree 5', 'Observed an apple at position [8, 2]. This apple belongs to tree 5', 'Observed an apple at position [8, 3]. This apple belongs to tree 5', 'Observed an apple at position [8, 4]. This apple belongs to tree 5', 'Observed an apple at position [8, 5]. This apple belongs to tree 5', 'Observed tree 5 at position [7, 3]. This tree has 8 apples remaining and 0 grass for apples growing'], Scene descriptions: {'observation': '-----------\n-----------\nWWWWWWWWWWW\nAAFFFFAFFFF\nAFFFFAAAFFF\nFFFFAAAAAFF\nFFFFFAAAFFF\nFFFFFFAFFFF\nFAFFFFFFFFF\nAAAFF#FFFFF\nAAAAFFFFFFF', 'agents_in_observation': {}, 'global_position': (7, 7), 'orientation': 0}
+2023-10-12 01:45:37,833 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: game_time. Memory: 2023-10-12 02:00:00
+2023-10-12 01:45:37,833 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (1, 2)
+2023-10-12 01:45:37,835 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (1, 3)
+2023-10-12 01:45:37,836 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (2, 2)
+2023-10-12 01:45:37,837 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (1, 2)
+2023-10-12 01:45:37,839 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (1, 8)
+2023-10-12 01:45:37,840 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (2, 7)
+2023-10-12 01:45:37,841 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (2, 8)
+2023-10-12 01:45:37,842 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (2, 9)
+2023-10-12 01:45:37,844 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (3, 6)
+2023-10-12 01:45:37,845 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (3, 7)
+2023-10-12 01:45:37,846 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (3, 8)
+2023-10-12 01:45:37,848 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (3, 9)
+2023-10-12 01:45:37,849 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (3, 10)
+2023-10-12 01:45:37,850 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (4, 7)
+2023-10-12 01:45:37,852 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (4, 8)
+2023-10-12 01:45:37,853 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (4, 9)
+2023-10-12 01:45:37,854 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (5, 8)
+2023-10-12 01:45:37,855 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (3, 8)
+2023-10-12 01:45:37,857 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (6, 3)
+2023-10-12 01:45:37,858 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (7, 2)
+2023-10-12 01:45:37,858 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (7, 3)
+2023-10-12 01:45:37,859 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (7, 4)
+2023-10-12 01:45:37,859 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (8, 2)
+2023-10-12 01:45:37,860 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (8, 3)
+2023-10-12 01:45:37,861 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (8, 4)
+2023-10-12 01:45:37,861 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (8, 5)
+2023-10-12 01:45:37,862 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (7, 3)
+2023-10-12 01:45:37,862 - INFO - agent.memory_structures.long_term_memory - Adding memory to long term memory, Metadata: [{'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}, {'created_at': '2023-10-12 02:00:00', 'poignancy': 1, 'type': 'perception', 'timestamp': 1697094000}]. Memory: ['Observed an apple at position [4, 7]. This apple belongs to tree 2', 'Observed an apple at position [5, 8]. This apple belongs to tree 2', 'Observed an apple at position [7, 4]. This apple belongs to tree 5', 'Observed an apple at position [8, 5]. This apple belongs to tree 5', 'Observed an apple at position [3, 7]. This apple belongs to tree 2', 'Observed an apple at position [4, 8]. This apple belongs to tree 2', 'Observed an apple at position [7, 3]. This apple belongs to tree 5', 'Observed an apple at position [8, 4]. This apple belongs to tree 5', 'Observed tree 5 at position [7, 3]. This tree has 8 apples remaining and 0 grass for apples growing', 'Observed an apple at position [2, 7]. This apple belongs to tree 2']
+2023-10-12 01:45:38,083 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_observation. Memory: Observed an apple at position [4, 7]. This apple belongs to tree 2, Observed an apple at position [5, 8]. This apple belongs to tree 2, Observed an apple at position [7, 4]. This apple belongs to tree 5, Observed an apple at position [8, 5]. This apple belongs to tree 5, Observed an apple at position [3, 7]. This apple belongs to tree 2, Observed an apple at position [4, 8]. This apple belongs to tree 2, Observed an apple at position [7, 3]. This apple belongs to tree 5, Observed an apple at position [8, 4]. This apple belongs to tree 5, Observed tree 5 at position [7, 3]. This tree has 8 apples remaining and 0 grass for apples growing, Observed an apple at position [2, 7]. This apple belongs to tree 2
+2023-10-12 01:45:38,084 - INFO - agent.agent - Laura should react to the observation: True
+2023-10-12 01:45:38,085 - INFO - llm.base_llm - Prompt: You have this information about an agent called Laura:
+
+Laura's world understanding: Your are a controller Game Master. Your responsibilities involves overseeing and directing the immediate actions of specific agents. Each decision you make should carefully consider the individual behavior of each agent, the primary objective of each scenario, and the rules of the entire environment.
+
+Scenario: Apples are spread around and can be consumed for a reward of 1. Apples that have been consumed regrow with a per-step probability that depends on the number of current apples in a 𝐿2 norm neighborhood of radius 2. As a consequence, a patch of apples that collectively doesn't have other apples within a distance of 2 from them, can be irrevocably lost if all apples in the patch are consumed. Therefore, agents must exercise restraint when consuming apples within a patch. Each apple tree contains multiple apples.
+
+Roles: 
+There are 1 kind of roles in this scenario : (Consumer). Each role has its own valid actions and an agent have to act according to his role.
+- Consumer role: The primary goal of a Consumer agent is to maximize their reward by efficiently collecting apples and avoiding unnecessary actions.
+
+Considerations and constrains:
+- An agent can only attack another agent if he is at least 3 steps upward from you.
+
+Remember, the goal for each agent in this world is to maximize its rewards (gathered apples).
+
+Recent analysis of past observations:
+
+
+Current observations: Observed an apple at position [4, 7]. This apple belongs to tree 2, Observed an apple at position [5, 8]. This apple belongs to tree 2, Observed an apple at position [7, 4]. This apple belongs to tree 5, Observed an apple at position [8, 5]. This apple belongs to tree 5, Observed an apple at position [3, 7]. This apple belongs to tree 2, Observed an apple at position [4, 8]. This apple belongs to tree 2, Observed an apple at position [7, 3]. This apple belongs to tree 5, Observed an apple at position [8, 4]. This apple belongs to tree 5, Observed tree 5 at position [7, 3]. This tree has 8 apples remaining and 0 grass for apples growing, Observed an apple at position [2, 7]. This apple belongs to tree 2
+
+Current plan: None
+
+With the information given above, generate a new plan and new objectives to persuit. The plan should be a description of how Laura should behave in the long-term to maximize its wellbeing.
+The plan should include how to act to different situations observed in past experiences.
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:
+
+```json
+{
+ "Reasoning": string \\ Step by step thinking and analysis of all the observations and the current plan to create the new plan and the new goals
+ "Goals": string \\ The new goals for Laura
+ "Plan": string \\ The new plan for Laura
+}```
+2023-10-12 01:45:43,666 - INFO - llm.base_llm - Response: ```json
+{
+  "Reasoning": "Based on the current observations and analysis, my new plan will be to focus on efficiently collecting apples while also considering the regrowth probability. My primary goal is to maximize my reward by strategically consuming apples and avoiding unnecessary actions.",
+  "Goals": "1. Maximize reward by efficiently collecting apples\n2. Exercise restraint when consuming apples within a patch to prevent irrevocable loss\n3. Consider regrowth probability when deciding which apples to consume\n4. Avoid unnecessary actions that don't contribute to maximizing reward",
+  "Plan": "1. Analyze the current positions of apples and determine the patches of apples\n2. Prioritize consuming apples in patches where there are multiple apples within a distance of 2\n3. Calculate the regrowth probability for each patch and consider it when deciding which apples to consume\n4. Maintain a minimum number of apples in each patch to prevent the patch from being lost\n5. Avoid unnecessary actions such as attacking other agents unless they are at least 3 steps upward\n6. Continuously monitor and update the observations to adapt the plan as new information becomes available"
+}
+```
+2023-10-12 01:45:43,666 - INFO - llm.base_llm - Prompt tokens: 655
+2023-10-12 01:45:43,666 - INFO - llm.base_llm - Response tokens: 234
+2023-10-12 01:45:43,667 - INFO - agent.agent - Laura new plan: 1. Analyze the current positions of apples and determine the patches of apples
+2. Prioritize consuming apples in patches where there are multiple apples within a distance of 2
+3. Calculate the regrowth probability for each patch and consider it when deciding which apples to consume
+4. Maintain a minimum number of apples in each patch to prevent the patch from being lost
+5. Avoid unnecessary actions such as attacking other agents unless they are at least 3 steps upward
+6. Continuously monitor and update the observations to adapt the plan as new information becomes available, new goals: 1. Maximize reward by efficiently collecting apples
+2. Exercise restraint when consuming apples within a patch to prevent irrevocable loss
+3. Consider regrowth probability when deciding which apples to consume
+4. Avoid unnecessary actions that don't contribute to maximizing reward
+2023-10-12 01:45:43,667 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_plan. Memory: 1. Analyze the current positions of apples and determine the patches of apples
+2. Prioritize consuming apples in patches where there are multiple apples within a distance of 2
+3. Calculate the regrowth probability for each patch and consider it when deciding which apples to consume
+4. Maintain a minimum number of apples in each patch to prevent the patch from being lost
+5. Avoid unnecessary actions such as attacking other agents unless they are at least 3 steps upward
+6. Continuously monitor and update the observations to adapt the plan as new information becomes available
+2023-10-12 01:45:43,667 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_goals. Memory: 1. Maximize reward by efficiently collecting apples
+2. Exercise restraint when consuming apples within a patch to prevent irrevocable loss
+3. Consider regrowth probability when deciding which apples to consume
+4. Avoid unnecessary actions that don't contribute to maximizing reward
+2023-10-12 01:45:43,669 - INFO - llm.base_llm - Prompt: You have this information about an agent called Laura:
+
+Laura's world understanding: Your are a controller Game Master. Your responsibilities involves overseeing and directing the immediate actions of specific agents. Each decision you make should carefully consider the individual behavior of each agent, the primary objective of each scenario, and the rules of the entire environment.
+
+Scenario: Apples are spread around and can be consumed for a reward of 1. Apples that have been consumed regrow with a per-step probability that depends on the number of current apples in a 𝐿2 norm neighborhood of radius 2. As a consequence, a patch of apples that collectively doesn't have other apples within a distance of 2 from them, can be irrevocably lost if all apples in the patch are consumed. Therefore, agents must exercise restraint when consuming apples within a patch. Each apple tree contains multiple apples.
+
+Roles: 
+There are 1 kind of roles in this scenario : (Consumer). Each role has its own valid actions and an agent have to act according to his role.
+- Consumer role: The primary goal of a Consumer agent is to maximize their reward by efficiently collecting apples and avoiding unnecessary actions.
+
+Considerations and constrains:
+- An agent can only attack another agent if he is at least 3 steps upward from you.
+
+Remember, the goal for each agent in this world is to maximize its rewards (gathered apples).
+Current plan: 1. Analyze the current positions of apples and determine the patches of apples
+2. Prioritize consuming apples in patches where there are multiple apples within a distance of 2
+3. Calculate the regrowth probability for each patch and consider it when deciding which apples to consume
+4. Maintain a minimum number of apples in each patch to prevent the patch from being lost
+5. Avoid unnecessary actions such as attacking other agents unless they are at least 3 steps upward
+6. Continuously monitor and update the observations to adapt the plan as new information becomes available
+Current relevant memories: Observed an apple at position [4, 7]. This apple belongs to tree 2
+Observed an apple at position [5, 8]. This apple belongs to tree 2
+Observed an apple at position [7, 4]. This apple belongs to tree 5
+Observed an apple at position [8, 5]. This apple belongs to tree 5
+Observed an apple at position [3, 7]. This apple belongs to tree 2
+Observed an apple at position [4, 8]. This apple belongs to tree 2
+Observed an apple at position [7, 3]. This apple belongs to tree 5
+Observed an apple at position [8, 4]. This apple belongs to tree 5
+Observed tree 5 at position [7, 3]. This tree has 8 apples remaining and 0 grass for apples growing
+Observed an apple at position [2, 7]. This apple belongs to tree 2 
+Current observations: Observed an apple at position [4, 7]. This apple belongs to tree 2, Observed an apple at position [5, 8]. This apple belongs to tree 2, Observed an apple at position [7, 4]. This apple belongs to tree 5, Observed an apple at position [8, 5]. This apple belongs to tree 5, Observed an apple at position [3, 7]. This apple belongs to tree 2, Observed an apple at position [4, 8]. This apple belongs to tree 2, Observed an apple at position [7, 3]. This apple belongs to tree 5, Observed an apple at position [8, 4]. This apple belongs to tree 5, Observed tree 5 at position [7, 3]. This tree has 8 apples remaining and 0 grass for apples growing, Observed an apple at position [2, 7]. This apple belongs to tree 2
+
+With the information given above, asign to each observation of the environment an importance factor
+from 1-10, where 1 is the least important and 10 is the most important. The importance factor should
+be based on the current relevant memories and what you consider will reflect a better
+rewarding outcome for Laura to achieve the plan, take in account also the agent position, which is (7, 7). 
+
+Then, using only the observations with an importance factor of greater or equal than 7,
+create a sequence of 3 actions that Laura should take to get closer to achieve the plan. 
+Each action you determinate can only be one of the following, make sure you assign a valid position from memories or observations and a valid name for each action:
+
+Valid actions: 
+['grab apple (x,y)', 'attack player (player_name)', 'go to the tree (treeId) at (x,y)', 'explore']
+
+Important: if you consider there is not enough information to create a sequence of actions,
+your answer should be one only action, and it must to be "explore".
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:
+
+
+```json
+{
+    "observations": {
+        "observation_1": "the importance value is #num",
+        "observation_2": "the importance value is #num",
+        "observation_3": "the importance value is #num",
+        "observation_n": "the importance value is #num"
+    },
+    "actions": {
+        "action_1":"#action",
+        "action_2":"#action",
+        "action_3":"#action"
+    }
+}```
+
+2023-10-12 01:45:48,274 - INFO - llm.base_llm - Response: ```json
+{
+    "observations": {
+        "Observed an apple at position [7, 3]. This apple belongs to tree 5": "the importance value is 8",
+        "Observed an apple at position [8, 4]. This apple belongs to tree 5": "the importance value is 8",
+        "Observed tree 5 at position [7, 3]. This tree has 8 apples remaining and 0 grass for apples growing": "the importance value is 10"
+    },
+    "actions": {
+        "action_1": "go to the tree 5 at (7, 3)",
+        "action_2": "grab apple (7, 3)",
+        "action_3": "grab apple (8, 4)"
+    }
+}
+```
+2023-10-12 01:45:48,274 - INFO - llm.base_llm - Prompt tokens: 1192
+2023-10-12 01:45:48,274 - INFO - llm.base_llm - Response tokens: 168
+-----------------------------------------------------------------------
+{'observations': {'observed an apple at position [7, 3]. this apple belongs to tree 5': 'the importance value is 8', 'observed an apple at position [8, 4]. this apple belongs to tree 5': 'the importance value is 8', 'observed tree 5 at position [7, 3]. this tree has 8 apples remaining and 0 grass for apples growing': 'the importance value is 10'}, 'actions': {'action_1': 'go to the tree 5 at (7, 3)', 'action_2': 'grab apple (7, 3)', 'action_3': 'grab apple (8, 4)'}}
+-----------------------------------------------------------------------
+2023-10-12 01:45:48,274 - INFO - agent.agent - Laura generated new actions sequence: deque(['go to the tree 5 at (7, 3)', 'grab apple (7, 3)', 'grab apple (8, 4)'])
+2023-10-12 01:45:48,274 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: actions_sequence. Memory: <queue.Queue object at 0x7f03fef51ed0>
+2023-10-12 01:45:48,274 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_steps_sequence. Memory: <queue.Queue object at 0x7f03fef50b50>
+2023-10-12 01:45:48,274 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: accumulated_poignancy. Memory: 10
+2023-10-12 01:45:48,274 - INFO - agent.agent - Laura should not reflect on the observations. Accumulated poignancy: 10
+2023-10-12 01:45:48,274 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_action. Memory: go to the tree 5 at (7, 3)
+2023-10-12 01:45:48,274 - INFO - agent.memory_structures.spatial_memory - Finding route from (7, 7) to (7, 3)
+2023-10-12 01:45:48,276 - INFO - agent.memory_structures.spatial_memory - The steps sequence is: ['move left', 'move left', 'move left', 'move left']
+2023-10-12 01:45:48,276 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_steps_sequence. Memory: <queue.Queue object at 0x7f03fef52d70>
+2023-10-12 01:45:48,276 - INFO - agent.agent - Laura is grabbing an apple, the steps sequence  is: ['move left', 'move left', 'move left', 'move left']
+2023-10-12 01:45:48,276 - INFO - agent.agent - Laura is executing the action: go to the tree 5 at (7, 3) with the gameloop deque(['move left', 'move left', 'move left'])                          and the next instant step is move left. Remaining actions: deque(['grab apple (7, 3)', 'grab apple (8, 4)'])
+2023-10-12 01:45:48,276 - INFO - __main__ - Agent Laura action map: {'move': 4, 'turn': 0, 'fireZap': 0}
+2023-10-12 01:45:48,276 - INFO - __main__ - Pedro Observations: [], Scene descriptions: {'observation': 'FFFFFFW----\nFFFFFFW----\nFFFFFFW----\nFFFFFFW----\nFFFFFFW----\nFFFFFFW----\nFFFFFFW----\nFFFFFFW----\nFFFFFFW----\nFFFFF#W----\nFFFFFFW----', 'agents_in_observation': {}, 'global_position': (16, 2), 'orientation': 1}
+2023-10-12 01:45:48,276 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: game_time. Memory: 2023-10-12 02:00:00
+2023-10-12 01:45:48,276 - INFO - agent.memory_structures.short_term_memory - Adding memory to short term memory, Key: current_observation. Memory: 
+2023-10-12 01:45:48,276 - INFO - agent.agent - Pedro should react to the observation: True
+2023-10-12 01:45:48,279 - INFO - llm.base_llm - Prompt: You have this information about an agent called Pedro:
+
+Pedro's world understanding: Your are a controller Game Master. Your responsibilities involves overseeing and directing the immediate actions of specific agents. Each decision you make should carefully consider the individual behavior of each agent, the primary objective of each scenario, and the rules of the entire environment.
+
+Scenario: Apples are spread around and can be consumed for a reward of 1. Apples that have been consumed regrow with a per-step probability that depends on the number of current apples in a 𝐿2 norm neighborhood of radius 2. As a consequence, a patch of apples that collectively doesn't have other apples within a distance of 2 from them, can be irrevocably lost if all apples in the patch are consumed. Therefore, agents must exercise restraint when consuming apples within a patch. Each apple tree contains multiple apples.
+
+Roles: 
+There are 1 kind of roles in this scenario : (Consumer). Each role has its own valid actions and an agent have to act according to his role.
+- Consumer role: The primary goal of a Consumer agent is to maximize their reward by efficiently collecting apples and avoiding unnecessary actions.
+
+Considerations and constrains:
+- An agent can only attack another agent if he is at least 3 steps upward from you.
+
+Remember, the goal for each agent in this world is to maximize its rewards (gathered apples).
+
+Recent analysis of past observations:
+
+
+Current observations: 
+
+Current plan: None
+
+With the information given above, generate a new plan and new objectives to persuit. The plan should be a description of how Pedro should behave in the long-term to maximize its wellbeing.
+The plan should include how to act to different situations observed in past experiences.
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Pedro:
+
+```json
+{
+ "Reasoning": string \\ Step by step thinking and analysis of all the observations and the current plan to create the new plan and the new goals
+ "Goals": string \\ The new goals for Pedro
+ "Plan": string \\ The new plan for Pedro
+}```
