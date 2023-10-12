@@ -73,7 +73,7 @@ class Agent:
         
         self.reflect(filtered_observations)
 
-        step_actions = self.get_actions_to_execute(filtered_observations)
+        step_actions = self.get_actions_to_execute()
 
         return step_actions
 
@@ -202,17 +202,14 @@ class Agent:
 
 
 
-
-    def get_actions_to_execute(self, filtered_observations: list[str]) -> Queue:
+    def get_actions_to_execute(self) -> str:
         """
         Executes the current actions of the agent. 
         If the current gameloop is empty, it generates a new one.
 
-        Args:
-            filtered_observations (list[str]): List of filtered observations.
             
         Returns:
-            Queue: Steps sequence for the current action.
+            str: Next action step to execute.
         """
 
         if self.stm.get_memory('current_steps_sequence').empty():
@@ -229,6 +226,7 @@ class Agent:
             # Now defines a gameloop for the current action
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
+            self.logger.info(f'{self.name} is grabbing an apple, the steps sequence  is: {list(steps_sequence.queue)}')
            
 
        
@@ -248,9 +246,8 @@ class Agent:
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
             self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
     
-        agent_steps = self.stm.get_memory('current_steps_sequence')
+        agent_step = self.stm.get_memory('current_steps_sequence').get()
         
-        self.logger.info(f'{self.name} is executing the action: {self.stm.get_memory("current_action")} with the steps sequence {agent_steps.queue}')
-
-        return agent_steps
-    
+        self.logger.info(f'{self.name} is executing the action: {self.stm.get_memory("current_action")} with the gameloop { self.stm.get_memory("current_steps_sequence").queue}\
+                          and the next instant step is {agent_step}. Remaining actions: {self.stm.get_memory("actions_sequence").queue}')
+        return agent_step
