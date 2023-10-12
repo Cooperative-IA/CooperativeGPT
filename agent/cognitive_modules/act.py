@@ -7,7 +7,7 @@ from utils.logger_singleton import LoggerSingleton
 logger_instance = LoggerSingleton()
 logger = logging.getLogger(__name__)
 
-def actions_sequence(name:str, world_context:str, current_plan:str, memory_statements:list[str], current_observations:list[str]|str, current_position:tuple, valid_actions:list[str], actions_seq_len: int = 3) -> Queue:
+def actions_sequence(name:str, world_context:str, current_plan:str, reflections: str, current_observations:list[str]|str, current_position:tuple, valid_actions:list[str], current_goals: str, actions_seq_len: int = 3) -> Queue:
     """
     Description: Returns the actions that the agent should perform given its name, the world context, the current plan, the memory statements and the current observations
 
@@ -15,7 +15,7 @@ def actions_sequence(name:str, world_context:str, current_plan:str, memory_state
         name (str): Name of the agent
         world_context (str): World context
         current_plan (str): Current plan
-        memory_statements (list[str]): Memory statements
+        reflections (str): Reflections
         current_observations (list[str])|str: Current observations
         current_position (tuple): Current position of the agent
         valid_actions (list[str]): Valid actions
@@ -26,17 +26,13 @@ def actions_sequence(name:str, world_context:str, current_plan:str, memory_state
     """
     
     llm = LLMModels().get_main_model()
-    memory_statements = "\n".join(memory_statements)
     if isinstance(current_observations, list):
         current_observations = "\n".join(current_observations)
     valid_actions = str(valid_actions)
-    response = llm.completion(prompt='act.txt', inputs=[name, world_context, str(current_plan), memory_statements, current_observations, str(current_position), str(actions_seq_len), valid_actions])
+    response = llm.completion(prompt='act.txt', inputs=[name, world_context, str(current_plan), reflections, current_observations, str(current_position), str(actions_seq_len), valid_actions, current_goals])
 
     response_dict = extract_answers(response.lower())
     actions_seq_queue= Queue() 
-    print('-----------------------------------------------------------------------')
-    print(response_dict)
-    print('-----------------------------------------------------------------------')
     for action in response_dict['actions'].values():
         try:
             actions_seq_queue.put(action)

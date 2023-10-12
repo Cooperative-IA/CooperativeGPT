@@ -26,7 +26,7 @@ def list_from_queue(queue_:Queue) -> list[str]:
         list[str]: List
     """
     list_ = []
-    while not queue_.empty():
+    while queue_ and not queue_.empty():
         list_.append(queue_.get())
     return list_
 
