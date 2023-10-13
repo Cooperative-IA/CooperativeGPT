@@ -236,7 +236,6 @@ class Game:
             player_prefixes: Optional[Sequence[str]] = None,
             default_observation: str = 'WORLD.RGB',
             reset_env_when_done: bool = False,
-            initial_player_index: int = 0,
             record: bool = False,):
         """Run multiplayer environment, with per player rendering and actions.
 
@@ -292,8 +291,6 @@ class Game:
         reset_env_when_done: if True, reset the environment once the episode has
             terminated; useful for playing multiple episodes in a row. Note this
             will cause this function to loop infinitely.
-        initial_player_index: Initial index of the player to play as. Defaults to 0.
-            (Players are always switchable via the tab key.)
         """
         # Update the config with the overrides.
         full_config.lab2d_settings.update(config_overrides)
@@ -320,9 +317,6 @@ class Game:
         
         # Reset the game environment
         timestep = env.reset()
-
-        # Set the initial player index
-        player_index = initial_player_index
 
         # Create a dictionary to store the score of each player
         score = collections.defaultdict(float)
@@ -373,7 +367,6 @@ class Game:
         self.first_move_done = False
         self.interactive = interactive
         self.player_prefixes = player_prefixes
-        self.player_index = player_index
         self.player_count = player_count
         self.action_map = action_map
         self.descriptor = descriptor
@@ -428,12 +421,6 @@ class Game:
                 if event.type == pygame.QUIT:
                     stop = True
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_TAB:
-                        self.player_index = (self.player_index + 1) % self.player_count
-                    break
-        player_prefix = self.player_prefixes[self.player_index] if self.player_prefixes else ''
-
         if stop:
             return None
         action_reader = ActionReader(self.env, self.action_map)
@@ -449,8 +436,7 @@ class Game:
         ## --------- END OF OUR CODE ---------
         # Record the game
         if self.record:
-            if self.record_counter % 5 == 0:
-                self.game_recorder.record(self.timestep, description)
+            self.game_recorder.record(self.timestep, description)
             self.record_counter += 1
 
         # Check if the game is finished
@@ -462,13 +448,11 @@ class Game:
 
         # Get the rewards
         rewards = _get_rewards(self.timestep)
-        reward = rewards[str(self.player_index + 1)]
         for i, prefix in enumerate(self.player_prefixes):
             if self.verbose_fn:
-                self.verbose_fn(self.timestep, i, self.player_index)
-            self.score[prefix] += reward
-            if i == self.player_index and reward != 0:
-                logger.info(f'Player {prefix} Score: {self.score[prefix]}')
+                self.verbose_fn(self.timestep, i)
+            self.score[prefix] += rewards[str(i + 1)]
+            logger.info(f'Player {prefix} Score: {self.score[prefix]}')
 
         # Print events if applicable
         if self.print_events and hasattr(self.env, 'events'):
@@ -482,8 +466,6 @@ class Game:
             # show visual observation
             if self.render_observation in self.timestep.observation:
                 obs = self.timestep.observation[self.render_observation]
-            elif f'{player_prefix}.{self.render_observation}' in self.timestep.observation:
-                obs = self.timestep.observation[f'{player_prefix}.{self.render_observation}']
             else:
                 # Fall back to default_observation.
                 obs = self.timestep.observation[self.default_observation]
@@ -501,7 +483,7 @@ class Game:
                 if self.player_count == 1:
                     text_str = self.text_display_fn(self.timestep, 0)
                 else:
-                    text_str = self.text_display_fn(self.timestep, self.player_index)
+                    text_str = self.text_display_fn(self.timestep)
                 img = self.font.render(text_str, True, self.text_color)
                 self.game_display.blit(img, (self.text_x_pos, self.text_y_pos))
 
