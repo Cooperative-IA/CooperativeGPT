@@ -6,6 +6,7 @@ venv/
 
 # Logs
 logs/*.log
+logs/*/*/*.png
 
 # Data
 data/*/*.db/

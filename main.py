@@ -74,7 +74,7 @@ if __name__ == "__main__":
     agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file="world_context.txt", scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players)
+    env = start_server(players, record=True)
 
 
     llm = LLMModels().get_main_model()
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Program interrupted. %s steps executed.", step_count)
     except Exception as e:
-        logger.exception("Exception: %s", e)
+        logger.exception("Steps executed: %s. Exception: %s", step_count, e)
     
     env.end_game()
        

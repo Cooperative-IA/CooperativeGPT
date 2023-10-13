@@ -1,6 +1,6 @@
 import os
 import cv2
-import time
+from datetime import datetime
 import shutil
 import numpy as np
 from skimage import io
@@ -12,7 +12,7 @@ class Recorder:
     def __init__(self, log_path, substrate_config):
         self.substrate_config = substrate_config
         self.n_players = self.substrate_config.lab2d_settings.numPlayers
-        self.experiment_id = int((time.time() % 1000) * 1000)
+        self.experiment_id = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
         self.log_path = os.path.join(log_path, str(self.experiment_id))
         self.step = 0
         self.logs = {}

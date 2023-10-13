@@ -17,8 +17,7 @@ The output should be a markdown code snippet formatted in the following schema, 
 
 ```json
 {
- "Reasoning": string, \\ Step by step thinking and analysis of all the observations and the current plan to create the new plan and the new goals. The string can't be multiline.
- "Goals": string, \\ The new goals for <input1>. The string can't be multiline.
- "Plan": string \\ The new plan for <input1>. Do not describe specific actions. The string can't be multiline.
-}
-```
+ "Reasoning": string, \\ Step by step thinking and analysis of all the observations and the current plan to create the new plan and the new goals.
+ "Goals": string, \\ The new goals for <input1>.
+ "Plan": string \\ The new plan for <input1>. Do not describe specific actions.
+}```
