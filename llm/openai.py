@@ -46,6 +46,13 @@ class GPT35(BaseLLM):
             tuple(str, int, int): A tuple with the completed text, the number of tokens in the prompt and the number of tokens in the response
         """
         prompt = self._format_prompt(prompt)
+
+        # Check if there is a system prompt
+        if "system_prompt" in kwargs:
+            system_prompt = self._format_prompt(kwargs["system_prompt"], role="system")
+            prompt = system_prompt + prompt
+            del kwargs["system_prompt"]
+
         response = openai.ChatCompletion.create(engine=self.deployment_name, messages=prompt, **kwargs)
         completion = response.choices[0].message.content
         prompt_tokens = response.usage.prompt_tokens

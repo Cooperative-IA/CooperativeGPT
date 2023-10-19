@@ -15,7 +15,7 @@ def plan(name: str, world_context: str, observation: str, current_plan: str, ref
         tuple[str, str]: New plan and new goals for the agent.
     """
     llm = LLMModels().get_main_model()
-    response = llm.completion(prompt='plan.txt', inputs=[name, world_context, observation, current_plan, reflections])
+    response = llm.completion(prompt='plan.txt', inputs=[name, world_context, observation, current_plan, reflections], system_prompt='plan_system_prompt.txt')
     answers = extract_answers(response)
 
     plan = answers.get('Plan', None)
