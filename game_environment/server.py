@@ -11,7 +11,7 @@ from game_environment.substrates.installer import install_substrate
 from game_environment.substrates.python import commons_harvest_language as game
 from game_environment.substrates.python.commons_harvest_language import ASCII_MAP
 from game_environment.playing_utils import level_playing_utils as level_playing_utils
-import asyncio
+from utils.logging import CustomAdapter
 
 FLAGS = flags.FLAGS
 
@@ -28,6 +28,7 @@ flags.DEFINE_string('text_message', 'This page intentionally left blank',
                     'Text to display if `display_text` is `True`')
 
 logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 def read_action_map ():
     for line in sys.stdin:

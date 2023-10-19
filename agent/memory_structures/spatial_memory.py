@@ -5,6 +5,7 @@ from utils.route_plan import get_shortest_valid_route
 import re
 from utils.queue_utils import queue_from_list, new_empty_queue
 from utils.math import manhattan_distance
+from utils.logging import CustomAdapter
 
 class SpatialMemory:
     """
@@ -20,6 +21,7 @@ class SpatialMemory:
             scenario_obstacles (list[str], optional): Obstacles of the scenario. Defaults to ['W'] for Walls.
         """
         self.logger = logging.getLogger(__name__)
+        self.logger = CustomAdapter(self.logger)
         self.scenario_map = scenario_map.split('\n')[1:-1]
         #self.exploredMap = ["$"*mapSize[1] for _ in range(mapSize[0])]
         self.explored_map = self.scenario_map # CHANGE THIS TO LINE ABOVE

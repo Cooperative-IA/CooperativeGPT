@@ -2,8 +2,10 @@ from queue import Queue
 import logging
 from llm import LLMModels
 from utils.llm import extract_answers
+from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 def actions_sequence(name:str, world_context:str, current_plan:str, reflections: str, current_observations:list[str]|str, current_position:tuple, valid_actions:list[str], current_goals: str, actions_seq_len: int = 3) -> Queue:
     """

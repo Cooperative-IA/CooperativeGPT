@@ -2,7 +2,7 @@ import logging
 from dotenv import load_dotenv
 import time
 
-from utils.logging import setup_logging
+from utils.logging import setup_logging, CustomAdapter
 from game_environment.utils import generate_agent_actions_map,  default_agent_actions_map
 from agent.agent import Agent
 from game_environment.server import start_server, get_scenario_map
@@ -60,9 +60,11 @@ def game_loop(agents: list[Agent]) -> None:
         time.sleep(0.01)
 
 if __name__ == "__main__":
-    logger.info("Program started")
-
     setup_logging()
+
+    logger.info("Program started")
+    start_time = time.time()
+
 
     # Define players
     players = ["Juan", "Laura", "Pedro"]
@@ -75,15 +77,16 @@ if __name__ == "__main__":
 
     # Start the game server
     env = start_server(players, record=True)
+    logger = CustomAdapter(logger, game_env=env)
 
 
     llm = LLMModels().get_main_model()
     try:
         game_loop(agents)
     except KeyboardInterrupt:
-        logger.info("Program interrupted. %s steps executed.", step_count)
+        logger.info("Program interrupted. %s rounds executed.", step_count)
     except Exception as e:
-        logger.exception("Steps executed: %s. Exception: %s", step_count, e)
+        logger.exception("Rounds executed: %s. Exception: %s", step_count, e)
     
     env.end_game()
        
@@ -91,6 +94,9 @@ if __name__ == "__main__":
     costs = llm.cost_manager.get_costs()
     tokens = llm.cost_manager.get_tokens()
     logger.info("LLM total cost: %.2f, total tokens: %s", costs['total_cost'], tokens['total_tokens'])
+
+    end_time = time.time()
+    logger.info("Execution time: %.2f minutes", (end_time - start_time)/60)
 
 
     logger.info("Program finished")

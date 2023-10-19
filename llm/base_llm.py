@@ -3,6 +3,7 @@ import logging
 import os
 
 from utils.llm_cost import CostManager
+from utils.logging import CustomAdapter
 
 class BaseLLM(ABC):
     """Base class for all LLM classes. It defines the api to use the LLMs"""
@@ -19,6 +20,7 @@ class BaseLLM(ABC):
         self.max_tokens = max_tokens
         self.max_tokens_ratio_per_input = max_tokens_ratio_per_input
         self.logger = logging.getLogger(__name__)
+        self.logger = CustomAdapter(self.logger)
 
     @abstractmethod
     def _calculate_tokens(self, prompt:str) -> int:

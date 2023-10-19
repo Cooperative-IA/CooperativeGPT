@@ -11,6 +11,7 @@ from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
 from agent.cognitive_modules.act import actions_sequence
 from utils.queue_utils import list_from_queue
+from utils.logging import CustomAdapter
 
 class Agent:
     """Agent class.
@@ -29,6 +30,7 @@ class Agent:
             reflection_umbral (int, optional): Reflection umbral. The reflection umbral is the number of poignancy that the agent needs to accumulate to reflect on its observations. Defaults to 30.
         """
         self.logger = logging.getLogger(__name__)
+        self.logger = CustomAdapter(self.logger)
 
         self.name = name
         self.att_bandwidth = att_bandwidth
@@ -114,7 +116,7 @@ class Agent:
         """Plans the next actions of the agent and its main goals.
         """
 
-        current_observation = self.stm.get_memory('current_observation')
+        current_observation = self.stm.get_memory('current_observation') or 'None'
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
@@ -187,7 +189,7 @@ class Agent:
         world_context = self.stm.get_memory('world_context')
         current_plan = self.stm.get_memory('current_plan')
         valid_actions = self.stm.get_memory('valid_actions') 
-        observations = self.stm.get_memory('current_observation')
+        observations = self.stm.get_memory('current_observation') or 'None'
         current_goals = self.stm.get_memory('current_goals')
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'

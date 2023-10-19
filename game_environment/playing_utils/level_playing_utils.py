@@ -38,6 +38,7 @@ from meltingpot.python.utils.substrates import builder
 from game_environment.scene_descriptor.scene_descriptor import SceneDescriptor
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
 from utils.files import load_config
+from utils.logging import CustomAdapter
 
 import sys
 import ast
@@ -211,6 +212,7 @@ class ActionReader(object):
         return actions
     
 logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 class Game:
     """Run multiplayer environment, with per player rendering and actions. This class is used to run the game Commons Harvest Open from Meltingpot."""
@@ -393,6 +395,7 @@ class Game:
         self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes)
         self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         self.dateFormat = load_config()['date_format']
+        self.game_steps = 0 # Number of steps of the game
 
     def end_game(self):
         """Ends the game. This function is called when the game is finished."""
@@ -423,6 +426,9 @@ class Game:
 
         if stop:
             return None
+        
+        self.game_steps += 1
+
         action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
         description = self.descriptor.describe_scene(self.timestep)
@@ -500,3 +506,7 @@ class Game:
     def get_time(self) -> str:
         """Returns the current time of the game. The time will be formatted as specified in the config file."""
         return self.time.strftime(self.dateFormat)
+    
+    def get_current_step_number(self) -> int:
+        """Returns the current step number of the game."""
+        return self.game_steps
