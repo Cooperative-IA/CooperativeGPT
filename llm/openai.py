@@ -38,7 +38,7 @@ class GPT35(BaseLLM):
             {"content": prompt, "role": role}
         ]
 
-    def _completion(self, prompt: str, **kwargs) -> tuple[str, int, int]:
+    def __completion(self, prompt: str, **kwargs) -> tuple[str, int, int]:
         """Completion api for the GPT-3.5 model
         Args:
             prompt (str): Prompt for the completion
@@ -50,7 +50,20 @@ class GPT35(BaseLLM):
         completion = response.choices[0].message.content
         prompt_tokens = response.usage.prompt_tokens
         response_tokens = response.usage.completion_tokens
+    
         return completion, prompt_tokens, response_tokens
+    
+    def _completion(self, prompt: str, **kwargs) -> tuple[str, int, int]:
+        """Wrapper for the completion api with retry and exponential backoff
+        
+        Args:
+            prompt (str): Prompt for the completion
+
+        Returns:
+            tuple(str, int, int): A tuple with the completed text, the number of tokens in the prompt and the number of tokens in the response
+        """
+        wrapper = BaseLLM.retry_with_exponential_backoff(self.__completion, self.logger, errors=(openai.error.RateLimitError, openai.error.APIConnectionError))
+        return wrapper(prompt, **kwargs)
     
     def _calculate_tokens(self, prompt: str) -> int:
         """Calculate the number of tokens in the prompt

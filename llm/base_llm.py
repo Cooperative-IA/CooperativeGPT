@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import logging
 import os
+import time
+import random
 
 from utils.llm_cost import CostManager
 from utils.logging import CustomAdapter
@@ -42,6 +44,70 @@ class BaseLLM(ABC):
             tuple(int, int): Tuple containing the tokens number of the prompt and response
         """
         self.cost_manager.update_costs(prompt_tokens, response_tokens)
+
+    @staticmethod
+    def retry_with_exponential_backoff(
+        func,
+        logger: logging.Logger,
+        errors: tuple,
+        initial_delay: float = 1,
+        exponential_base: float = 2,
+        jitter: bool = True,
+        max_retries: int = 5,
+    ):
+        """Retry a function with exponential backoff.
+        
+        Args:
+            func (function): Function to retry
+            logger (logging.Logger): Logger
+            errors (tuple): Tuple of type of errors to retry
+            initial_delay (float, optional): Initial delay. Defaults to 1.
+            exponential_base (float, optional): Exponential base. Defaults to 2.
+            jitter (bool, optional): Add jitter to the delay. Defaults to True.
+            max_retries (int, optional): Maximum number of retries. Defaults to 5.
+
+        Raises:
+            Exception: Maximum number of retries exceeded
+            Exception: Any other exception raised by the function that is not specified in the errors tuple
+
+        Returns:
+            function: Function to retry with exponential backoff
+        """
+    
+        def wrapper(*args, **kwargs):
+            # Initialize variables
+            num_retries = 0
+            delay = initial_delay
+    
+            # Loop until a successful response or max_retries is hit or an exception is raised
+            while True:
+                try:
+                    return func(*args, **kwargs)
+    
+                # Retry on specific errors
+                except errors as e:
+                    # Increment retries
+                    num_retries += 1
+    
+                    # Check if max retries has been reached
+                    if num_retries > max_retries:
+                        raise Exception(
+                            f"Maximum number of retries ({max_retries}) exceeded."
+                        )
+                    
+                    # Increment the delay
+                    delay *= exponential_base * (1 + jitter * random.random())
+
+                    logger.warning("Error in the llm: %s. Retrying for the %s time. Waiting %.2f seconds", e, num_retries, delay)
+    
+                    # Sleep for the delay
+                    time.sleep(delay)
+    
+                # Raise exceptions for any errors not specified
+                except Exception as e:
+                    raise e
+    
+        return wrapper
     
     @abstractmethod
     def _completion(self, prompt: str, **kwargs) -> tuple[str, int, int]:

@@ -41,6 +41,7 @@ def game_loop(agents: list[Agent]) -> None:
             game_time = env.get_time()
             scene_descriptions = {agents[i].name : scene_descriptions[i] for i in range(len(agents))}
             agent_current_scene = scene_descriptions[agent.name]
+            logger.info("\n\n" + f"Agent's {agent.name} turn".center(50, '#') + "\n")
             logger.info('%s Observations: %s, Scene descriptions: %s', agent.name, observations[agent.name], scene_descriptions[agent.name])
             # Get the steps for the agent to execute a high level action
             step_actions = agent.move(observations[agent.name], agent_current_scene, game_time)
