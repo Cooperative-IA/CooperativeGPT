@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from queue import Queue
+import copy
 
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
@@ -107,7 +108,7 @@ class Agent:
         # Decide if the agent should react to the observation
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
-        actions_sequence = list_from_queue(self.stm.get_memory('actions_sequence'))
+        actions_sequence = list_from_queue(copy.copy(self.stm.get_memory('actions_sequence')))
         react = should_react(self.name, world_context, observations, current_plan, actions_sequence)
         self.logger.info(f'{self.name} should react to the observation: {react}')
         return react, observations
