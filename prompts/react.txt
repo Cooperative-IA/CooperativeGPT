@@ -17,5 +17,5 @@ The output should be a markdown code snippet formatted in the following schema, 
 ```json
 {
  "Reasoning": string, \\ Step by step thinking and analysis of all the observations and the current plan to decide if the plan should be changed or not
- "Answer": bool \\ Answer True if the plan or actions to execute should be changed or False otherwise
+ "Answer": bool \\ Answer true if the plan or actions to execute should be changed or false otherwise
 }```
