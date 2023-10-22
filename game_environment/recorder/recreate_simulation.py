@@ -297,6 +297,7 @@ def generate_rewards_plot (individual_rewards:dict, round_map:dict, record_folde
     individual_rewards = { round_map[step]: rew for step, rew in individual_rewards.items()}
 
     steps = list(individual_rewards.keys())
+    steps = [int(s) for s in steps]
     cumulative_averages = [sum(list(val.values()))/3 for val in individual_rewards.values()]
     individual_rewards = [list(val.values()) for val in individual_rewards.values()]
 
