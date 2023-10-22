@@ -88,7 +88,7 @@ class ObservationsGenerator (object):
                                 (element_local[1] - local_position[1]) + global_position[1]
         elif agent_orientation == 1:
             element_global = (element_local[1] - local_position[1]) + global_position[0],\
-                                (local_position[0] - element_local[0]) + global_position[1]
+                                -1 * (element_local[0] - local_position[0])  + global_position[1]
         elif agent_orientation == 2:
             element_global = -1 * (element_local[0] - local_position[0]) + global_position[0],\
                              -1 * (element_local[1] - local_position[1]) + global_position[1]

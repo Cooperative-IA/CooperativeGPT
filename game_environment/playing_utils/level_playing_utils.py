@@ -223,6 +223,7 @@ class Game:
             action_map: ActionMap,
             full_config: config_dict.ConfigDict,
             game_ascii_map: str,
+            init_timestamp: str,
             interactive: RenderType = RenderType.PYGAME,
             screen_width: int = 800,
             screen_height: int = 600,
@@ -354,7 +355,7 @@ class Game:
 
         # Create the game recorder
         if record:
-            game_recorder = Recorder("logs", full_config)
+            game_recorder = Recorder("logs", init_timestamp, full_config)
             record_counter = 0
 
         self.env = env
@@ -440,10 +441,6 @@ class Game:
         else:
             self.first_move_done = True
         ## --------- END OF OUR CODE ---------
-        # Record the game
-        if self.record:
-            self.game_recorder.record(self.timestep, description)
-            self.record_counter += 1
 
         # Check if the game is finished
         if self.timestep.step_type == dm_env.StepType.LAST:
@@ -466,6 +463,12 @@ class Game:
             # Only print events on timesteps when there are events to print.
             if events:
                 logger.info('Env events: %s', events)
+
+        # Record the game
+        if self.record:
+            self.game_recorder.record(self.timestep, description)
+            self.game_recorder.record_rewards(rewards)
+            self.record_counter += 1
 
         # pygame display
         if self.interactive == RenderType.PYGAME:
@@ -510,3 +513,16 @@ class Game:
     def get_current_step_number(self) -> int:
         """Returns the current step number of the game."""
         return self.game_steps
+
+    def update_history_file(self, logger_timestamp: str, step_count: int, actions_count: int) -> None:
+        """Updates the history file with the current step number and the current actions of the players.
+        Args:
+            logger_timestamp: The timestamp of the logger
+            step_count: The current step number
+            actions_count: The current actions count
+        """
+        #Creates the history file if it doesn't exist
+        
+        with open(f'logs/{logger_timestamp}/steps_history.txt', 'a') as file:
+            # Write round_number and actions_count in the history file
+            file.write(f'{step_count} {actions_count}\n')

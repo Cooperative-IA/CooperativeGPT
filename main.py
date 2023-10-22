@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 from dotenv import load_dotenv
 import time
@@ -8,7 +9,8 @@ from agent.agent import Agent
 from game_environment.server import start_server, get_scenario_map
 from llm import LLMModels
 
-
+# Set up logging timestamp
+logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 # load environment variables
 load_dotenv(override=True)
 
@@ -27,7 +29,7 @@ def game_loop(agents: list[Agent]) -> None:
     """
     global step_count
     actions = None
-    step_count, max_steps = 0, 100
+    step_count, actions_count, max_steps = 0, 0, 200
 
     # Get the initial observations and environment information
     observations, scene_descriptions = env.step(actions)
@@ -53,15 +55,17 @@ def game_loop(agents: list[Agent]) -> None:
                 # Execute each step one by one until the agent has executed all the steps for the high level action
                 actions = agents_map_actions
                 observations, scene_descriptions = env.step(actions)
+                actions_count += 1
             # Reset actions for the agent until its next turn
             actions[agent.name] = default_agent_actions_map()      
 
         step_count += 1
         logger.info('Round %s completed. Executed all the high level actions for each agent.', step_count)
+        env.update_history_file(logger_timestamp, step_count, actions_count)
         time.sleep(0.01)
 
 if __name__ == "__main__":
-    setup_logging()
+    setup_logging(logger_timestamp)
 
     logger.info("Program started")
     start_time = time.time()
@@ -77,7 +81,7 @@ if __name__ == "__main__":
     agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file="world_context.txt", scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, record=True)
+    env = start_server(players, init_timestamp=logger_timestamp, record=True)
     logger = CustomAdapter(logger, game_env=env)
 
 
@@ -98,6 +102,5 @@ if __name__ == "__main__":
 
     end_time = time.time()
     logger.info("Execution time: %.2f minutes", (end_time - start_time)/60)
-
 
     logger.info("Program finished")

@@ -28,17 +28,19 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
     llm = LLMModels().get_main_model()
     if isinstance(current_observations, list):
         current_observations = "\n".join(current_observations)
-    valid_actions = str(valid_actions)
-    response = llm.completion(prompt='act.txt', inputs=[name, world_context, str(current_plan), reflections, current_observations, str(current_position), str(actions_seq_len), valid_actions, current_goals])
 
-    response_dict = extract_answers(response.lower())
     actions_seq_queue= Queue() 
+    while actions_seq_queue.qsize() < 1:
+        response = llm.completion(prompt='act.txt', inputs=[name, world_context, str(current_plan), reflections, current_observations, str(current_position), str(actions_seq_len), str(valid_actions), current_goals])
+        response_dict = extract_answers(response.lower())
 
-    try:
-        actions = list(response_dict['actions'].values())
-        for i in range(actions_seq_len):
-            actions_seq_queue.put(actions[i])
-    except:
-        logger.warning(f'Could not find action {i} in the response_dict')
+        try:
+            actions = list(response_dict['actions'].values())
+            for i in range(actions_seq_len):
+                actions_seq_queue.put(actions[i])
+        except:
+            logger.warning(f'Could not find action in the response_dict: {response_dict}')
+            # TODO omited this exception for this experiment
+            # raise Exception(f'Could not find action in the response_dict: {response_dict}')
 
     return actions_seq_queue
