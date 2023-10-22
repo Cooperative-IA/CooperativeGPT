@@ -32,7 +32,6 @@ logger = CustomAdapter(logger)
 
 def read_action_map ():
     for line in sys.stdin:
-        print("Received message:", line.strip())
         return ast.literal_eval(line.strip())
     
 

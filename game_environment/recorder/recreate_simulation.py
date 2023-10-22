@@ -112,7 +112,6 @@ def generate_video_from_images(image_folder:str, video_name:str, rewards:dict, r
         img_with_text = add_text_to_image(img_resized, round_map[str(int(step))], reward)
 
         out.write(img_with_text)
-        print(f"Processed {img_path}")
 
     out.release()
 

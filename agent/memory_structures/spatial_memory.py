@@ -221,16 +221,6 @@ class SpatialMemory:
             random_row = random.randint(min_row, max_row)
             random_col = random.randint(min_col, max_col)
         
-        print ('-------------------------------------------------------------------')
-        print(f'Bouds: {min_row, min_col, max_row, max_col}')
-        print (f'Random position: {random_row, random_col}')
-        print (f'Agent position: {self.position}')
-        print(f'Agent local position: {self.get_local_self_position()}')
-        print (f'Agent orientation: {self.orientation}')
-        print (f'Current observed map: {self.current_observed_map}')
-        print (f'Current map: {current_map_matrix}')
-
-        print ('-------------------------------------------------------------------')
         # Get the global position of the destination
         agent_local_pos = self.get_local_self_position()
         destination = self.get_global_position((random_row, random_col), agent_local_pos)
