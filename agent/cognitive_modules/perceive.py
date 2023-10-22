@@ -24,5 +24,5 @@ def should_react(name: str, world_context: str, observations: list[str], current
     actions_queue = ', '.join([f'{i+1}.{action}' for i, action in enumerate(actions_queue)]) if len(actions_queue) > 0 else 'None'
     response = llm.completion(prompt='react.txt', inputs=[name, world_context, observation, current_plan, actions_queue])
     answers = extract_answers(response)
-    answer = answers.get('Answer', None)
-    return answer == 'True'
+    answer = answers.get('Answer', False)
+    return answer
