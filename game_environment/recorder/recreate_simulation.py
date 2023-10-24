@@ -169,7 +169,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def add_text_to_image (img:np.ndarray, round:str, reward_per_capita:str)->np.ndarray:
+def add_text_to_image (img:np.ndarray, round:str, step:str, reward_per_capita:str)->np.ndarray:
     """
     Adds text to the image.
 
@@ -184,7 +184,7 @@ def add_text_to_image (img:np.ndarray, round:str, reward_per_capita:str)->np.nda
 
     height, _, _ = img.shape
     font = cv2.FONT_HERSHEY_SIMPLEX
-    text = f"Round: {round} - Reward per capita: {reward_per_capita}"
+    text = f"Round: {round} - Step {step}- Reward per capita: {reward_per_capita}"
     cv2.putText(img, text, (12, int(height * 0.035)), font, 1, (255,255,255), 2, cv2.LINE_AA)
     return img
 
@@ -293,6 +293,14 @@ def generate_video_from_images(image_folder:str, video_name:str, rewards:dict, r
 
 
 def generate_rewards_plot (individual_rewards:dict, round_map:dict, record_folder:str)->None:
+    """
+    Generates a plot with the individual rewards and the cumulative average reward per step.
+
+    Args:
+        individual_rewards: a dictionary that maps the step number with the individual reward for each agent for that step.
+        round_map: a dictionary that maps the step number with the round number.
+        record_folder: the path to the record folder.
+    """
     # Uses round map to evaluate only the steps that are part of a round from individual rewards
     individual_rewards = { round_map[step]: rew for step, rew in individual_rewards.items()}
 
@@ -313,9 +321,9 @@ def generate_rewards_plot (individual_rewards:dict, round_map:dict, record_folde
     plt.plot(steps, cumulative_averages, label="Cumulative Average", linewidth=2.5, linestyle="-", color="orange")
     plt.xticks(rotation=90, ha='right')
 
-    plt.xlabel("Steps")
+    plt.xlabel("ROunds")
     plt.ylabel("Reward")
-    plt.title("Individual reward vs Cumulative average reward per step")
+    plt.title("Individual reward vs Cumulative average reward per Round")
     plt.legend()
     plt.grid(True)
     plt.savefig(record_folder + '/rewards_plot.png')
