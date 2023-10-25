@@ -26,10 +26,17 @@ The output should be a markdown code snippet formatted in the following schema, 
 
 
 ```json
-{
-    "actions": {
-        "action_1": string \\ must be one of the valid actions with the position replaced
-        "action_2": string \\ must be one of the valid actions with the position replaced
-        "action_<input7>": string \\ must be one of the valid actions with the position replaced
+{   
+    "Action_1": {
+        "Reasoning": string \\ Reasoning behind the action 1
+        "Action": string \\ Must be one of the valid actions with the position replaced
+    },
+    "Action_2": {
+        "Reasoning": string \\ Reasoning behind the action 2
+        "Action": string \\ Must be one of the valid actions with the position replaced
+    },
+    "Action_3": {
+        "Reasoning": string \\ Reasoning behind the action 3
+        "Action": string \\ Must be one of the valid actions with the position replaced
     }
 }```
