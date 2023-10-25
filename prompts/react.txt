@@ -7,12 +7,15 @@ Current observations:
 
 Current plan: <input4>
 
-Review the plan and decide if <input1> should continue with its plan given the new information that it's seeing in the observations.
+Actions to execute: <input5>
+
+Review the plan and the actions to execute, and then decide if <input1> should continue with its plan and the actions to execute given the new information that it's seeing in the observations.
+Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
 
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
 
 ```json
 {
- "Reasoning": #reasoning \\ Step by step thinking and analysis of all the observations and the current plan to decide if the plan should be changed or not
- "Answer": #answer \\ Answer True if the plan should be changed or False otherwise
+ "Reasoning": string, \\ Step by step thinking and analysis of all the observations and the current plan to decide if the plan should be changed or not
+ "Answer": bool \\ Answer true if the plan or actions to execute should be changed or false otherwise
 }```

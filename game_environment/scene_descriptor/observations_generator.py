@@ -70,32 +70,31 @@ class ObservationsGenerator (object):
         return dict(component_data)
 
 
-    def get_element_global_pos(self, element_local, local_position, global_position, agent_orientation=0):
+    def get_element_global_pos(self, el_local_pos, self_local_pos, self_global_pos, agent_orientation=0) -> list[int]:
         """
         Description: Returns the global position of an element given its local position and the global position of the agent
 
         Args:
-            element_local (tuple): Local position of the element
-            local_position (tuple): Local position of the agent 
-            global_position (tuple): Global position of the agent
+            el_local_pos (tuple): Local position of the element
+            self_local_pos (tuple): Local position of the agent 
+            self_global_pos (tuple): Global position of the agent
             agent_orientation (int, optional): Orientation of the agent. Defaults to 0.
 
         Returns:
-            tuple: Global position of the element
+            list[int]: Global position of the element
         """
         if agent_orientation == 0:
-            element_global = (element_local[0] - local_position[0]) + global_position[0],\
-                                (element_local[1] - local_position[1]) + global_position[1]
+            element_global = (el_local_pos[0] - self_local_pos[0]) + self_global_pos[0],\
+                                (el_local_pos[1] - self_local_pos[1]) + self_global_pos[1]
         elif agent_orientation == 1:
-            element_global = (element_local[1] - local_position[1]) + global_position[0],\
-                                (local_position[0] - element_local[0]) + global_position[1]
+            element_global = (el_local_pos[1] - self_local_pos[1]) + self_global_pos[0],\
+                               -1 * (el_local_pos[0] - self_local_pos[0]) + self_global_pos[1]
         elif agent_orientation == 2:
-            element_global = -1 * (element_local[0] - local_position[0]) + global_position[0],\
-                             -1 * (element_local[1] - local_position[1]) + global_position[1]
+            element_global = -1 * (el_local_pos[0] - self_local_pos[0]) + self_global_pos[0],\
+                                -1 * (el_local_pos[1] - self_local_pos[1]) + self_global_pos[1]
         elif agent_orientation == 3:
-            element_global = -1 * (element_local[1] - local_position[1]) + global_position[0],\
-                             (element_local[0] - local_position[0]) + global_position[1]
-
+            element_global = -1 * (el_local_pos[1] - self_local_pos[1]) + self_global_pos[0],\
+                                (self_local_pos[0] - el_local_pos[0]) + self_global_pos[1]
         return list(element_global)
 
     
@@ -146,7 +145,7 @@ class ObservationsGenerator (object):
 
             # Get agents observed descriptions
             i = 0
-            for row in local_observation_map:
+            for row in local_observation_map.split('\n'):
                 j=0
                 for char in row:
                     if re.match(r'^[0-9]$', char):
@@ -174,33 +173,43 @@ class ObservationsGenerator (object):
 
         local_tree_elements = self.connected_elems_map(local_map, elements_to_find=['A', 'G'])
         list_trees_observations = []
-        trees_observed = []
+        trees_observed = {}
 
-        for local_tree_data in local_tree_elements.values():
-            local_tree_center = local_tree_data['center']
-            local_center_real_pos = self.get_element_global_pos(local_tree_center, local_position, global_position, agent_orientation)
-            for global_tree_id, global_tree_data in self.global_trees.items():
-
-                # Continue if the tree has already been observed
-                if global_tree_id in trees_observed: 
+        for global_tree_id, global_tree_data in self.global_trees.items():
+            apple_count, grass_count = 0, 0
+            for local_tree_data in local_tree_elements.values():
+                # Check if the group is a tree element
+                first_element = local_tree_data['elements'][0]
+                element_type = local_map.split('\n')[first_element[0]][first_element[1]]
+                if element_type not in ['A', 'G']:
                     continue
 
+                # Continue if the tree has already been observed
+                if global_tree_id in trees_observed.get(element_type, []): 
+                    continue
+
+                local_tree_center = local_tree_data['center']
+                local_center_real_pos = self.get_element_global_pos(local_tree_center, local_position, global_position, agent_orientation)
+
+                # Check if the local tree corresponds to the global tree
+                if local_center_real_pos not in global_tree_data['elements']:
+                    continue 
+
                 # Find the cluster tree of the local tree
-                if local_center_real_pos in global_tree_data['elements']:
-                    trees_observed.append(global_tree_id)
-                    apple_count, grass_count = 0, 0
-                    for apple in local_tree_data['elements']:
-                        apple_global_pos = self.get_element_global_pos(apple, local_position, global_position, agent_orientation)
-                        if local_map.split('\n')[apple[0]][apple[1]] == 'G':
-                            list_trees_observations.append("Observed grass to grow apples at position {}. This grass belongs to tree {}"
-                                                        .format(apple_global_pos, global_tree_id))
-                            grass_count += 1
-                        else:
-                            list_trees_observations.append("Observed an apple at position {}. This apple belongs to tree {}"
-                                                        .format(apple_global_pos, global_tree_id ))
-                            apple_count += 1
-                    
-                    list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remainding and {} grass for apples growing"
-                                                .format(global_tree_id, local_center_real_pos, apple_count, grass_count))
-                    break
+                trees_observed[element_type] = trees_observed.get(element_type, []) + [global_tree_id]
+    
+                for apple in local_tree_data['elements']:
+                    apple_global_pos = self.get_element_global_pos(apple, local_position, global_position, agent_orientation)
+                    if local_map.split('\n')[apple[0]][apple[1]] == 'G':
+                        list_trees_observations.append("Observed grass to grow apples at position {}. This grass belongs to tree {}"
+                                                    .format(apple_global_pos, global_tree_id))
+                        grass_count += 1
+                    else:
+                        list_trees_observations.append("Observed an apple at position {}. This apple belongs to tree {}"
+                                                    .format(apple_global_pos, global_tree_id ))
+                        apple_count += 1
+
+            if apple_count > 0 or grass_count > 0:      
+                list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remaining and {} grass for apples growing on the observed map. The tree might have more apples and grass on the global map"
+                                                .format(global_tree_id, list(global_tree_data['center']), apple_count, grass_count))
         return list_trees_observations

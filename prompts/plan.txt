@@ -5,9 +5,11 @@ You have this information about an agent called <input1>:
 Recent analysis of past observations:
 <input5>
 
-Current observations: <input3>
+Current observations: 
+<input3>
 
 Current plan: <input4>
+This is the reason to change the current plan: <input6>
 
 With the information given above, generate a new plan and new objectives to persuit. The plan should be a description of how <input1> should behave in the long-term to maximize its wellbeing.
 The plan should include how to act to different situations observed in past experiences.
@@ -16,7 +18,7 @@ The output should be a markdown code snippet formatted in the following schema, 
 
 ```json
 {
- "Reasoning": string \\ Step by step thinking and analysis of all the observations and the current plan to create the new plan and the new goals
- "Goals": string \\ The new goals for <input1>
- "Plan": string \\ The new plan for <input1>
+ "Reasoning": string, \\ Step by step thinking and analysis of all the observations and the current plan to create the new plan and the new goals.
+ "Goals": string, \\ The new goals for <input1>.
+ "Plan": string \\ The new plan for <input1>. Do not describe specific actions.
 }```

@@ -2,6 +2,7 @@ import logging
 import os
 
 from utils.files import load_agent_context, load_world_context
+from utils.logging import CustomAdapter
 
 class ShortTermMemory:
     """Class for yhe short term memory. Memories are stored in a dictionary.
@@ -16,6 +17,7 @@ class ShortTermMemory:
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to. The world context will be added to the short term memory with the key 'world_context'.
         """
         self.logger = logging.getLogger(__name__)
+        self.logger = CustomAdapter(self.logger)
 
         agent_context_file = os.path.join(data_folder, 'agents_context', agent_context_file)
         world_context_file = os.path.join(data_folder, 'agents_context', world_context_file)

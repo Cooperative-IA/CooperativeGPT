@@ -12,7 +12,6 @@ class Agent(object):
         self.agent_system_context = ""
 
         self.initializate_agent_system_context()
-        #print(self.agent_system_context)
     
     def __str__(self) -> str:
         return "%s: { name: %s, rol: %s, bio: %s}" % (self.agent_id, self.name, self.role, self.bio)

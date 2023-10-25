@@ -11,7 +11,7 @@ from game_environment.substrates.installer import install_substrate
 from game_environment.substrates.python import commons_harvest_language as game
 from game_environment.substrates.python.commons_harvest_language import ASCII_MAP
 from game_environment.playing_utils import level_playing_utils as level_playing_utils
-import asyncio
+from utils.logging import CustomAdapter
 
 FLAGS = flags.FLAGS
 
@@ -28,10 +28,10 @@ flags.DEFINE_string('text_message', 'This page intentionally left blank',
                     'Text to display if `display_text` is `True`')
 
 logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 def read_action_map ():
     for line in sys.stdin:
-        print("Received message:", line.strip())
         return ast.literal_eval(line.strip())
     
 
@@ -71,7 +71,7 @@ def verbose_fn(unused_timestep, unused_player_index: int) -> None:
     pass
 
 
-def run_episode(game_name: str, record: bool, players: list[str]):
+def run_episode(game_name: str, record: bool, players: list[str], init_timestamp:str):
     """Create the simulation environment and run an episode of the game
     Args:
         game_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
@@ -102,12 +102,14 @@ def run_episode(game_name: str, record: bool, players: list[str]):
         interactive=level_playing_utils.RenderType.PYGAME,
         player_prefixes=players,
         game_ascii_map=ASCII_MAP,
+        init_timestamp=init_timestamp,
         verbose_fn=verbose_fn if verbose else None,
-        print_events=print_events, record=record)
+        print_events=print_events, 
+        record=record)
     return game_env
 
 
-def start_server(players: list[str], game_name: str = "commons_harvest_language", record: bool = False):
+def start_server(players: list[str],init_timestamp: str,  game_name: str = "commons_harvest_language", record: bool = False):
     """Start the game simulation server
     Args:
         players: List with the player names to run the game with
@@ -117,7 +119,7 @@ def start_server(players: list[str], game_name: str = "commons_harvest_language"
     Returns:
         A game environment
     """
-    return run_episode(game_name, record, players)
+    return run_episode(game_name, record, players, init_timestamp)
 
 def get_scenario_map  ()-> str:
     """Get the scenario map from the game environment

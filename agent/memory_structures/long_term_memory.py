@@ -7,6 +7,7 @@ from chromadb.utils import embedding_functions
 
 from utils.files import load_config
 from utils.time import str_to_timestamp
+from utils.logging import CustomAdapter
 
 class LongTermMemory:
     """Class for long term memory. Memories are stored in the chromadb database.
@@ -23,6 +24,7 @@ class LongTermMemory:
         self.chroma_client = chromadb.PersistentClient(path=db_path)
 
         self.logger = logging.getLogger(__name__)
+        self.logger = CustomAdapter(self.logger)
 
         self.date_format = load_config()['date_format']
 

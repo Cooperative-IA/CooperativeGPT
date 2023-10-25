@@ -2,8 +2,10 @@ import re
 import numpy as np
 import logging
 from game_environment.utils import parse_string_to_matrix, matrix_to_string
+from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 class Avatar:
     def __init__(self, name:str, avatar_config):

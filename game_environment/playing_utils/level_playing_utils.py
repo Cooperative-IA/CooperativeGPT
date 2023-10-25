@@ -38,6 +38,7 @@ from meltingpot.python.utils.substrates import builder
 from game_environment.scene_descriptor.scene_descriptor import SceneDescriptor
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
 from utils.files import load_config
+from utils.logging import CustomAdapter
 
 import sys
 import ast
@@ -211,6 +212,7 @@ class ActionReader(object):
         return actions
     
 logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 class Game:
     """Run multiplayer environment, with per player rendering and actions. This class is used to run the game Commons Harvest Open from Meltingpot."""
@@ -221,6 +223,7 @@ class Game:
             action_map: ActionMap,
             full_config: config_dict.ConfigDict,
             game_ascii_map: str,
+            init_timestamp: str,
             interactive: RenderType = RenderType.PYGAME,
             screen_width: int = 800,
             screen_height: int = 600,
@@ -236,7 +239,6 @@ class Game:
             player_prefixes: Optional[Sequence[str]] = None,
             default_observation: str = 'WORLD.RGB',
             reset_env_when_done: bool = False,
-            initial_player_index: int = 0,
             record: bool = False,):
         """Run multiplayer environment, with per player rendering and actions.
 
@@ -292,8 +294,6 @@ class Game:
         reset_env_when_done: if True, reset the environment once the episode has
             terminated; useful for playing multiple episodes in a row. Note this
             will cause this function to loop infinitely.
-        initial_player_index: Initial index of the player to play as. Defaults to 0.
-            (Players are always switchable via the tab key.)
         """
         # Update the config with the overrides.
         full_config.lab2d_settings.update(config_overrides)
@@ -320,9 +320,6 @@ class Game:
         
         # Reset the game environment
         timestep = env.reset()
-
-        # Set the initial player index
-        player_index = initial_player_index
 
         # Create a dictionary to store the score of each player
         score = collections.defaultdict(float)
@@ -358,7 +355,7 @@ class Game:
 
         # Create the game recorder
         if record:
-            game_recorder = Recorder("logs", full_config)
+            game_recorder = Recorder("logs", init_timestamp, full_config)
             record_counter = 0
 
         self.env = env
@@ -373,7 +370,6 @@ class Game:
         self.first_move_done = False
         self.interactive = interactive
         self.player_prefixes = player_prefixes
-        self.player_index = player_index
         self.player_count = player_count
         self.action_map = action_map
         self.descriptor = descriptor
@@ -400,6 +396,7 @@ class Game:
         self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes)
         self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         self.dateFormat = load_config()['date_format']
+        self.game_steps = 0 # Number of steps of the game
 
     def end_game(self):
         """Ends the game. This function is called when the game is finished."""
@@ -428,14 +425,11 @@ class Game:
                 if event.type == pygame.QUIT:
                     stop = True
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_TAB:
-                        self.player_index = (self.player_index + 1) % self.player_count
-                    break
-        player_prefix = self.player_prefixes[self.player_index] if self.player_prefixes else ''
-
         if stop:
             return None
+        
+        self.game_steps += 1
+
         action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
         description = self.descriptor.describe_scene(self.timestep)
@@ -447,11 +441,6 @@ class Game:
         else:
             self.first_move_done = True
         ## --------- END OF OUR CODE ---------
-        # Record the game
-        if self.record:
-            if self.record_counter % 5 == 0:
-                self.game_recorder.record(self.timestep, description)
-            self.record_counter += 1
 
         # Check if the game is finished
         if self.timestep.step_type == dm_env.StepType.LAST:
@@ -462,13 +451,11 @@ class Game:
 
         # Get the rewards
         rewards = _get_rewards(self.timestep)
-        reward = rewards[str(self.player_index + 1)]
         for i, prefix in enumerate(self.player_prefixes):
             if self.verbose_fn:
-                self.verbose_fn(self.timestep, i, self.player_index)
-            self.score[prefix] += reward
-            if i == self.player_index and reward != 0:
-                logger.info(f'Player {prefix} Score: {self.score[prefix]}')
+                self.verbose_fn(self.timestep, i)
+            self.score[prefix] += rewards[str(i + 1)]
+            logger.info(f'Player {prefix} Score: {self.score[prefix]}')
 
         # Print events if applicable
         if self.print_events and hasattr(self.env, 'events'):
@@ -477,13 +464,17 @@ class Game:
             if events:
                 logger.info('Env events: %s', events)
 
+        # Record the game
+        if self.record:
+            self.game_recorder.record(self.timestep, description)
+            self.game_recorder.record_rewards(rewards)
+            self.record_counter += 1
+
         # pygame display
         if self.interactive == RenderType.PYGAME:
             # show visual observation
             if self.render_observation in self.timestep.observation:
                 obs = self.timestep.observation[self.render_observation]
-            elif f'{player_prefix}.{self.render_observation}' in self.timestep.observation:
-                obs = self.timestep.observation[f'{player_prefix}.{self.render_observation}']
             else:
                 # Fall back to default_observation.
                 obs = self.timestep.observation[self.default_observation]
@@ -501,7 +492,7 @@ class Game:
                 if self.player_count == 1:
                     text_str = self.text_display_fn(self.timestep, 0)
                 else:
-                    text_str = self.text_display_fn(self.timestep, self.player_index)
+                    text_str = self.text_display_fn(self.timestep)
                 img = self.font.render(text_str, True, self.text_color)
                 self.game_display.blit(img, (self.text_x_pos, self.text_y_pos))
 
@@ -518,3 +509,20 @@ class Game:
     def get_time(self) -> str:
         """Returns the current time of the game. The time will be formatted as specified in the config file."""
         return self.time.strftime(self.dateFormat)
+    
+    def get_current_step_number(self) -> int:
+        """Returns the current step number of the game."""
+        return self.game_steps
+
+    def update_history_file(self, logger_timestamp: str, step_count: int, actions_count: int) -> None:
+        """Updates the history file with the current step number and the current actions of the players.
+        Args:
+            logger_timestamp: The timestamp of the logger
+            step_count: The current step number
+            actions_count: The current actions count
+        """
+        #Creates the history file if it doesn't exist
+        
+        with open(f'logs/{logger_timestamp}/steps_history.txt', 'a') as file:
+            # Write round_number and actions_count in the history file
+            file.write(f'{step_count} {actions_count}\n')

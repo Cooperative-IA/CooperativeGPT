@@ -1,26 +1,27 @@
 import logging
-import os
 from queue import Queue
 import random
 from utils.route_plan import get_shortest_valid_route
 import re
 from utils.queue_utils import queue_from_list, new_empty_queue
-
+from utils.math import manhattan_distance
+from utils.logging import CustomAdapter
 
 class SpatialMemory:
     """
     Class for the spacial memory. Memories are stored in a dictionary.
     """
 
-    def __init__ (self, scenario_map: list[str], scenario_obstacles: list[str] = ['W']  ) -> None:
+    def __init__ (self, scenario_map: str, scenario_obstacles: list[str] = ['W']  ) -> None:
         """
         Initializes the spacial memory.
 
         Args:
-            scenario_map (str, optional): Real map of the environment, in ascci format, rows separated by '\n'. 
+            scenario_map (str): Real map of the environment, in ascci format, rows separated by '\n'. 
             scenario_obstacles (list[str], optional): Obstacles of the scenario. Defaults to ['W'] for Walls.
         """
         self.logger = logging.getLogger(__name__)
+        self.logger = CustomAdapter(self.logger)
         self.scenario_map = scenario_map.split('\n')[1:-1]
         #self.exploredMap = ["$"*mapSize[1] for _ in range(mapSize[0])]
         self.explored_map = self.scenario_map # CHANGE THIS TO LINE ABOVE
@@ -67,8 +68,18 @@ class SpatialMemory:
         Returns:
             Queue(str): Steps sequence for the route.
         """
-        logging.info(f'Finding route from {self.position} to {position_end}')
+        self.logger.info(f'Finding route from {self.position} to {position_end}')
         route = get_shortest_valid_route(self.explored_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
+        
+        # Adds a change on orientation on the last step of the route
+        if len(route) > 0:
+            new_orientation = 'turn '+ route[-1].split(' ')[1]
+            # If the new orientation is the same as the current one, we do not need to change it, if down we need to turn twice
+            if new_orientation == 'turn down':
+                route.append('turn right')
+                route.append('turn right')
+            else: 
+                route.append(new_orientation)
 
         if return_list:
             return route
@@ -99,7 +110,7 @@ class SpatialMemory:
         elif current_action.startswith('explore'):
             sequence_steps = self.generate_explore_sequence()
     
-        logging.info(f'The steps sequence is: {list(sequence_steps.queue)}')
+        self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')
         return sequence_steps
         
 
@@ -125,7 +136,7 @@ class SpatialMemory:
             
             return  (int(x), int(y))
         except :
-            logging.error(f'Action {action} does not contain a position')
+            self.logger.error(f'Action {action} does not contain a position')
             return (-1,-1)
         
     
@@ -141,10 +152,51 @@ class SpatialMemory:
         """
 
         observations_positions = [self.get_position_from_action(observation) for observation in observations]
-        observations_distances = [len(self.find_route_to_position(position, self.orientation, True)) for position in observations_positions]
+        observations_distances = [manhattan_distance(self.position, position) for position in observations_positions]
 
         return sorted(observations, key=lambda x: observations_distances[observations.index(x)])
     
+    def get_global_position(self, local_dest_pos: tuple[int, int], local_self_pos: tuple[int, int]) -> tuple[int, int]:
+        """Get the global position of an element given its local position on the observed map.
+
+        Args:
+            local_dest_pos (tuple[int, int]): Local position of the destination on the observed map.
+            local_self_pos (tuple[int, int]): Local position of the agent on the observed map.
+
+        Returns:
+            tuple[int, int]: Global position of the element.
+        """
+        # North
+        if self.orientation == 0:
+            element_global = (local_dest_pos[0] - local_self_pos[0]) + self.position[0],\
+                                (local_dest_pos[1] - local_self_pos[1]) + self.position[1]
+        # East
+        elif self.orientation == 1:
+            element_global = (local_dest_pos[1] - local_self_pos[1]) + self.position[0],\
+                             -1 * (local_dest_pos[0] - local_self_pos[0]) + self.position[1]
+        # South
+        elif self.orientation == 2:
+            element_global = -1 * (local_dest_pos[0] - local_self_pos[0]) + self.position[0],\
+                             -1 * (local_dest_pos[1] - local_self_pos[1]) + self.position[1]
+        # West
+        elif self.orientation == 3:
+            element_global =  -1 * (local_dest_pos[1] - local_self_pos[1]) + self.position[0],\
+                                (local_dest_pos[0] - local_self_pos[0])+ self.position[1]
+
+        return element_global
+    
+    def get_local_self_position(self) -> tuple[int, int]:
+        """Get the local position of the agent on the observed map. Yhe agent is represented as # on the observed map.
+
+        Returns:
+            tuple[int, int]: Local position of the agent on the observed map.
+        """
+        # TODO  retrieve from the map initial config.
+        #observed_map = self.current_observed_map.split('\n')[1:-1]
+        #for i, row in enumerate(observed_map):
+        #    if '#' in row:
+        #        return (i, row.index('#'))
+        return (9,5)
 
     def generate_explore_sequence(self) -> Queue[str]:
         """
@@ -156,17 +208,67 @@ class SpatialMemory:
             Queue[str]: Sequence of steps to explore the map.
         """
         # Take a random position from the current_observed map
-        current_map_matrix = self.current_observed_map.split('\n')[1:-1]
-        max_y, max_x  = len(current_map_matrix), len(current_map_matrix[0])
-        random_x, random_y = 0, 0
-        # Will check for the valird elements
+        current_map_matrix = self.current_observed_map.split('\n')
 
-        while current_map_matrix[random_y][random_x] not in ['F', 'A']:
-            random_x, random_y = random.randint(0, max_x-1), random.randint(0, max_y-1)
+        # Finds the bounds of the current observed map
+        # TODO change that function to utils module
+        min_row, min_col, max_row, max_col = self.get_bounds_current_map(current_map_matrix)
+
+        random_row = random.randint(min_row, max_row)
+        random_col = random.randint(min_col, max_col)
+        # Is the destination a valid position? '-' means that the position does not exist on the map
+        while current_map_matrix[random_row][random_col] not in ['F', 'A']:
+            random_row = random.randint(min_row, max_row)
+            random_col = random.randint(min_col, max_col)
         
+        # Get the global position of the destination
+        agent_local_pos = self.get_local_self_position()
+        destination = self.get_global_position((random_row, random_col), agent_local_pos)
         # Finds the shortest route to that position
-        end_position = (random_y, random_x)
-        sequence_steps = self.find_route_to_position(end_position, self.orientation)
-        logging.info(f'The steps sequence is: {list(sequence_steps.queue)}')
+        sequence_steps = self.find_route_to_position(destination, self.orientation)
+        if sequence_steps.qsize() < 1:
+            self.logger.error(f'Could not find a route to the destination {destination}')
+            raise Exception(f'Could not find a route to the destination {destination}')
+
+                
+        self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')
 
         return sequence_steps
+
+
+    def get_bounds_current_map(self, current_map_matrix : list[str]) -> tuple[int, int, int, int]:
+        """
+        Finds the bounds of the current observed map.
+        
+        Args:
+            current_map_matrix (list[str]): Current observed map.
+        
+        Returns:
+            tuple[int, int, int, int]: Bounds of the current observed map.
+        """
+
+        found_row_min, found_col_min = False, False 
+        min_row, min_col = 0, 0
+        max_row, max_col  =  len(current_map_matrix) - 1, len(current_map_matrix[0]) - 1
+        for i in range(len(current_map_matrix)):
+            row = current_map_matrix[i]
+            if row == '-'*len(row):
+                if not found_row_min:
+                    min_row += 1
+                else: 
+                    max_row = i
+                    break
+            elif not found_col_min:
+                found_row_min = True
+                found_col_max = False
+                # Now we need to find the min and max col               
+                for j in range(len(row)):
+                    if row[j] == '-':
+                        if not found_col_min:
+                            min_col += 1
+                        elif not found_col_max:
+                            max_col = j
+                            found_col_max = True
+                    else:
+                        found_col_min = True
+        return min_row, min_col, max_row, max_col

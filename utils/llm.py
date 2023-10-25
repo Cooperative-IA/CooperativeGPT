@@ -12,6 +12,7 @@ def extract_answers(response: str) -> dict[str, str]:
     """
     patt = re.compile(r'\s*```json\s*([\w\W\n\r\t]*?)\s*```\s*', re.MULTILINE)
     try:
+        response = response.replace('\n', ' ') # Remove new lines to avoid errors on multiline double quotes
         answers = re.findall(patt, response)[0].strip()
         parsed_answers = json.loads(answers)
     except:
