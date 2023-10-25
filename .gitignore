@@ -14,3 +14,4 @@ data/*/*.db/
 # Cache
 *.pyc
 __pycache__/
+.pytest_cache/
