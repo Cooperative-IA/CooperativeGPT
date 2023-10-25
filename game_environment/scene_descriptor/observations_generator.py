@@ -70,32 +70,31 @@ class ObservationsGenerator (object):
         return dict(component_data)
 
 
-    def get_element_global_pos(self, element_local, local_position, global_position, agent_orientation=0):
+    def get_element_global_pos(self, el_local_pos, self_local_pos, self_global_pos, agent_orientation=0) -> list[int]:
         """
         Description: Returns the global position of an element given its local position and the global position of the agent
 
         Args:
-            element_local (tuple): Local position of the element
-            local_position (tuple): Local position of the agent 
-            global_position (tuple): Global position of the agent
+            el_local_pos (tuple): Local position of the element
+            self_local_pos (tuple): Local position of the agent 
+            self_global_pos (tuple): Global position of the agent
             agent_orientation (int, optional): Orientation of the agent. Defaults to 0.
 
         Returns:
-            tuple: Global position of the element
+            list[int]: Global position of the element
         """
         if agent_orientation == 0:
-            element_global = (element_local[0] - local_position[0]) + global_position[0],\
-                                (element_local[1] - local_position[1]) + global_position[1]
+            element_global = (el_local_pos[0] - self_local_pos[0]) + self_global_pos[0],\
+                                (el_local_pos[1] - self_local_pos[1]) + self_global_pos[1]
         elif agent_orientation == 1:
-            element_global = (element_local[1] - local_position[1]) + global_position[0],\
-                                -1 * (element_local[0] - local_position[0])  + global_position[1]
+            element_global = (el_local_pos[1] - self_local_pos[1]) + self_global_pos[0],\
+                               -1 * (el_local_pos[0] - self_local_pos[0]) + self_global_pos[1]
         elif agent_orientation == 2:
-            element_global = -1 * (element_local[0] - local_position[0]) + global_position[0],\
-                             -1 * (element_local[1] - local_position[1]) + global_position[1]
+            element_global = -1 * (el_local_pos[0] - self_local_pos[0]) + self_global_pos[0],\
+                                -1 * (el_local_pos[1] - self_local_pos[1]) + self_global_pos[1]
         elif agent_orientation == 3:
-            element_global = -1 * (element_local[1] - local_position[1]) + global_position[0],\
-                             (element_local[0] - local_position[0]) + global_position[1]
-
+            element_global = -1 * (el_local_pos[1] - self_local_pos[1]) + self_global_pos[0],\
+                                (self_local_pos[0] - el_local_pos[0]) + self_global_pos[1]
         return list(element_global)
 
     
@@ -194,8 +193,7 @@ class ObservationsGenerator (object):
 
                 # Check if the local tree corresponds to the global tree
                 if local_center_real_pos not in global_tree_data['elements']:
-                    continue
-
+                    continue 
 
                 # Find the cluster tree of the local tree
                 trees_observed[element_type] = trees_observed.get(element_type, []) + [global_tree_id]
@@ -213,5 +211,5 @@ class ObservationsGenerator (object):
 
             if apple_count > 0 or grass_count > 0:      
                 list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remaining and {} grass for apples growing on the observed map. The tree might have more apples and grass on the global map"
-                                                .format(global_tree_id, local_center_real_pos, apple_count, grass_count))
+                                                .format(global_tree_id, list(global_tree_data['center']), apple_count, grass_count))
         return list_trees_observations

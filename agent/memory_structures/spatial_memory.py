@@ -12,12 +12,12 @@ class SpatialMemory:
     Class for the spacial memory. Memories are stored in a dictionary.
     """
 
-    def __init__ (self, scenario_map: list[str], scenario_obstacles: list[str] = ['W']  ) -> None:
+    def __init__ (self, scenario_map: str, scenario_obstacles: list[str] = ['W']  ) -> None:
         """
         Initializes the spacial memory.
 
         Args:
-            scenario_map (str, optional): Real map of the environment, in ascci format, rows separated by '\n'. 
+            scenario_map (str): Real map of the environment, in ascci format, rows separated by '\n'. 
             scenario_obstacles (list[str], optional): Obstacles of the scenario. Defaults to ['W'] for Walls.
         """
         self.logger = logging.getLogger(__name__)
@@ -173,14 +173,14 @@ class SpatialMemory:
         # East
         elif self.orientation == 1:
             element_global = (local_dest_pos[1] - local_self_pos[1]) + self.position[0],\
-                             -1 *(local_dest_pos[0] - local_self_pos[0]) + self.position[1]
+                             -1 * (local_dest_pos[0] - local_self_pos[0]) + self.position[1]
         # South
         elif self.orientation == 2:
             element_global = -1 * (local_dest_pos[0] - local_self_pos[0]) + self.position[0],\
                              -1 * (local_dest_pos[1] - local_self_pos[1]) + self.position[1]
         # West
         elif self.orientation == 3:
-            element_global =  -1*(local_dest_pos[1] - local_self_pos[1]) + self.position[0],\
+            element_global =  -1 * (local_dest_pos[1] - local_self_pos[1]) + self.position[0],\
                                 (local_dest_pos[0] - local_self_pos[0])+ self.position[1]
 
         return element_global
