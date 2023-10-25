@@ -1,7 +1,7 @@
 from llm import LLMModels
 from utils.llm import extract_answers
 
-def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str]) -> bool:
+def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str]) -> tuple[bool, str]:
     """Decides if the agent should react to the observation.
 
     Args:
@@ -12,11 +12,11 @@ def should_react(name: str, world_context: str, observations: list[str], current
         actions_queue (list[str]): List of actions to be executed by the agent.
 
     Returns:
-        bool: True if the agent should react to the observation, False otherwise.
+        tuple[bool, str]: Tuple with True if the agent should react to the observation, False otherwise, and the reasoning.
     """
 
     if current_plan is None:
-        return True
+        return True, 'There is no plan to follow.'
     
     llm = LLMModels().get_main_model()
 
@@ -25,4 +25,5 @@ def should_react(name: str, world_context: str, observations: list[str], current
     response = llm.completion(prompt='react.txt', inputs=[name, world_context, observation, current_plan, actions_queue])
     answers = extract_answers(response)
     answer = answers.get('Answer', False)
-    return answer
+    reasoning = answers.get('Reasoning', '')
+    return answer, reasoning

@@ -9,6 +9,7 @@ Current observations:
 <input3>
 
 Current plan: <input4>
+This is the reason to change the current plan: <input6>
 
 With the information given above, generate a new plan and new objectives to persuit. The plan should be a description of how <input1> should behave in the long-term to maximize its wellbeing.
 The plan should include how to act to different situations observed in past experiences.

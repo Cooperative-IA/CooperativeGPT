@@ -109,7 +109,8 @@ class Agent:
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
         actions_sequence = list_from_queue(copy.copy(self.stm.get_memory('actions_sequence')))
-        react = should_react(self.name, world_context, observations, current_plan, actions_sequence)
+        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence)
+        self.stm.add_memory(reasoning, 'reason_to_react')
         self.logger.info(f'{self.name} should react to the observation: {react}')
         return react, observations
     
@@ -122,9 +123,13 @@ class Agent:
         world_context = self.stm.get_memory('world_context')
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
+        reason_to_react = self.stm.get_memory('reason_to_react')
+        assert reason_to_react is not None, 'Reason to react is None. This should not happen because the agent only plans if it should react to the observation'
 
-        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections)
+        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react)
         self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
+        if new_plan is None or new_goals is None:
+            self.logger.warn(f'{self.name} could not generate a new plan or new goals')
 
         # Update the short term memory
         self.stm.add_memory(new_plan, 'current_plan')
