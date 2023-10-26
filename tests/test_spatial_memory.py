@@ -40,4 +40,12 @@ def test_get_global_position():
     element_global_pos = spatial_memory.get_global_position(el_local_pos, self_local_pos)
     assert element_global_pos == expected_output, f'Expected {expected_output}, got {element_global_pos}.Failed with agent_orientation = {spatial_memory.orientation}: {orientation_map[spatial_memory.orientation]}'
 
+    el_local_pos = (1, 9)
+    self_local_pos = (9, 5)
+    spatial_memory.position = (7, 21)
+    spatial_memory.orientation = 3
+    expected_output = (3, 13)
+    element_global_pos = spatial_memory.get_global_position(el_local_pos, self_local_pos)
+    assert element_global_pos == expected_output, f'Expected {expected_output}, got {element_global_pos}.Failed with agent_orientation = {spatial_memory.orientation}: {orientation_map[spatial_memory.orientation]}'
+
     print("All test cases pass")
