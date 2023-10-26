@@ -94,7 +94,7 @@ class ObservationsGenerator (object):
                                 -1 * (el_local_pos[1] - self_local_pos[1]) + self_global_pos[1]
         elif agent_orientation == 3:
             element_global = -1 * (el_local_pos[1] - self_local_pos[1]) + self_global_pos[0],\
-                                (self_local_pos[0] - el_local_pos[0]) + self_global_pos[1]
+                                (el_local_pos[0] - self_local_pos[0]) + self_global_pos[1]
         return list(element_global)
 
     
@@ -193,7 +193,7 @@ class ObservationsGenerator (object):
 
                 # Check if the local tree corresponds to the global tree
                 if local_center_real_pos not in global_tree_data['elements']:
-                    continue 
+                    continue
 
                 # Find the cluster tree of the local tree
                 trees_observed[element_type] = trees_observed.get(element_type, []) + [global_tree_id]
