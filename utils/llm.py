@@ -1,5 +1,8 @@
 import re
 import json
+from chromadb import Documents, EmbeddingFunction, Embeddings
+
+from llm import LLMModels
 
 def extract_answers(response: str) -> dict[str, str]:
     """Extracts the answers from the response. The answers are extracted by parsing the json part of the response.
@@ -18,3 +21,11 @@ def extract_answers(response: str) -> dict[str, str]:
     except:
         parsed_answers = {}
     return parsed_answers
+
+
+class CustomEmbeddingFunction(EmbeddingFunction):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = LLMModels().get_embedding_model()
+    def __call__(self, texts: Documents) -> Embeddings:
+        return self.model.get_embeddings(texts)
