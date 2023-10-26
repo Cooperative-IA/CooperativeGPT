@@ -7,6 +7,7 @@ import numpy as np
 import logging
 from utils.logging import CustomAdapter
 import random
+from matplotlib.ticker import MaxNLocator
 
 logger = logging.getLogger(__name__)
 logger = CustomAdapter(logger)
@@ -168,6 +169,7 @@ def generate_rewards_plot (individual_rewards:dict, round_map:dict, record_folde
         plt.plot(steps, individual_rewards[:, i], label=f"Individual {i+1}", linewidth=2, linestyle="--", color=colors[i])
     plt.plot(steps, per_capita_reward, label="Per capita reward", linewidth=2.5, linestyle="-", color="orange")
     plt.xticks(steps, rotation=90, ha='right')
+    plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
 
     plt.xlabel("Steps")
     plt.ylabel("Reward")
