@@ -2,12 +2,13 @@ from datetime import datetime
 import logging
 from dotenv import load_dotenv
 import time
-
+import traceback
 from utils.logging import setup_logging, CustomAdapter
 from game_environment.utils import generate_agent_actions_map,  default_agent_actions_map
 from agent.agent import Agent
 from game_environment.server import start_server, get_scenario_map
 from llm import LLMModels
+from utils.queue_utils import new_empty_queue
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -54,7 +55,16 @@ def game_loop(agents: list[Agent]) -> None:
                 logger.info('Agent %s action map: %s', agent.name, agents_map_actions[agent.name] )
                 # Execute each step one by one until the agent has executed all the steps for the high level action
                 actions = agents_map_actions
-                observations, scene_descriptions = env.step(actions)
+                try: 
+                    observations, scene_descriptions = env.step(actions)
+                except:
+                    logger.warning("Skipping action %s", step_action)
+                    logger.exception("Error executing action %s", step_action)
+                    logger.exception("Error when calling env.step(actions)")
+                    #log the catched exception
+                    logger.exception(traceback.format_exc())
+                    step_actions = new_empty_queue()
+                    
                 actions_count += 1
             # Reset actions for the agent until its next turn
             actions[agent.name] = default_agent_actions_map()      
@@ -74,7 +84,7 @@ if __name__ == "__main__":
     # Define players
     players = ["Juan", "Laura", "Pedro"]
     players_context = ["juan_context.json", "laura_context.json", "pedro_context.json"]
-    valid_actions = ['grab apple (x,y)', 'attack player (player_name)','explore'] # TODO : Change this.
+    valid_actions = ['grab apple (x,y)', 'attack player (player_name) at (x,y)','explore'] # TODO : Change this.
     scenario_obstacles  = ['W', '$'] # TODO : Change this.
     scenario_info = {'scenario_map': get_scenario_map(), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
     # Create agents

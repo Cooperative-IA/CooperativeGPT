@@ -56,7 +56,7 @@ class SpatialMemory:
         self.explored_map[pos[0]][pos[1]] = self.scenario_map[pos[0]][pos[1]]
 
 
-    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False) -> Queue[str] | list[str]:
+    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True ) -> Queue[str] | list[str]:
         """
         Finds the shortest route to a position.
 
@@ -70,7 +70,7 @@ class SpatialMemory:
         """
         self.logger.info(f'Finding route from {self.position} to {position_end}')
         route = get_shortest_valid_route(self.explored_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
-        
+
         # Adds a change on orientation on the last step of the route
         if len(route) > 0:
             new_orientation = 'turn '+ route[-1].split(' ')[1]
@@ -80,6 +80,11 @@ class SpatialMemory:
                 route.append('turn right')
             else: 
                 route.append(new_orientation)
+
+
+        if not include_last_pos and len(route) > 0:
+            route = route[:-2] + route[-1:]
+        
 
         if return_list:
             return route
@@ -105,6 +110,8 @@ class SpatialMemory:
             sequence_steps = self.find_route_to_position(end_position, self.orientation)
         
         elif current_action.startswith('attack '):
+            agent2attack_pos = self.get_position_from_action(current_action)
+            sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False)
             sequence_steps.put('attack')
         
         elif current_action.startswith('explore'):
