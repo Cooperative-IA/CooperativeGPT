@@ -54,7 +54,7 @@ class Recorder:
         self.save_images(self.logs["world"], os.path.join(self.log_path, "world"))
         for avatar_id, avatar_images in self.logs["avatars"].items():
             self.save_images(avatar_images, os.path.join(self.log_path, str(avatar_id)))
-        recreate_simulation.recreate_records(record_path=self.log_path)
+        recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)
 
     @staticmethod
     def save_images(images, path):
