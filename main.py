@@ -36,7 +36,7 @@ def game_loop(agents: list[Agent]) -> None:
 
     while step_count < max_steps:
         # Reset the actions for each agent
-        agents_map_actions = {agent.name: default_agent_actions_map() for agent in agents}
+        actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
         # Execute an action for each agent on each step
         for agent in agents:
             # Get the current observations and environment information
@@ -50,14 +50,21 @@ def game_loop(agents: list[Agent]) -> None:
             while not step_actions.empty():
                 step_action = step_actions.get()
                 # Update the actions map for the agent
-                agents_map_actions[agent.name] = generate_agent_actions_map(step_action)
-                logger.info('Agent %s action map: %s', agent.name, agents_map_actions[agent.name] )
+                actions[agent.name] = generate_agent_actions_map(step_action)
+                logger.info('Agent %s action map: %s', agent.name, actions[agent.name] )
                 # Execute each step one by one until the agent has executed all the steps for the high level action
-                actions = agents_map_actions
                 observations, scene_descriptions = env.step(actions)
                 actions_count += 1
             # Reset actions for the agent until its next turn
-            actions[agent.name] = default_agent_actions_map()      
+            actions[agent.name] = default_agent_actions_map()
+
+        # Execute the actions for the bots if a scenario is provided
+        if env.bots:
+            for bot in env.bots:
+                actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
+                bot_action = bot.move(env.timestep)
+                actions[bot.name] = bot_action
+                env.step(actions)
 
         step_count += 1
         logger.info('Round %s completed. Executed all the high level actions for each agent.', step_count)
@@ -81,11 +88,13 @@ if __name__ == "__main__":
     agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file="world_context.txt", scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=True)
+    env = start_server(players, init_timestamp=logger_timestamp, record=True, scenario='commons_harvest__open_0')
     logger = CustomAdapter(logger, game_env=env)
 
 
-    llm = LLMModels().get_main_model()
+    llm = LLMModels()
+    gpt_model = llm.get_main_model()
+    embedding_model = llm.get_embedding_model()
     try:
         game_loop(agents)
     except KeyboardInterrupt:
@@ -96,9 +105,9 @@ if __name__ == "__main__":
     env.end_game()
        
     # LLm total cost
-    costs = llm.cost_manager.get_costs()
-    tokens = llm.cost_manager.get_tokens()
-    logger.info("LLM total cost: %.2f, total tokens: %s", costs['total_cost'], tokens['total_tokens'])
+    costs = gpt_model.cost_manager.get_costs()['total_cost'] + embedding_model.cost_manager.get_costs()['total_cost']
+    tokens = gpt_model.cost_manager.get_tokens()['total_tokens'] + embedding_model.cost_manager.get_tokens()['total_tokens']
+    logger.info("LLM total cost: %.2f, total tokens: %s", costs, tokens)
 
     end_time = time.time()
     logger.info("Execution time: %.2f minutes", (end_time - start_time)/60)
