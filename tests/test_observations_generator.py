@@ -119,3 +119,48 @@ def test_get_trees_descriptions():
     expected_output = ['Observed an apple at position [8, 20]. This apple belongs to tree 6', 'Observed an apple at position [7, 20]. This apple belongs to tree 6', 'Observed an apple at position [6, 20]. This apple belongs to tree 6', 'Observed grass to grow apples at position [8, 21]. This grass belongs to tree 6', 'Observed an apple at position [8, 22]. This apple belongs to tree 6', 'Observed tree 6 at position [8, 20]. This tree has 4 apples remaining and 1 grass for apples growing on the observed map. The tree might have more apples and grass on the global map', 'Observed an apple at position [3, 22]. This apple belongs to tree 4', 'Observed tree 4 at position [1, 21]. This tree has 1 apples remaining and 0 grass for apples growing on the observed map. The tree might have more apples and grass on the global map']
     trees_descriptions = obs_gen.get_trees_descriptions(observed_map, local_map_position, global_position, agent_orientation)
     assert sorted(trees_descriptions) == sorted(expected_output), f"Expected {expected_output}, got {trees_descriptions}."
+
+    # When the agent is in a tree and might interrupt the connected components observed
+    observed_map = '-----------\n-----------\n-----------\n-----------\n-----------\n-----------\n-----------\nWWWWWWWWWWW\nFFFFFAFFFFA\nFFFFA#AFFFF\nAFFAAAAAFFF'
+    local_map_position = (9,5)
+    global_position = (2, 15)
+    agent_orientation = 0
+    expected_output = [
+    'Observed an apple at position [3, 10]. This apple belongs to tree 2', 
+    'Observed tree 2 at position [3, 8]. This tree has 1 apples remaining and 0 grass for apples growing on the observed map. The tree might have more apples and grass on the global map', 
+    'Observed an apple at position [1, 15]. This apple belongs to tree 3', 
+    'Observed an apple at position [2, 14]. This apple belongs to tree 3', 
+    'Observed an apple at position [2, 16]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 13]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 14]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 15]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 16]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 17]. This apple belongs to tree 3', 
+    'Observed tree 3 at position [3, 15]. This tree has 8 apples remaining and 0 grass for apples growing on the observed map. The tree might have more apples and grass on the global map', 
+    'Observed an apple at position [1, 20]. This apple belongs to tree 4', 
+    'Observed tree 4 at position [1, 21]. This tree has 1 apples remaining and 0 grass for apples growing on the observed map. The tree might have more apples and grass on the global map'
+    ]
+    trees_descriptions = obs_gen.get_trees_descriptions(observed_map, local_map_position, global_position, agent_orientation)
+    assert sorted(trees_descriptions) == sorted(expected_output), f"Expected {expected_output}, got {trees_descriptions}."
+
+    # When another agent is in a tree and might interrupt the connected components observed
+    observed_map = '-----------\n-----------\n-----------\n-----------\n-----------\n-----------\n-----------\nWWWWWWWWWWW\nFFFFFAFFFFA\nFFFFA#2FFFF\nAFFAAAAAFFF'
+    local_map_position = (9,5)
+    global_position = (2, 15)
+    agent_orientation = 0
+    expected_output = [
+    'Observed an apple at position [3, 10]. This apple belongs to tree 2', 
+    'Observed tree 2 at position [3, 8]. This tree has 1 apples remaining and 0 grass for apples growing on the observed map. The tree might have more apples and grass on the global map', 
+    'Observed an apple at position [1, 15]. This apple belongs to tree 3', 
+    'Observed an apple at position [2, 14]. This apple belongs to tree 3',
+    'Observed an apple at position [3, 13]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 14]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 15]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 16]. This apple belongs to tree 3', 
+    'Observed an apple at position [3, 17]. This apple belongs to tree 3', 
+    'Observed tree 3 at position [3, 15]. This tree has 7 apples remaining and 0 grass for apples growing on the observed map. The tree might have more apples and grass on the global map', 
+    'Observed an apple at position [1, 20]. This apple belongs to tree 4', 
+    'Observed tree 4 at position [1, 21]. This tree has 1 apples remaining and 0 grass for apples growing on the observed map. The tree might have more apples and grass on the global map'
+    ]
+    trees_descriptions = obs_gen.get_trees_descriptions(observed_map, local_map_position, global_position, agent_orientation)
+    assert sorted(trees_descriptions) == sorted(expected_output), f"Expected {expected_output}, got {trees_descriptions}."

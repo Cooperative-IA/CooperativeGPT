@@ -31,6 +31,8 @@ class ObservationsGenerator (object):
         self.global_map = global_map
         self.global_trees = self.connected_elems_map(self.global_map, ['A', 'G'])
         self.players_names = players_names
+        self.self_symbol = '#'
+        self.other_players_symbols = [str(i) for i in range(len(players_names))]
 
 
     def connected_elems_map(self, ascci_map, elements_to_find):
@@ -170,8 +172,9 @@ class ObservationsGenerator (object):
         Returns:
             list: List with the descriptions of the trees observed by the agent
         """
-
-        local_tree_elements = self.connected_elems_map(local_map, elements_to_find=['A', 'G'])
+        tree_elements = ['A', 'G']
+        elements_to_find = tree_elements + self.other_players_symbols + [self.self_symbol]
+        local_tree_elements = self.connected_elems_map(local_map, elements_to_find=elements_to_find)
         list_trees_observations = []
         trees_observed = {}
 
@@ -181,7 +184,7 @@ class ObservationsGenerator (object):
                 # Check if the group is a tree element
                 first_element = local_tree_data['elements'][0]
                 element_type = local_map.split('\n')[first_element[0]][first_element[1]]
-                if element_type not in ['A', 'G']:
+                if element_type not in tree_elements:
                     continue
 
                 # Continue if the tree has already been observed
@@ -204,7 +207,7 @@ class ObservationsGenerator (object):
                         list_trees_observations.append("Observed grass to grow apples at position {}. This grass belongs to tree {}"
                                                     .format(apple_global_pos, global_tree_id))
                         grass_count += 1
-                    else:
+                    elif local_map.split('\n')[apple[0]][apple[1]] == 'A':
                         list_trees_observations.append("Observed an apple at position {}. This apple belongs to tree {}"
                                                     .format(apple_global_pos, global_tree_id ))
                         apple_count += 1

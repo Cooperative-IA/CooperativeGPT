@@ -8,6 +8,7 @@ from chromadb.utils import embedding_functions
 from utils.files import load_config
 from utils.time import str_to_timestamp
 from utils.logging import CustomAdapter
+from utils.llm import CustomEmbeddingFunction
 
 class LongTermMemory:
     """Class for long term memory. Memories are stored in the chromadb database.
@@ -32,14 +33,8 @@ class LongTermMemory:
         if agent_name in [c.name for c in self.chroma_client.list_collections()]:
             self.chroma_client.delete_collection(agent_name)
 
-        # Use OpenAI to create the embeddings
-        openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-                api_key=os.getenv("AZURE_OPENAI_KEY_GPT3"),
-                api_base=os.getenv("AZURE_OPENAI_ENDPOINT_GPT3"),
-                api_type=os.getenv("OPENAI_API_TYPE"),
-                api_version=os.getenv("OPENAI_API_VERSION"),
-                model_name=os.getenv("TEXT_EMMBEDDING_MODEL_ID")
-            )
+        # Use a custom model to create the embeddings
+        openai_ef = CustomEmbeddingFunction()
 
         self.collection = self.chroma_client.create_collection(agent_name, embedding_function=openai_ef)
 

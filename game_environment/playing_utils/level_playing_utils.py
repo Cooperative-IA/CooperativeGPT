@@ -39,6 +39,7 @@ from game_environment.scene_descriptor.scene_descriptor import SceneDescriptor
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
 from utils.files import load_config
 from utils.logging import CustomAdapter
+from game_environment.bots import Bot
 
 import sys
 import ast
@@ -239,7 +240,9 @@ class Game:
             player_prefixes: Optional[Sequence[str]] = None,
             default_observation: str = 'WORLD.RGB',
             reset_env_when_done: bool = False,
-            record: bool = False,):
+            record: bool = False,
+            bots: Optional[list[Bot]] = None,
+            ):
         """Run multiplayer environment, with per player rendering and actions.
 
         This function initialises a Melting Pot environment with the given
@@ -294,6 +297,8 @@ class Game:
         reset_env_when_done: if True, reset the environment once the episode has
             terminated; useful for playing multiple episodes in a row. Note this
             will cause this function to loop infinitely.
+        record: Whether to record the game.
+        bots: A list of Bot objects. This bots have a predefined policy.
         """
         # Update the config with the overrides.
         full_config.lab2d_settings.update(config_overrides)
@@ -397,6 +402,7 @@ class Game:
         self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         self.dateFormat = load_config()['date_format']
         self.game_steps = 0 # Number of steps of the game
+        self.bots = bots
 
     def end_game(self):
         """Ends the game. This function is called when the game is finished."""
@@ -426,7 +432,7 @@ class Game:
                     stop = True
 
         if stop:
-            return None
+            return None, None
         
         self.game_steps += 1
 
@@ -447,7 +453,7 @@ class Game:
             if self.reset_env_when_done:
                 self.timestep = self.env.reset()
             else:
-                return None
+                return None, None
 
         # Get the rewards
         rewards = _get_rewards(self.timestep)

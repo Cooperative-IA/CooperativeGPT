@@ -7,6 +7,7 @@ import numpy as np
 import logging
 from utils.logging import CustomAdapter
 import random
+from matplotlib.ticker import MaxNLocator
 
 logger = logging.getLogger(__name__)
 logger = CustomAdapter(logger)
@@ -149,12 +150,14 @@ def generate_random_color():
     b = random.random()
     return (r, g, b)
 
-def generate_rewards_plot (individual_rewards:dict, round_map:dict, record_folder:str)->None:
+def generate_rewards_plot (individual_rewards:dict, round_map:dict, record_folder:str, players: list[str], is_focal_player: list[bool])->None:
     # Uses round map to evaluate only the steps that are part of a round from individual rewards
     steps = list(individual_rewards.keys())
     steps = [int(s) for s in steps]
-    num_players = len(list(individual_rewards.values())[0])
-    per_capita_reward = [sum(list(val.values()))/num_players for val in individual_rewards.values()]
+    num_players = len(players)
+    num_focal_players = sum(is_focal_player)
+
+    focal_per_capita_reward = [sum([r for i, r in enumerate(val.values()) if is_focal_player[i]])/num_focal_players for val in individual_rewards.values()]
     individual_rewards = [np.array(list(val.values())) for val in individual_rewards.values()]
 
     # Transform to numpy array
@@ -164,21 +167,22 @@ def generate_rewards_plot (individual_rewards:dict, round_map:dict, record_folde
     plt.figure(figsize=(12, 6))
     # Vector of colors for each individual
     colors = [generate_random_color() for _ in range(num_players)]
-    for i in range(num_players):
-        plt.plot(steps, individual_rewards[:, i], label=f"Individual {i+1}", linewidth=2, linestyle="--", color=colors[i])
-    plt.plot(steps, per_capita_reward, label="Per capita reward", linewidth=2.5, linestyle="-", color="orange")
+    for i, name in enumerate(players):
+        plt.plot(steps, individual_rewards[:, i], label=name, linewidth=2, linestyle="--", color=colors[i])
+    plt.plot(steps, focal_per_capita_reward, label="Focal per capita reward", linewidth=2.5, linestyle="-", color="orange")
     plt.xticks(steps, rotation=90, ha='right')
+    plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
 
     plt.xlabel("Steps")
     plt.ylabel("Reward")
-    plt.title("Individual reward vs Per capita average reward per step")
+    plt.title("Individual reward vs Focal per capita mean reward")
     plt.legend()
     plt.grid(True)
     plt.savefig(record_folder + '/rewards_plot.png')
 
 
 
-def recreate_records(record_path:str, image_folder:str = 'world', video_name:str = 'output_video.avi', output_resolution:tuple = (1600, 1200), rounds_file:str = 'steps_history.txt', rewards_file:str = 'rewards_history.txt')->None:
+def recreate_records(record_path:str, players: list[str], is_focal_player: list[bool], image_folder:str = 'world', video_name:str = 'output_video.avi', output_resolution:tuple = (1600, 1200), rounds_file:str = 'steps_history.txt', rewards_file:str = 'rewards_history.txt')->None:
     """
     Recreates the simulation from the given record folder.
 
@@ -196,4 +200,4 @@ def recreate_records(record_path:str, image_folder:str = 'world', video_name:str
     total_rewards, individual_rewards, players_index = read_rewards_from_file(rewards_path)
     round_map = read_rounds_history(rounds_path, image_path)
     generate_video_from_images(image_path, video_path, total_rewards, players_index, round_map, output_resolution, 0.2)
-    generate_rewards_plot( individual_rewards, round_map, record_path)
+    generate_rewards_plot( individual_rewards, round_map, record_path, players, is_focal_player)
