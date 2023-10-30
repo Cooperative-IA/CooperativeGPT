@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import time
 import traceback
 from utils.logging import setup_logging, CustomAdapter
-from game_environment.utils import generate_agent_actions_map,  default_agent_actions_map
+from game_environment.utils import generate_agent_actions_map,  default_agent_actions_map, check_agent_out_of_game
 from agent.agent import Agent
 from game_environment.server import start_server, get_scenario_map
 from llm import LLMModels
@@ -17,7 +17,7 @@ load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
 
-step_count = 0
+rounds_count = 0
 
 def game_loop(agents: list[Agent]) -> None:
     """Main game loop. The game loop is executed until the game ends or the maximum number of steps is reached.
@@ -28,18 +28,21 @@ def game_loop(agents: list[Agent]) -> None:
     Returns:
         None
     """
-    global step_count
+    global rounds_count
     actions = None
-    step_count, actions_count, max_steps = 0, 0, 200
+    rounds_count, steps_count, max_steps = 0, 0, 200
 
     # Get the initial observations and environment information
     observations, scene_descriptions = env.step(actions)
 
-    while step_count < max_steps:
+    while rounds_count < max_steps:
         # Reset the actions for each agent
         agents_map_actions = {agent.name: default_agent_actions_map() for agent in agents}
         # Execute an action for each agent on each step
         for agent in agents:
+            #Updates the observations for the current agent
+            observations, scene_descriptions = env.step({agent.name: default_agent_actions_map() for agent in agents})
+            steps_count += 1
             # Get the current observations and environment information
             game_time = env.get_time()
             scene_descriptions = {agents[i].name : scene_descriptions[i] for i in range(len(agents))}
@@ -47,7 +50,15 @@ def game_loop(agents: list[Agent]) -> None:
             logger.info("\n\n" + f"Agent's {agent.name} turn".center(50, '#') + "\n")
             logger.info('%s Observations: %s, Scene descriptions: %s', agent.name, observations[agent.name], scene_descriptions[agent.name])
             # Get the steps for the agent to execute a high level action
-            step_actions = agent.move(observations[agent.name], agent_current_scene, game_time)
+
+            if check_agent_out_of_game(observations, agent):
+                logger.info('Agent %s was taken out of the game', agent.name)
+                agent.move(observations[agent.name], agent_current_scene, game_time, agent_is_out=True)
+                step_actions = new_empty_queue()
+            else:
+                step_actions = agent.move(observations[agent.name], agent_current_scene, game_time)
+
+
             while not step_actions.empty():
                 step_action = step_actions.get()
                 # Update the actions map for the agent
@@ -57,21 +68,18 @@ def game_loop(agents: list[Agent]) -> None:
                 actions = agents_map_actions
                 try: 
                     observations, scene_descriptions = env.step(actions)
+                    steps_count += 1
                 except:
-                    logger.warning("Skipping action %s", step_action)
                     logger.exception("Error executing action %s", step_action)
-                    logger.exception("Error when calling env.step(actions)")
-                    #log the catched exception
                     logger.exception(traceback.format_exc())
                     step_actions = new_empty_queue()
                     
-                actions_count += 1
             # Reset actions for the agent until its next turn
             actions[agent.name] = default_agent_actions_map()      
 
-        step_count += 1
-        logger.info('Round %s completed. Executed all the high level actions for each agent.', step_count)
-        env.update_history_file(logger_timestamp, step_count, actions_count)
+        rounds_count += 1
+        logger.info('Round %s completed. Executed all the high level actions for each agent.', rounds_count)
+        env.update_history_file(logger_timestamp, rounds_count, steps_count)
         time.sleep(0.01)
 
 if __name__ == "__main__":
@@ -99,9 +107,9 @@ if __name__ == "__main__":
     try:
         game_loop(agents)
     except KeyboardInterrupt:
-        logger.info("Program interrupted. %s rounds executed.", step_count)
+        logger.info("Program interrupted. %s rounds executed.", rounds_count)
     except Exception as e:
-        logger.exception("Rounds executed: %s. Exception: %s", step_count, e)
+        logger.exception("Rounds executed: %s. Exception: %s", rounds_count, e)
     
     env.end_game()
        

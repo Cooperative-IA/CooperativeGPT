@@ -49,7 +49,7 @@ class Agent:
 
 
 
-    def move(self, observations: list[str], agent_current_scene:dict, game_time: str) -> Queue:
+    def move(self, observations: list[str], agent_current_scene:dict, game_time: str, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
@@ -74,8 +74,11 @@ class Agent:
         
         self.reflect(filtered_observations)
 
-        step_actions = self.get_actions_to_execute(filtered_observations)
-
+        if not agent_is_out:
+            step_actions = self.get_actions_to_execute(filtered_observations)
+        else :
+            step_actions = Queue()
+            
         return step_actions
 
     def perceive(self, observations: list[str], game_time: str) -> None:

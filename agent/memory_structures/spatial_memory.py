@@ -113,6 +113,7 @@ class SpatialMemory:
             agent2attack_pos = self.get_position_from_action(current_action)
             sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False)
             sequence_steps.put('attack')
+            sequence_steps.put('attack') # Put it twice to ensure enemy agent will be dead on its turn
         
         elif current_action.startswith('explore'):
             sequence_steps = self.generate_explore_sequence()

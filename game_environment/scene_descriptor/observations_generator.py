@@ -130,8 +130,8 @@ class ObservationsGenerator (object):
             list: List with the descriptions of the observations of the agent
         """
         list_of_observations = []
-        if agent_dict['observation'].startswith('You were taken'):
-            list_of_observations.append(agent_dict['observation'])
+        if agent_dict['observation'].startswith('There are not observations: You were taken '):
+            list_of_observations.append(str(agent_dict['observation'] + ' at position {}'.format(agent_dict['global_position'])))
             return list_of_observations
         else:
             local_observation_map = agent_dict['observation']

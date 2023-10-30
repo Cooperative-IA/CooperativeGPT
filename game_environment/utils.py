@@ -2,6 +2,8 @@ import json
 import numpy as np
 from copy import deepcopy
 
+from agent.agent import Agent
+
 _BASE_ACTION_MAP = {
     'move': 0,
     'turn': 0,
@@ -91,3 +93,17 @@ def get_element_global_pos( element_local_pos, local_position, global_position, 
 
     return list(element_global)
 
+
+
+def check_agent_out_of_game(observations:dict, agent: Agent):
+   """
+    Description: Checks if the agent is out of the game
+    
+    Args:
+        observations (dict): Observations of the agents
+        agent (Agent): Agent to check
+    
+    Returns:
+        bool: True if the agent is out of the game, False otherwise
+   """
+   return len(observations[agent.name]) >0 and observations[agent.name][0].startswith('There are not observations: You were taken ')
