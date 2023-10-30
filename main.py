@@ -32,6 +32,9 @@ def game_loop(agents: list[Agent]) -> None:
     actions = None
     rounds_count, steps_count, max_steps = 0, 0, 200
 
+    # Define bots number of steps per action
+    bots_steps_per_action = 3
+
     # Get the initial observations and environment information
     observations, scene_descriptions = env.step(actions)
 
@@ -70,7 +73,6 @@ def game_loop(agents: list[Agent]) -> None:
                     steps_count += 1
                 except:
                     logger.exception("Error executing action %s", step_action)
-                    logger.exception(traceback.format_exc())
                     step_actions = new_empty_queue()
                     
             # Reset actions for the agent until its next turn
@@ -80,7 +82,7 @@ def game_loop(agents: list[Agent]) -> None:
         if env.bots:
             for bot in env.bots:
                 actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
-                for _ in range(3): # TODO change this, consider how many steps the bots should execute (not only 1)
+                for _ in range(bots_steps_per_action): 
                     bot_action = bot.move(env.timestep)
                     actions[bot.name] = bot_action
                     env.step(actions)

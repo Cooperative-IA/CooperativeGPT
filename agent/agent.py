@@ -59,6 +59,7 @@ class Agent:
                 -> orientation (int): Current orientation of the agent. 0: North, 1: East, 2: South, 3: West.
                 -> observation (str): ascii representation of the scene.
             game_time (str): Current game time.
+            agent_is_out (bool, optional): True if the agent is out of the scenario (was taken), False otherwise. Defaults to False.
 
         Returns:
             Queue: Steps sequence for the current action.

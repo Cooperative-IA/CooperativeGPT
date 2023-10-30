@@ -106,4 +106,4 @@ def check_agent_out_of_game(observations:dict, agent: Agent):
     Returns:
         bool: True if the agent is out of the game, False otherwise
    """
-   return len(observations[agent.name]) >0 and observations[agent.name][0].startswith('There are not observations: You were taken ')
+   return len(observations[agent.name]) >0 and observations[agent.name][0].startswith('There are no observations: You were taken ')

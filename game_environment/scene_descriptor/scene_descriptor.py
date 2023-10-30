@@ -100,7 +100,7 @@ class SceneDescriptor:
     def compute_partial_observations(self, map):
         for avatar_id, avatar in self.avatars.items():
             if avatar.avatar_state == 0:
-                obs_text = f"There are not observations: You were taken out of the game by agent {avatar.murder}"
+                obs_text = f"There are no observations: You were taken out of the game by agent {avatar.murder}"
                 avatar.set_partial_observation(obs_text)
             else:
                 min_padding = max(avatar.avatar_view.values())

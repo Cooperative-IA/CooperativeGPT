@@ -64,7 +64,8 @@ class SpatialMemory:
             position_end (tuple): End position of the route.
             orientation (int): Orientation of the agent. 0: North, 1: East, 2: South, 3: West.
             return_list (bool, optional): If True, returns a list instead of a queue. Defaults to False.
-
+            include_last_pos (bool, optional): If True, includes the last position of the route. Defaults to True.
+            
         Returns:
             Queue(str): Steps sequence for the route.
         """
