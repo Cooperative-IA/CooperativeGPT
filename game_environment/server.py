@@ -13,6 +13,7 @@ from game_environment.substrates.python.commons_harvest_language import ASCII_MA
 from game_environment.playing_utils import level_playing_utils as level_playing_utils
 from game_environment.bots import get_bots_for_scenario, Bot
 from utils.logging import CustomAdapter
+from typing import Dict, Any
 
 FLAGS = flags.FLAGS
 
@@ -86,7 +87,7 @@ def run_episode(game_name: str, record: bool, players: list[str], init_timestamp
     # Install the substrate in the meltingpot library
     install_substrate(game_name)
     observation = "WORLD.RGB"
-    settings = {}
+    config_overrides = {}
     verbose = False
     print_events = False
 
@@ -112,8 +113,12 @@ def run_episode(game_name: str, record: bool, players: list[str], init_timestamp
         env_config.lab2d_settings = game.build(env_config)
         env_config.is_focal_player = is_focal_player
     
+    config_overrides = change_avatars_appearance(env_config.lab2d_settings, is_focal_player)
+
     # Create the game environment and run the episode
-    game_env = level_playing_utils.Game(observation, settings, _ACTION_MAP,
+    game_env = level_playing_utils.Game(observation,
+        config_overrides,
+        _ACTION_MAP,
         env_config, 
         interactive=level_playing_utils.RenderType.PYGAME,
         player_prefixes=players,
@@ -146,3 +151,35 @@ def get_scenario_map  ()-> str:
         A string of the scenario map, rows are separed by '\n'
     """
     return ASCII_MAP
+
+def change_avatars_appearance(lab2d_settings: Dict[str, Any],is_focal_player: list[bool]):    
+
+    """
+    Change the avatars appearance in the game environment
+    """
+    new_color =  (0, 0, 0, 255)  # Example new color
+    game_objects = lab2d_settings['simulation']['gameObjects']
+
+    for i in range(len(is_focal_player)):
+        if not is_focal_player[i]:
+
+           
+            components = game_objects[i]['components']   
+            # Find the Appearance component
+            for j, component in enumerate(components):
+                if component.get('component') == 'Appearance':
+                    # Override the first color ('!')
+                    component['kwargs']['palettes'][0]['!'] = new_color
+                    component['kwargs']['palettes'][0]['#'] = new_color
+                    component['kwargs']['palettes'][0]['%'] = new_color
+                    component['kwargs']['palettes'][0]['&'] = new_color
+                    components[j] = component
+                    break
+            game_objects[i]['components'] = components   
+    
+    overrided_configs = {'simulation':lab2d_settings['simulation']}
+    overrided_configs['simulation']['gameObjects'] = game_objects
+    
+    return overrided_configs
+    
+

@@ -41,7 +41,7 @@ def game_loop(agents: list[Agent]) -> None:
         # Execute an action for each agent on each step
         for agent in agents:
             #Updates the observations for the current agent
-            observations, scene_descriptions = env.step({agent.name: default_agent_actions_map() for agent in agents})
+            observations, scene_descriptions = env.step({player_name: default_agent_actions_map() for player_name in env.player_prefixes})
             steps_count += 1
             # Get the current observations and environment information
             game_time = env.get_time()
@@ -80,9 +80,11 @@ def game_loop(agents: list[Agent]) -> None:
         if env.bots:
             for bot in env.bots:
                 actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
-                bot_action = bot.move(env.timestep)
-                actions[bot.name] = bot_action
-                env.step(actions)
+                for _ in range(3): # TODO change this, consider how many steps the bots should execute (not only 1)
+                    bot_action = bot.move(env.timestep)
+                    actions[bot.name] = bot_action
+                    env.step(actions)
+                    steps_count += 1
 
         rounds_count += 1
         logger.info('Round %s completed. Executed all the high level actions for each agent.', rounds_count)

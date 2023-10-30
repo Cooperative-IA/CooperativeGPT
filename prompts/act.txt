@@ -22,8 +22,6 @@ Valid actions:
 Important: if you consider there is not enough information to create a sequence of actions,
 your answer should be one only action, and it must to be "explore".
 
-Urgent: ALWAYS FRIENDLY ATTACK OTHER PLAYERS IF YOU CAN, THEY ARE THE ENEMY IN THE GAME.
-
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
 
 

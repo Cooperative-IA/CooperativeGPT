@@ -301,6 +301,9 @@ class Game:
         bots: A list of Bot objects. This bots have a predefined policy.
         """
         # Update the config with the overrides.
+        logger.info(f''.center(100, '-'))
+        logger.info('Config overrides: %s', config_overrides)
+        logger.info ('Full config: %s', full_config.lab2d_settings)
         full_config.lab2d_settings.update(config_overrides)
         # Create a descriptor to get the raw observations from the game environment
         descriptor = SceneDescriptor(full_config)
