@@ -1,0 +1,1 @@
+Your answer must be a valid json snippet. If the type of a property is a string follow the rules for a JSON string: A string is a sequence of zero or more Unicode characters, wrapped in double quotes, using backslash escapes. A character is represented as a single character string. A string is very much like a C or Java string.

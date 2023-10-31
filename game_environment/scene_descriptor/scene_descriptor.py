@@ -2,8 +2,10 @@ import re
 import numpy as np
 import logging
 from game_environment.utils import parse_string_to_matrix, matrix_to_string
+from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 class Avatar:
     def __init__(self, name:str, avatar_config):
@@ -93,12 +95,12 @@ class SceneDescriptor:
             for murder_index, value in enumerate(row):
                 murder_name = self.avatars[murder_index].name
                 if value > 0:
-                    self.avatars[victim_index].set_murder(murder_name)
+                    self.avatars[victim_index].set_murder(murder_index)
 
     def compute_partial_observations(self, map):
         for avatar_id, avatar in self.avatars.items():
             if avatar.avatar_state == 0:
-                obs_text = f"You were taken out of the game by {avatar.murder}"
+                obs_text = f"There are no observations: You were taken out of the game by agent {avatar.murder}"
                 avatar.set_partial_observation(obs_text)
             else:
                 min_padding = max(avatar.avatar_view.values())

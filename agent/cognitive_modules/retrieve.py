@@ -6,8 +6,10 @@ import numpy as np
 from agent.agent import Agent
 from utils.files import load_config
 from utils.math import normalize_values, cosine_similarity
+from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 def retrieve_relevant_memories(agent: Agent, query: str, max_memories: int = 10, metadata_filter: dict = None) -> list[str]:
     """

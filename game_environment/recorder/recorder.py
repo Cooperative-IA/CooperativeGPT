@@ -1,18 +1,20 @@
 import os
+from typing import Mapping
 import cv2
-import time
+from datetime import datetime
 import shutil
 import numpy as np
 from skimage import io
 from skimage.transform import resize
+from game_environment.recorder import recreate_simulation
 
 
 class Recorder:
 
-    def __init__(self, log_path, substrate_config):
+    def __init__(self, log_path, init_timestamp, substrate_config):
         self.substrate_config = substrate_config
         self.n_players = self.substrate_config.lab2d_settings.numPlayers
-        self.experiment_id = int((time.time() % 1000) * 1000)
+        self.experiment_id = init_timestamp
         self.log_path = os.path.join(log_path, str(self.experiment_id))
         self.step = 0
         self.logs = {}
@@ -40,11 +42,19 @@ class Recorder:
             self.logs["avatars"][player_id].append(agent_observation)
         self.step += 1
 
+    def record_rewards(self, rewards: Mapping[str, float])->None:
+        #Writes the rewards to a file
+        with open(os.path.join(self.log_path, "rewards_history.txt"), "a") as f:
+            rewards = {i: int(rr) for i, rr in enumerate(list(rewards.values()))}
+            f.write(f"{self.step}: {rewards}\n")
+
+
     def save_log(self):
 
         self.save_images(self.logs["world"], os.path.join(self.log_path, "world"))
         for avatar_id, avatar_images in self.logs["avatars"].items():
             self.save_images(avatar_images, os.path.join(self.log_path, str(avatar_id)))
+        recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)
 
     @staticmethod
     def save_images(images, path):
