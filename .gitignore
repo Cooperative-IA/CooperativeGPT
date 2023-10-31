@@ -5,7 +5,7 @@
 venv/
 
 # Logs
-logs/*.log
+logs/
 
 # Data
 data/*/*.db/
