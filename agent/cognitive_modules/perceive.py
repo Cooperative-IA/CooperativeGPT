@@ -1,5 +1,6 @@
 from llm import LLMModels
 from utils.llm import extract_answers
+from agent.memory_structures.short_term_memory import ShortTermMemory
 
 def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str]) -> tuple[bool, str]:
     """Decides if the agent should react to the observation.
@@ -27,3 +28,24 @@ def should_react(name: str, world_context: str, observations: list[str], current
     answer = answers.get('Answer', False)
     reasoning = answers.get('Reasoning', '')
     return answer, reasoning
+
+def update_known_agents(observations: list[str], stm: ShortTermMemory):
+    """Updates the known agents in the short term memory.
+
+    Args:
+        observations (list[str]): List of observations of the environment.
+        stm (ShortTermMemory): Short term memory of the agent.
+
+    Returns:
+        None
+    """
+    known_agents = list(stm.get_known_agents())
+
+    for observation in observations:
+        if 'agent' in observation:
+            agent_name = observation.split(' ')[2] # agent name is the third word of the observation
+            if agent_name not in known_agents:
+                known_agents.append(agent_name)
+    
+    known_agents = set(known_agents)
+    stm.set_known_agents(known_agents)

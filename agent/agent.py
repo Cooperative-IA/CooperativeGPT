@@ -6,7 +6,7 @@ import copy
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
-from agent.cognitive_modules.perceive import should_react
+from agent.cognitive_modules.perceive import should_react, update_known_agents
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
@@ -99,6 +99,9 @@ class Agent:
         # Observations are filtered to only store the closest ones. The att_bandwidth defines the number of observations that the agent can attend to at the same time
         sorted_observations = self.spatial_memory.sort_observations_by_distance(observations)
         observations = sorted_observations[:self.att_bandwidth]
+
+        # Update the agent known agents
+        update_known_agents(observations, self.stm)
         
         # Open AI Only allows 16 observations per request
         batch_size = 16
