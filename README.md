@@ -85,5 +85,41 @@ Test the setup by running the main script:
 python main.py
 ```
 
+### 5. Running Simulations
+
+To run the simulation, use the following command:
+
+```bash
+python main.py [--substrate SUBSTRATE] [--scenario SCENARIO] [--players PLAYER1 PLAYER2 ...] [--record RECORD]
+```
+
+#### Arguments
+
+- `--substrate`: Specifies the name of the game to run. The name must match a folder in `game_environment/substrates/python`. Default is `commons_harvest_language`.
+- `--scenario`: Specifies the name of the scenario to run. This must be one of the predefined scenarios for the chosen game. Default is `commons_harvest__open_0`.
+- `--players`: Specifies a list of player names to run the game with. Provide each player name as a separate argument. Default is `Juan`, `Laura`, `Pedro`.
+- `--record`: Specifies whether to record the game. Acceptable values are `True` or `False`. Default is `True`.
+
+#### Examples
+
+Run the simulation with specific values:
+
+```bash
+python main.py --substrate "your_game_name" --scenario "your_scenario_name" --players Player1 Player2 Player3 --record True
+```
+
+Run the simulation with default values for substrate, scenario, and record, but specify player names:
+
+```bash
+python main.py --players Alice Bob Charlie
+```
+
+Run the simulation with all default values:
+
+```bash
+python main.py
+```
+
+
 
 

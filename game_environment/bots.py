@@ -25,12 +25,25 @@ def get_bots_for_scenario(scenario: str) -> list[str]:
         raise KeyError('Scenario not found')
     # Get the bots for the scenario (non-focal players)
     bots_roles = [role for i, role in enumerate(scenario_config.roles) if not scenario_config.is_focal[i]]
+    print('---------------------------------------------------')
+    print(bots_roles)
+    print('---------------------------------------------------')
     # Find the names of the trained policies for the bots
     bots_names = []
+    print('---------------------------------------------------')
+    print(enumerate(bots_roles))
+    print('---------------------------------------------------')
     for i, role in enumerate(bots_roles):
         index = i % len(bots_roles)
         available_names = sorted(list(scenario_config.bots_by_role[role]))
-        bots_names.append(available_names[index])
+        print('---------------------------------------------------')
+        print(available_names)
+        print('---------------------------------------------------')
+        try:
+            bots_names.append(available_names[index])
+        except:
+            continue
+
 
     logger.info('Found the following bots for the scenario %s: %s', scenario, bots_names)
     return bots_names

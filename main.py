@@ -9,6 +9,7 @@ from agent.agent import Agent
 from game_environment.server import start_server, get_scenario_map
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
+from utils.args_handler import get_args
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -94,23 +95,24 @@ def game_loop(agents: list[Agent]) -> None:
         time.sleep(0.01)
 
 if __name__ == "__main__":
+    args = get_args()
     setup_logging(logger_timestamp)
-
+    print(args) ## TODO REMOVE
     logger.info("Program started")
     start_time = time.time()
 
 
     # Define players
-    players = ["Juan", "Laura", "Pedro"]
+    players = args.players
     players_context = ["juan_context.json", "laura_context.json", "pedro_context.json"]
     valid_actions = ['grab apple (x,y)', 'attack player (player_name) at (x,y)','explore'] # TODO : Change this.
     scenario_obstacles  = ['W', '$'] # TODO : Change this.
-    scenario_info = {'scenario_map': get_scenario_map(), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
+    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
     # Create agents
     agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file="world_context.txt", scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=True, scenario='commons_harvest__open_0')
+    env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name= args.substrate, scenario=args.scenario)
     logger = CustomAdapter(logger, game_env=env)
 
 

@@ -163,7 +163,10 @@ class SceneDescriptor:
     def parse_timestep(self, timestep):
         map = timestep.observation["GLOBAL.TEXT"].item().decode("utf-8")
         map = parse_string_to_matrix(map)
-        zaps = timestep.observation["WORLD.WHO_ZAPPED_WHO"]
+        try:
+            zaps = timestep.observation["WORLD.WHO_ZAPPED_WHO"]
+        except:
+            zaps = []
         states = timestep.observation["WORLD.AVATAR_STATES"]
         for avatar_id, avatar in self.avatars.items():
             _id = avatar_id + 1
