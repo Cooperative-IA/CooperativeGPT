@@ -1,4 +1,9 @@
+from dotenv import load_dotenv
+
 from llm import LLMModels
+
+# load environment variables
+load_dotenv(override=True)
 
 llm = LLMModels()
 embedding_model = llm.get_embedding_model()

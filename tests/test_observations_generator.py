@@ -164,3 +164,36 @@ def test_get_trees_descriptions():
     ]
     trees_descriptions = obs_gen.get_trees_descriptions(observed_map, local_map_position, global_position, agent_orientation)
     assert sorted(trees_descriptions) == sorted(expected_output), f"Expected {expected_output}, got {trees_descriptions}."
+
+def test_get_observed_agents():
+    observed_map = 'FFA\nFFF\n0FF\nAFF\nA#F\nAGA'
+    local_map_position = (4,1)
+    global_position = (7, 21)
+    agent_orientation = 0
+    expected_output = ['Observed agent agent1 at position [5, 20]']
+    agents_observed = obs_gen.get_agents_observed(observed_map, local_map_position, global_position, agent_orientation)
+    assert sorted(agents_observed) == sorted(expected_output), f"Expected {expected_output}, got {agents_observed}."
+
+    observed_map = 'AFFFF2\nFFFF#G\nFFFAAA'
+    local_map_position = (1,4)
+    global_position = (7, 21)
+    agent_orientation = 1
+    expected_output = ['Observed agent agent3 at position [8, 22]']
+    agents_observed = obs_gen.get_agents_observed(observed_map, local_map_position, global_position, agent_orientation)
+    assert sorted(agents_observed) == sorted(expected_output), f"Expected {expected_output}, got {agents_observed}."
+
+    observed_map = 'AGA\nF#1\nFFA\nFFF\nFFF\nAFF'
+    local_map_position = (1,1)
+    global_position = (7, 21)
+    agent_orientation = 2
+    expected_output = ['Observed agent agent2 at position [7, 20]']
+    agents_observed = obs_gen.get_agents_observed(observed_map, local_map_position, global_position, agent_orientation)
+    assert sorted(agents_observed) == sorted(expected_output), f"Expected {expected_output}, got {agents_observed}."
+
+    observed_map = 'AAAFFF\n0#FFFF\nAFFFFA'
+    local_map_position = (1,1)
+    global_position = (7, 21)
+    agent_orientation = 3
+    expected_output = ['Observed agent agent1 at position [8, 21]']
+    agents_observed = obs_gen.get_agents_observed(observed_map, local_map_position, global_position, agent_orientation)
+    assert sorted(agents_observed) == sorted(expected_output), f"Expected {expected_output}, got {agents_observed}."

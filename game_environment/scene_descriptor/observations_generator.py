@@ -146,18 +146,40 @@ class ObservationsGenerator (object):
             list_of_observations.extend(trees_descriptions)
 
             # Get agents observed descriptions
-            i = 0
-            for row in local_observation_map.split('\n'):
-                j=0
-                for char in row:
-                    if re.match(r'^[0-9]$', char):
-                        agent_id = int(char)
-                        agent_global_pos = self.get_element_global_pos((i,j), local_map_position, global_position, agent_orientation)
-                        list_of_observations.append("Observed agent {} at position {}".format(agent_id, agent_global_pos))
-                    j+=1
-                i+=1
+            agents_observed = self.get_agents_observed(local_observation_map, local_map_position, global_position, agent_orientation)
+            list_of_observations.extend(agents_observed)
         
         return list_of_observations
+    
+    def get_agents_observed(self, local_observation_map: str, local_map_position: tuple, global_position: tuple, agent_orientation: int) -> list[str]:
+        """
+        Returns a list with the descriptions of the agents observed by the agent
+
+        Args:
+            local_observation_map (str): Local map in ascci format
+            local_map_position (tuple): Local position of the agent in the observed window
+            global_position (tuple): Global position of the agent
+            agent_orientation (int): Orientation of the agent
+
+        Returns:
+            list[str]: List with the descriptions of the agents observed by the agent
+        """
+
+        agents_observed = []
+
+        i = 0
+        for row in local_observation_map.split('\n'):
+            j=0
+            for char in row:
+                if re.match(r'^[0-9]$', char):
+                    agent_id = int(char)
+                    agent_name = self.players_names[agent_id]
+                    agent_global_pos = self.get_element_global_pos((i,j), local_map_position, global_position, agent_orientation)
+                    agents_observed.append("Observed agent {} at position {}".format(agent_name, agent_global_pos))
+                j+=1
+            i+=1
+
+        return agents_observed
 
     def get_trees_descriptions(self, local_map, local_position, global_position, agent_orientation):
         """
