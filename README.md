@@ -77,6 +77,21 @@ pip install openai scikit-image chromadb tiktoken
 sudo apt-get install python3-tk
 ```
 
+If you are getting following error while trying to run chromadb example code using my python3.10.8 venv3.10:
+File "~/venv3.10/lib/python3.10/site-packages/chromadb/__init__.py", line 36, in <module> raise RuntimeError( RuntimeError: Your system has an unsupported version of sqlite3. Chroma requires sqlite3 >= 3.35.0.
+
+Execute following steps to resolve this error:
+
+Inside my python3.10.8's virtual environment i.e. venv3.10, installed pysqlite3-binary using command: pip install pysqlite3-binary
+Added these 3 lines in **venv3.10/lib/python3.10/site-packages/chromadb/__init__.py** at the beginning:
+
+```python
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+```
+
+
 ### 4. **Run the Application**
 
 Test the setup by running the main script:
