@@ -242,6 +242,7 @@ class Game:
             reset_env_when_done: bool = False,
             record: bool = False,
             bots: Optional[list[Bot]] = None,
+            substrate_name: str = 'commons_harvest_open'
             ):
         """Run multiplayer environment, with per player rendering and actions.
 
@@ -299,6 +300,7 @@ class Game:
             will cause this function to loop infinitely.
         record: Whether to record the game.
         bots: A list of Bot objects. This bots have a predefined policy.
+        substrate_name: The name of the substrate to use. By default it is 'commons_harvest_open'.
         """
         # Update the config with the overrides.
         full_config.lab2d_settings.update(config_overrides)
@@ -398,7 +400,7 @@ class Game:
         self.game_display = game_display
         self.clock = clock
         self.record = record
-        self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes)
+        self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes, substrate_name)
         self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         self.dateFormat = load_config()['date_format']
         self.game_steps = 0 # Number of steps of the game

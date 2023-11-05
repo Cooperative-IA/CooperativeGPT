@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import ast
 import sys
@@ -145,6 +146,7 @@ def run_episode(game_name: str, record: bool, players: list[str], init_timestamp
         print_events=print_events, 
         record=record,
         bots=bots,
+        substrate_name=game_name,
         )
     return game_env
 
@@ -176,6 +178,14 @@ def get_scenario_map  (game_name:str)-> str:
     ASCII_MAP = import_game(game_name).ASCII_MAP
     #return import_game(game_name).ASCII_MAP
     return ASCII_MAP
+
+def default_agent_actions_map():
+    """
+    Description: Returns the base action map for the agent
+    Retrieves the action map from the game environment
+    """
+    return deepcopy(game.NOOP)
+
 def change_avatars_appearance(lab2d_settings: Dict[str, Any],is_focal_player: list[bool]):    
 
     """

@@ -4,12 +4,6 @@ from copy import deepcopy
 
 from agent.agent import Agent
 
-_BASE_ACTION_MAP = {
-    'move': 0,
-    'turn': 0,
-    'fireZap': 0 
-}
-
 
 def parse_string_to_matrix(input_string):
     rows = input_string.strip().split('\n')
@@ -22,24 +16,35 @@ def matrix_to_string(matrix):
     return '\n'.join(rows)
 
 
+def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
+    if game_name == 'commons_harvest_open':
+        return  ['grab apple (x,y)', 
+                 'attack player (player_name) at (x,y)',
+                 'explore']
+    elif game_name == 'clean_up':
+        return ['grab apple (x,y)', 
+                'attack player (player_name) at (x,y)',
+                'explore',
+                'clean dirt (x,y)']
 
 
-def generate_agent_actions_map( action:str) -> dict:
+def generate_agent_actions_map( action:str, base_action_map: dict):
     """
     Description: Generates the action map for the agent
     
     Args:
         action (str): Action of the agent
+        base_action_map (dict): Base action map for the agent
 
     Returns:
         dict: Action map for the agent
     """
-
-    action_map = deepcopy(_BASE_ACTION_MAP)
     
     if len(action.split(' ')) == 1:
         if action == 'attack':
-            action_map['fireZap'] = 1
+            base_action_map['fireZap'] = 1
+        elif action == 'clean':
+            base_action_map['fireClean'] = 1
     
     elif len(action.split(' ')) == 2:
 
@@ -52,17 +57,10 @@ def generate_agent_actions_map( action:str) -> dict:
         elif kind == 'turn':
             int_dir = 1 if dir == 'right' else -1 if dir == 'left' else 0
 
-        action_map[kind] = int_dir
+        base_action_map[kind] = int_dir
 
-    return action_map
+    return base_action_map
 
-
-def default_agent_actions_map():
-    """
-    Description: Returns the base action map for the agent
-    """
-
-    return deepcopy(_BASE_ACTION_MAP)
 
 
 def get_element_global_pos( element_local_pos, local_position, global_position, agent_orientation=0):

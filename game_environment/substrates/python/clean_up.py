@@ -633,7 +633,23 @@ def create_scene(num_players):
                   ]
               }
           },
-          
+           {
+              "component": "GlobalMetricReporter",
+              "kwargs": {
+                  "metrics": [
+                      {"name": "WHO_ZAPPED_WHO",
+                       "type": "tensor.Int32Tensor",
+                       "shape": (num_players, num_players),
+                       "component": "GlobalMetricHolder",
+                       "variable": "playerZapMatrix"},
+                      {"name": "AVATAR_STATES",
+                       "type": "tensor.Int32Tensor",
+                       "shape": (num_players,),
+                       "component": "GlobalStateTracker",
+                       "variable": "states"}
+                  ]
+              }
+          },
 
       ]
   }
@@ -652,7 +668,7 @@ def create_avatar_object(player_idx: int,
 
   live_state_name = "player{}".format(lua_index)
   avatar_object = {
-      "name": f"avatar{lua_index}",
+      "name": f"avatar",
       "components": [
           {
               "component": "StateManager",
@@ -724,6 +740,9 @@ def create_avatar_object(player_idx: int,
               }
           },
           {
+              "component": "AvatarIdsInViewObservation"
+          },
+          {
               "component": "Zapper",
               "kwargs": {
                   "cooldownTime": 10,
@@ -737,6 +756,10 @@ def create_avatar_object(player_idx: int,
           },
           {
               "component": "ReadyToShootObservation",
+          },
+          {
+              "component": "LocationObserver",
+              "kwargs": {"objectIsAvatar": True, "alsoReportOrientation": True},
           },
           {
               "component": "Cleaner",
@@ -808,6 +831,8 @@ def create_avatar_object(player_idx: int,
       "component": "AvatarMetricReporter",
       "kwargs": {"metrics": metrics}
   })
+
+
 
   return avatar_object
 

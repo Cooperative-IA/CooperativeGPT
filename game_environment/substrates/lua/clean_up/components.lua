@@ -615,6 +615,9 @@ local allComponents = {
     Edible = Edible,
 
     -- Avatar components.
+    AvatarsStateObserver = AvatarsStateObserver,
+    GlobalStateTracker = GlobalStateTracker,
+    
     Cleaner = Cleaner,
     Taste = Taste,
     AllNonselfCumulants = AllNonselfCumulants,
@@ -623,6 +626,8 @@ local allComponents = {
     RiverMonitor = RiverMonitor,
     DirtSpawner = DirtSpawner,
     GlobalData = GlobalData,
+
+    
 }
 
 component_registry.registerAllComponents(allComponents)

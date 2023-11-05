@@ -19,13 +19,14 @@ class ObservationsGenerator (object):
             scene descriptor module which provides the observations in ascci format
     """
 
-    def __init__(self, global_map:str, players_names: list):
+    def __init__(self, global_map:str, players_names: list, substrate_name:str):
         """
         Description: Initializes the observations generator
 
         Args:
             global_map (str): Global map in ascci format
             players_names (list): List with the names of the players
+            substrate_name (str): Name of the substrate
         """
         
         self.global_map = global_map
@@ -33,7 +34,7 @@ class ObservationsGenerator (object):
         self.players_names = players_names
         self.self_symbol = '#'
         self.other_players_symbols = [str(i) for i in range(len(players_names))]
-
+        self.substrate_name = substrate_name
 
     def connected_elems_map(self, ascci_map, elements_to_find):
         """
@@ -141,25 +142,27 @@ class ObservationsGenerator (object):
             global_position = agent_dict['global_position']
             agent_orientation = agent_dict['orientation']
 
-            # Get trees descriptions
-            trees_descriptions = self.get_trees_descriptions(local_observation_map, local_map_position, global_position, agent_orientation) 
-            list_of_observations.extend(trees_descriptions)
+
+            if self.substrate_name == 'commons_harvest_open':
+                # Get trees descriptions
+                trees_descriptions = self.get_trees_descriptions(local_observation_map, local_map_position, global_position, agent_orientation) 
+                list_of_observations.extend(trees_descriptions)
+            elif self.substrate_name == 'clean_up':
+                # Get objects of clean up descriptions
+                items_descriptions = self.get_clean_up_descriptions(local_observation_map, local_map_position, global_position, agent_orientation)
+                list_of_observations.extend(items_descriptions)
 
             # Get agents observed descriptions
-            i = 0
-            for row in local_observation_map.split('\n'):
-                j=0
-                for char in row:
+            for i, row in enumerate(local_observation_map.split('\n')):
+                for j, char in enumerate(row):
                     if re.match(r'^[0-9]$', char):
                         agent_id = int(char)
                         agent_global_pos = self.get_element_global_pos((i,j), local_map_position, global_position, agent_orientation)
                         list_of_observations.append("Observed agent {} at position {}".format(agent_id, agent_global_pos))
-                    j+=1
-                i+=1
         
         return list_of_observations
 
-    def get_trees_descriptions(self, local_map, local_position, global_position, agent_orientation):
+    def get_trees_descriptions(self, local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int):
         """
         Description: Returns a list with the descriptions of the trees observed by the agent
 
@@ -216,3 +219,35 @@ class ObservationsGenerator (object):
                 list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remaining and {} grass for apples growing on the observed map. The tree might have more apples and grass on the global map"
                                                 .format(global_tree_id, list(global_tree_data['center']), apple_count, grass_count))
         return list_trees_observations
+
+
+    def get_clean_up_descriptions (self, local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int):
+        """
+        Description: Returns a list with the descriptions of the objects observed by the agent
+
+        Args:
+            local_map (str): Local map in ascci format
+            local_position (tuple): Local position of the agent
+            global_position (tuple): Global position of the agent
+            agent_orientation (int): Orientation of the agent
+            
+        Returns:
+            list: List with the descriptions of the objects observed by the agent
+        """
+        
+        items_observed = []
+        # Get apples (A) and dirt (D) observed descriptions
+        for i, row in enumerate(local_map.split('\n')):
+            for j, char in enumerate(row):
+                if re.match(r'^[0-9]$', char):
+                    agent_id = int(char)
+                    agent_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                    items_observed.append("Observed agent {} at position {}".format(agent_id, agent_global_pos))
+                elif char == 'A':
+                    apple_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                    items_observed.append("Observed an apple at position {}".format(apple_global_pos))
+                elif char == 'D':
+                    dirt_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                    items_observed.append("Observed dirt on the river at position {}".format(dirt_global_pos))
+
+        return items_observed

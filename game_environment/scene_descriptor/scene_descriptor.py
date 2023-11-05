@@ -58,6 +58,16 @@ class Avatar:
         self.reward = None
         self.partial_observation = None
         self.agents_in_observation = None
+    
+    def __str__(self):
+        return (f"Avatar(name={self.name}, view={self.avatar_view}, position={self.position}, "
+                f"orientation={self.orientation}, reward={self.reward}, "
+                f"partial_observation={self.partial_observation}, "
+                f"agents_in_observation={self.agents_in_observation}, murder={self.murder}, "
+                f"state={self.avatar_state})")
+
+
+        
 
 
 class SceneDescriptor:
@@ -161,6 +171,7 @@ class SceneDescriptor:
             avatar.reset_observation_variables()
 
     def parse_timestep(self, timestep):
+        
         map = timestep.observation["GLOBAL.TEXT"].item().decode("utf-8")
         map = parse_string_to_matrix(map)
         try:
