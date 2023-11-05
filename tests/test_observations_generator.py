@@ -1,5 +1,5 @@
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
-from CooperativeGPT.game_environment.substrates.python.commons_harvest_open import ASCII_MAP
+from game_environment.substrates.python.commons_harvest_open import ASCII_MAP
 
 players = ['agent1', 'agent2', 'agent3']
 obs_gen = ObservationsGenerator(ASCII_MAP, players)

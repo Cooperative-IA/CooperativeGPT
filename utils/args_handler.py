@@ -2,6 +2,13 @@ import argparse
 from typing import List
 
 def get_args():
+    """
+    Get the arguments for the simulation
+
+    Returns:
+        A list with the arguments for the simulation
+    """
+
     parser = argparse.ArgumentParser(
         description="Arguments to run a simulation of LLMs reasoning architecture on Melting Pot"
     )
@@ -37,6 +44,3 @@ def get_args():
     args = parser.parse_args()
     return args
 
-if __name__ == "__main__":
-    args = get_args()
-    print(args)

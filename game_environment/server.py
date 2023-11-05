@@ -171,6 +171,8 @@ def start_server(players: list[str],init_timestamp: str,  game_name: str = "comm
 
 def get_scenario_map  (game_name:str)-> str:
     """Get the scenario map from the game environment
+    Args:
+        game_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
     Returns:
         A string of the scenario map, rows are separed by '\n'
     """

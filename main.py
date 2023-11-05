@@ -97,7 +97,6 @@ def game_loop(agents: list[Agent]) -> None:
 if __name__ == "__main__":
     args = get_args()
     setup_logging(logger_timestamp)
-    print(args) ## TODO REMOVE
     logger.info("Program started")
     start_time = time.time()
 
