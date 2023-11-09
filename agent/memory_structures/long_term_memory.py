@@ -67,6 +67,9 @@ class LongTermMemory:
             # If additional_metadata is not a list, create a list with the same value for all memories
             elif isinstance(additional_metadata, dict):
                 additional_metadata = [additional_metadata for _ in range(len(memory))]
+            # If additional_metadata is None, create an empty list
+            elif additional_metadata is None:
+                additional_metadata = [{} for _ in range(len(memory))]
 
             # Create metadata for each memory
             metadata = [{"created_at": c, "poignancy": p, **additional_metadata[i], "timestamp": str_to_timestamp(c, self.date_format)} for i, (c, p) in enumerate(zip(created_at, poignancy))]
@@ -84,21 +87,26 @@ class LongTermMemory:
         else:
             self.collection.add(documents=[memory], metadatas=[metadata], ids=[str(uuid.uuid4())])
 
-    def get_relevant_memories(self, query: str, n_results: int = 10):
+    def get_relevant_memories(self, query: str, n_results: int = 10, return_metadata: bool = False, filter = None) -> list[str] | tuple[list[str], list[dict]]:
         """Gets relevant memories from the long term memory.
 
         Args:
             query (str): Query to search for.
             n_results (int, optional): Number of results to return. Defaults to 10.
+            return_metadata (bool, optional): Whether to return the metadata of the memories. Defaults to False.
+            filter (dict, optional):  A dictionary with the metadata to filter the memories. Defaults to None. This filter must be specified as the "where" filter for the query as defined for chromadb: https://docs.trychroma.com/usage-guide#using-where-filters.
 
         Returns:
             list[str]: List of relevant memories.
         """
-        results = self.collection.query(query_texts=[query], n_results=n_results)
+        results = self.collection.query(query_texts=[query], n_results=n_results, where=filter)
+
         # Formats the results to list of strings
-        #results = [r[0] for r in results['documents'] if r]
-        results = results['documents'][0] if results['documents'] else []
-        return results
+        memories = results['documents'][0] if results['documents'] else []
+        if return_metadata:
+            return memories, results['metadatas'][0] if results['metadatas'] else []
+        
+        return memories
     
     def get_memories(self, limit: int = 50, filter: dict = None, include_embeddings : bool = False) -> dict:
         """Gets memories from the long term memory and return them sorted in descending order.

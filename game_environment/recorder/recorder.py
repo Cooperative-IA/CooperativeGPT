@@ -11,7 +11,7 @@ from game_environment.recorder import recreate_simulation
 
 class Recorder:
 
-    def __init__(self, log_path, init_timestamp, substrate_config):
+    def __init__(self, log_path, init_timestamp, substrate_config, player_names):
         self.substrate_config = substrate_config
         self.n_players = self.substrate_config.lab2d_settings.numPlayers
         self.experiment_id = init_timestamp
@@ -19,6 +19,7 @@ class Recorder:
         self.step = 0
         self.logs = {}
         self.create_log_tree()
+        self.player_names = player_names
 
     def create_log_tree(self):
         self.create_or_replace_directory(self.log_path)
@@ -32,9 +33,9 @@ class Recorder:
     def record(self, timestep, description):
         world_view = timestep.observation["WORLD.RGB"]
         self.logs["world"].append(world_view)
-        for player_id in range(self.n_players):
+        for player_id, name in enumerate(self.player_names):
             agent_observation = timestep.observation[f"{player_id + 1}.RGB"]
-            description_image = self.add_description(description[player_id])
+            description_image = self.add_description(description[name])
             agent_observation = resize(agent_observation, (description_image.shape[0], description_image.shape[1]),
                                        anti_aliasing=True)
             agent_observation = (agent_observation * 255).astype(np.uint8)

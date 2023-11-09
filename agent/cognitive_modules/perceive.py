@@ -2,7 +2,7 @@ from llm import LLMModels
 from utils.llm import extract_answers
 from agent.memory_structures.short_term_memory import ShortTermMemory
 
-def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str]) -> tuple[bool, str]:
+def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str], changes_in_state: list[str], game_time: str) -> tuple[bool, str]:
     """Decides if the agent should react to the observation.
 
     Args:
@@ -11,6 +11,8 @@ def should_react(name: str, world_context: str, observations: list[str], current
         observations (list[str]): List of observations of the environment.
         current_plan (str): Current plan of the agent.
         actions_queue (list[str]): List of actions to be executed by the agent.
+        changes_in_state (list[str]): List of changes in the state of the environment.
+        game_time (str): Current game time.
 
     Returns:
         tuple[bool, str]: Tuple with True if the agent should react to the observation, False otherwise, and the reasoning.
@@ -21,9 +23,12 @@ def should_react(name: str, world_context: str, observations: list[str], current
     
     llm = LLMModels().get_main_model()
 
-    observation = '.\n'.join(observations)
+    observation = '\n'.join(observations)
+    changes_in_state = '\n'.join(changes_in_state)
+    if changes_in_state:
+        changes_in_state = f'The following changes in the environment were observed:\n{changes_in_state}'
     actions_queue = ', '.join([f'{i+1}.{action}' for i, action in enumerate(actions_queue)]) if len(actions_queue) > 0 else 'None'
-    response = llm.completion(prompt='react.txt', inputs=[name, world_context, observation, current_plan, actions_queue])
+    response = llm.completion(prompt='react.txt', inputs=[name, world_context, observation, current_plan, actions_queue, changes_in_state, game_time])
     answers = extract_answers(response)
     answer = answers.get('Answer', False)
     reasoning = answers.get('Reasoning', '')
@@ -49,3 +54,31 @@ def update_known_agents(observations: list[str], stm: ShortTermMemory):
     
     known_agents = set(known_agents)
     stm.set_known_agents(known_agents)
+
+def create_memory(agent_name: str, curr_time: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str]) -> str:
+    """Creates a memory from the action, state changes, reward and observations.
+
+    Args:
+        agent_name (str): Name of the agent.
+        curr_time (str): Current game time.
+        action (str|None): Action executed by the agent.
+        state_changes (list[str]): List of changes in the state of the environment.
+        reward (float): Reward obtained by the agent.
+        curr_observations (list[str]): List of observations of the environment.
+
+    Returns:
+        str: Memory.
+    """
+
+    memory = ''
+    if action is not None:
+        memory += f'{agent_name} took the action "{action}" in its last turn. '
+    if state_changes:
+        state_changes = '\n'.join(state_changes)
+        memory += f'Since then, the following changes in the environment were observed:\n{state_changes}\n'
+    memory += f'Now it\'s {curr_time} and the reward obtained by {agent_name} is {reward}.'
+    if curr_observations:
+        curr_observations = '\n'.join(curr_observations)
+        memory += f'\n{agent_name} can currently observe the following:\n{curr_observations}'
+    
+    return memory

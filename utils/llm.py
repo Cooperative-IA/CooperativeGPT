@@ -16,7 +16,9 @@ def extract_answers(response: str) -> dict[str, str]:
     patt = re.compile(r'\s*```json\s*([\w\W\n\r\t]*?)\s*```\s*', re.MULTILINE)
     try:
         response = response.replace('\n', ' ') # Remove new lines to avoid errors on multiline double quotes
-        answers = re.findall(patt, response)[0].strip()
+        answers = re.findall(patt, response)[0].strip() # Get the first json part of the response
+        answers =  re.sub(r'(:\s*"[^"]+")\s*("[^"]+"\s*:)', r'\1, \2', answers) # Add missing commas between items
+        answers = re.sub(r'"\s*,\s*}', '"}', answers) # Remove commas before the closing bracket
         parsed_answers = json.loads(answers)
     except:
         parsed_answers = {}

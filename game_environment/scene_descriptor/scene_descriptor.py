@@ -25,6 +25,7 @@ class Avatar:
         self.orientation = None
         self.reward = None
         self.partial_observation = None
+        self.last_partial_observation = None
         self.agents_in_observation = None
         self.murder = None
         self.avatar_state = 1
@@ -42,6 +43,9 @@ class Avatar:
 
     def set_partial_observation(self, partial_observation):
         self.partial_observation = partial_observation
+
+    def set_last_partial_observation(self, partial_observation):
+        self.last_partial_observation = partial_observation
 
     def set_position(self, x, y):
         self.position = (x, y)
@@ -66,6 +70,7 @@ class SceneDescriptor:
         self.substrate_config = substrate_config
         self.n_players = substrate_config.lab2d_settings.numPlayers
         self.avatars = self.get_avatars(substrate_config.player_names)
+        self.last_map = None # Map of the inmediately last step
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"{avatar.name} is player {avatar_id}")
 
@@ -79,15 +84,19 @@ class SceneDescriptor:
         self.reset_population()
         map, zaps = self.parse_timestep(timestep)
         self.parse_zaps(zaps)
-        self.compute_partial_observations(map)
+        self.compute_partial_observations(map, self.last_map)
+
+        self.last_map = map
 
         result = {}
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"Avatar {avatar_id} is in position {avatar.position}")
-            result[avatar_id] = {"observation": avatar.partial_observation,
+            result[avatar.name] = {"observation": avatar.partial_observation,
                                  "agents_in_observation": avatar.agents_in_observation,
                                  "global_position": avatar.position,
-                                 "orientation": int(avatar.orientation)}
+                                 "orientation": int(avatar.orientation),
+                                 "last_observation": avatar.last_partial_observation,
+                                }
         return result
 
     def parse_zaps(self, zaps):
@@ -95,12 +104,12 @@ class SceneDescriptor:
             for murder_index, value in enumerate(row):
                 murder_name = self.avatars[murder_index].name
                 if value > 0:
-                    self.avatars[victim_index].set_murder(murder_index)
+                    self.avatars[victim_index].set_murder(murder_name)
 
-    def compute_partial_observations(self, map):
+    def compute_partial_observations(self, map, last_map):
         for avatar_id, avatar in self.avatars.items():
             if avatar.avatar_state == 0:
-                obs_text = f"There are no observations: You were taken out of the game by agent {avatar.murder}"
+                obs_text = f"There are no observations: You were attacked by agent {avatar.murder}"
                 avatar.set_partial_observation(obs_text)
             else:
                 min_padding = max(avatar.avatar_view.values())
@@ -109,6 +118,13 @@ class SceneDescriptor:
                 observation, agents_in_observation = self.crop_observation(padded_map, avatar_id, avatar.avatar_view)
                 avatar.set_partial_observation(observation)
                 avatar.set_agents_in_observation(agents_in_observation)
+
+                # Get the past observations of the observed map to calculate state changes
+                if last_map is not None:
+                    last_padded_map = self.pad_matrix_to_square(last_map, min_padding)
+                    last_padded_map = np.rot90(last_padded_map, k=int(avatar.orientation))
+                    last_observation, _ = self.crop_observation(last_padded_map, avatar_id, avatar.avatar_view)
+                    avatar.set_last_partial_observation(last_observation)
 
     def crop_observation(self, map, avatar_id, avatar_view):
         # get avatar position in matrix

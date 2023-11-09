@@ -33,10 +33,10 @@ def game_loop(agents: list[Agent]) -> None:
     rounds_count, steps_count, max_steps = 0, 0, 200
 
     # Define bots number of steps per action
-    bots_steps_per_action = 3
+    bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
-    observations, scene_descriptions = env.step(actions)
+    env.step(actions)
 
     while rounds_count < max_steps:
         # Reset the actions for each agent
@@ -44,22 +44,22 @@ def game_loop(agents: list[Agent]) -> None:
         # Execute an action for each agent on each step
         for agent in agents:
             #Updates the observations for the current agent
-            observations, scene_descriptions = env.step({player_name: default_agent_actions_map() for player_name in env.player_prefixes})
-            steps_count += 1
+            all_observations =  env.get_observations_by_player(agent.name)
+            observations = all_observations['curr_state']
+            scene_description = all_observations['scene_description']
+            state_changes = all_observations['state_changes']
             # Get the current observations and environment information
             game_time = env.get_time()
-            scene_descriptions = {agents[i].name : scene_descriptions[i] for i in range(len(agents))}
-            agent_current_scene = scene_descriptions[agent.name]
             logger.info("\n\n" + f"Agent's {agent.name} turn".center(50, '#') + "\n")
-            logger.info('%s Observations: %s, Scene descriptions: %s', agent.name, observations[agent.name], scene_descriptions[agent.name])
+            logger.info('%s Observations: %s, Scene descriptions: %s', agent.name, observations, scene_description)
             # Get the steps for the agent to execute a high level action
-
-            if check_agent_out_of_game(observations, agent):
+            agent_reward = env.score[agent.name]
+            if check_agent_out_of_game(observations):
                 logger.info('Agent %s was taken out of the game', agent.name)
-                agent.move(observations[agent.name], agent_current_scene, game_time, agent_is_out=True)
+                agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
                 step_actions = new_empty_queue()
             else:
-                step_actions = agent.move(observations[agent.name], agent_current_scene, game_time)
+                step_actions = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
 
 
             while not step_actions.empty():
@@ -67,9 +67,19 @@ def game_loop(agents: list[Agent]) -> None:
                 # Update the actions map for the agent
                 actions[agent.name] = generate_agent_actions_map(step_action)
                 logger.info('Agent %s action map: %s', agent.name, actions[agent.name] )
+
+                # Execute a move for the bots
+                if env.bots:
+                    for bot in env.bots:
+                        if env.get_current_step_number() % bots_steps_per_agent_move == 0:
+                            bot_action = bot.move(env.timestep)
+                            actions[bot.name] = bot_action
+                        else:
+                            actions[bot.name] = default_agent_actions_map()
+
                 # Execute each step one by one until the agent has executed all the steps for the high level action
                 try: 
-                    observations, scene_descriptions = env.step(actions)
+                    env.step(actions)
                     steps_count += 1
                 except:
                     logger.exception("Error executing action %s", step_action)
@@ -77,16 +87,6 @@ def game_loop(agents: list[Agent]) -> None:
                     
             # Reset actions for the agent until its next turn
             actions[agent.name] = default_agent_actions_map()
-
-        # Execute the actions for the bots if a scenario is provided
-        if env.bots:
-            for bot in env.bots:
-                actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
-                for _ in range(bots_steps_per_action): 
-                    bot_action = bot.move(env.timestep)
-                    actions[bot.name] = bot_action
-                    env.step(actions)
-                    steps_count += 1
 
         rounds_count += 1
         logger.info('Round %s completed. Executed all the high level actions for each agent.', rounds_count)
@@ -99,15 +99,18 @@ if __name__ == "__main__":
     logger.info("Program started")
     start_time = time.time()
 
+    # Define the simulation mode
+    mode = "cooperative" # cooperative or None, if cooperative the agents will use the cooperative modules
 
     # Define players
     players = ["Juan", "Laura", "Pedro"]
     players_context = ["juan_context.json", "laura_context.json", "pedro_context.json"]
-    valid_actions = ['grab apple (x,y)', 'attack player (player_name) at (x,y)','explore'] # TODO : Change this.
+    valid_actions = ['grab apple (x,y)', 'attack player (player_name) at (x,y)','explore (x,y)'] # TODO : Change this.
     scenario_obstacles  = ['W', '$'] # TODO : Change this.
     scenario_info = {'scenario_map': get_scenario_map(), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
     # Create agents
-    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file="world_context.txt", scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
+    world_context_file = None if mode == "cooperative" else "world_context.txt"
+    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=world_context_file, scenario_info=scenario_info, mode=mode) for player, player_context in zip(players, players_context)]
 
     # Start the game server
     env = start_server(players, init_timestamp=logger_timestamp, record=True, scenario='commons_harvest__open_0')

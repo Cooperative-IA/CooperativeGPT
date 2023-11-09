@@ -2,8 +2,10 @@ You have this information about an agent called <input1>:
 
 <input1>'s world understanding: <input2>
 
-Current observations:
+Current observations at <input7>:
 <input3>
+
+<input6>
 
 Current plan: <input4>
 

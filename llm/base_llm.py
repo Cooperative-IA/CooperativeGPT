@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import random
+import re
 
 from utils.llm_cost import CostManager
 from utils.logging import CustomAdapter
@@ -150,6 +151,11 @@ class BaseLLM(ABC):
         for i, input in enumerate(inputs):
             if input is None:
                 input = 'None'
+            # Delete the line if the input is empty
+            if str(input).strip() == "":
+                regex = rf"^\s*{re.escape(f'<input{i+1}>')}[ \t\r\f\v]*\n"
+                prompt = re.sub(regex, "", prompt, flags=re.MULTILINE)
+   
             prompt = prompt.replace(f"<input{i+1}>", input)
 
         # Check if there are any <input> left

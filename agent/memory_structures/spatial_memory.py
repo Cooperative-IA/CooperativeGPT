@@ -70,6 +70,10 @@ class SpatialMemory:
             Queue(str): Steps sequence for the route.
         """
         self.logger.info(f'Finding route from {self.position} to {position_end}')
+        # If the position is the same as the current one, return an empty queue
+        if self.position == position_end:
+            return queue_from_list(['stay put'])
+        
         route = get_shortest_valid_route(self.explored_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
 
         # Adds a change on orientation on the last step of the route
@@ -91,6 +95,25 @@ class SpatialMemory:
             return route
         return queue_from_list(route)
     
+    def is_position_valid(self, position: tuple) -> bool:
+        """
+        Checks if a position is valid.
+
+        Args:
+            position (tuple): Position to check.
+
+        Returns:
+            bool: True if the position is valid, False otherwise.
+        """
+        if position[0] < 0 or position[0] >= self.mapSize[0] or position[1] < 0 or position[1] >= self.mapSize[1]:
+            return False
+        
+        if self.scenario_map[position[0]][position[1]] in self.scenario_obstacles:
+            return False
+        
+        return True
+        
+
 
 
     def get_steps_sequence(self, current_action) -> Queue[str]:
@@ -117,7 +140,10 @@ class SpatialMemory:
             sequence_steps.put('attack') # Put it twice to ensure enemy agent will be dead on its turn
         
         elif current_action.startswith('explore'):
-            sequence_steps = self.generate_explore_sequence()
+            explore_pos = self.get_position_from_action(current_action)
+            if not self.is_position_valid(explore_pos):
+                explore_pos = None
+            sequence_steps = self.generate_explore_sequence(explore_pos)
     
         self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')
         return sequence_steps
@@ -207,32 +233,39 @@ class SpatialMemory:
         #        return (i, row.index('#'))
         return (9,5)
 
-    def generate_explore_sequence(self) -> Queue[str]:
+    def generate_explore_sequence(self, position: str = None) -> Queue[str]:
         """
         Generates a sequence of steps to explore the map.
         Takes a random position from the current_observed map
         then finds the shortest route to that position and returns the steps sequence.
 
+        Args:
+            position (str, optional): Position to explore. Defaults to None.
+
         Returns:
             Queue[str]: Sequence of steps to explore the map.
         """
-        # Take a random position from the current_observed map
-        current_map_matrix = self.current_observed_map.split('\n')
+        if position is not None:
+            destination = position
+        else:
+            # Take a random position from the current_observed map
+            current_map_matrix = self.current_observed_map.split('\n')
 
-        # Finds the bounds of the current observed map
-        # TODO change that function to utils module
-        min_row, min_col, max_row, max_col = self.get_bounds_current_map(current_map_matrix)
+            # Finds the bounds of the current observed map
+            # TODO change that function to utils module
+            min_row, min_col, max_row, max_col = self.get_bounds_current_map(current_map_matrix)
 
-        random_row = random.randint(min_row, max_row)
-        random_col = random.randint(min_col, max_col)
-        # Is the destination a valid position? '-' means that the position does not exist on the map
-        while current_map_matrix[random_row][random_col] not in ['F', 'A']:
             random_row = random.randint(min_row, max_row)
             random_col = random.randint(min_col, max_col)
-        
-        # Get the global position of the destination
-        agent_local_pos = self.get_local_self_position()
-        destination = self.get_global_position((random_row, random_col), agent_local_pos)
+            # Is the destination a valid position? '-' means that the position does not exist on the map
+            while current_map_matrix[random_row][random_col] not in ['F', 'A']:
+                random_row = random.randint(min_row, max_row)
+                random_col = random.randint(min_col, max_col)
+            
+            # Get the global position of the destination
+            agent_local_pos = self.get_local_self_position()
+            destination = self.get_global_position((random_row, random_col), agent_local_pos)
+
         # Finds the shortest route to that position
         sequence_steps = self.find_route_to_position(destination, self.orientation)
         if sequence_steps.qsize() < 1:

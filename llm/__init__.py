@@ -1,4 +1,4 @@
-from llm.openai import GPT35, Ada
+from llm.openai import GPT35, Ada, GPT35_16K
 from llm.base_llm import BaseLLM
 
 class LLMModels():
@@ -11,9 +11,11 @@ class LLMModels():
             self.instance = super(LLMModels, self).__new__(self)
             self.instance.llm_models = {
             "gpt-3.5": GPT35(),
+            "gpt-3.5-16k": GPT35_16K(),
             "ada": Ada()
             }
             self.instance.main_model = "gpt-3.5"
+            self.instance.longer_context_fallback = "gpt-3.5-16k"
             self.instance.embedding_model = "ada"
         return self.instance
 
@@ -30,3 +32,10 @@ class LLMModels():
             BaseLLM: Embedding model
         """
         return self.llm_models[self.embedding_model]
+    
+    def get_longer_context_fallback(self) -> BaseLLM:
+        """Get the longer context fallback model
+        Returns:
+            BaseLLM: Longer context fallback model
+        """
+        return self.llm_models[self.longer_context_fallback]

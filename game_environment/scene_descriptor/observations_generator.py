@@ -33,6 +33,7 @@ class ObservationsGenerator (object):
         self.players_names = players_names
         self.self_symbol = '#'
         self.other_players_symbols = [str(i) for i in range(len(players_names))]
+        self.observed_changes = {name: [] for name in players_names}
 
 
     def connected_elems_map(self, ascci_map, elements_to_find):
@@ -85,6 +86,7 @@ class ObservationsGenerator (object):
         Returns:
             list[int]: Global position of the element
         """
+        element_global = []
         if agent_orientation == 0:
             element_global = (el_local_pos[0] - self_local_pos[0]) + self_global_pos[0],\
                                 (el_local_pos[1] - self_local_pos[1]) + self_global_pos[1]
@@ -108,25 +110,27 @@ class ObservationsGenerator (object):
 
         Args:
             agents_observations_str (str): Observations of the agents in ascci format
+            agents_observing (list[str]): List of the agents that are observing and didn't take an action
             
         Returns:
             dict[str, list[str]]: Dictionary with the descriptions of the observations in a list by agent name
         """
         agents_observations = ast.literal_eval(agents_observations_str)
         observations_description_per_agent = {}
-        for agent_id, agent_dict in agents_observations.items():
-            agent = self.players_names[agent_id]
-            observations_description_per_agent[agent] = self.get_observations_per_agent(agent_dict)
+        for agent_name, agent_dict in agents_observations.items():
+            observations_description_per_agent[agent_name] = self.get_observations_per_agent(agent_dict, agent_name, True)
             
         return observations_description_per_agent
     
 
-    def get_observations_per_agent(self, agent_dict: dict):
+    def get_observations_per_agent(self, agent_dict: dict, agent_name: str, is_observing: bool) -> list[str]:
         """
         Description: Returns a list with the descriptions of the observations of the agent
 
         Args:
             agent_dict (dict): Dictionary with the observations of the agent
+            agent_name (str): Name of the agent
+            is_observing (bool): True if the agent is observing, False otherwise
         
         Returns:
             list: List with the descriptions of the observations of the agent
@@ -137,6 +141,7 @@ class ObservationsGenerator (object):
             return list_of_observations
         else:
             local_observation_map = agent_dict['observation']
+            last_observation_map =  agent_dict['last_observation']
             local_map_position = (9,5)
             global_position = agent_dict['global_position']
             agent_orientation = agent_dict['orientation']
@@ -150,6 +155,39 @@ class ObservationsGenerator (object):
             list_of_observations.extend(agents_observed)
         
         return list_of_observations
+    
+    def update_state_changes(self, scene_description: dict, agents_observing: list[str], game_time: str):
+        """Update the state changes of the agents
+
+        Args:
+            scene_description (dict): Scene description of the agents
+            agents_observing (list[str]): List of the agents that are observing and didn't take an action
+        """
+        for agent_name in agents_observing:
+            agent_dict = scene_description[agent_name]
+            local_observation_map = agent_dict['observation']
+            last_observation_map =  agent_dict['last_observation']
+            local_map_position = (9,5)
+            global_position = agent_dict['global_position']
+            agent_orientation = agent_dict['orientation']
+
+            # Get observed changes in the environment. If the agent is observing, the changes are stored in the observed_changes dictionary
+            observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, agent_orientation, game_time)
+            self.observed_changes[agent_name].extend(observed_changes)
+    
+    def get_observed_changes_per_agent(self, agent_name: str) -> list[tuple[str, str]]:
+        """
+        Description: Returns a list with the descriptions of the observed changes of the agent
+
+        Args:
+            agent_name (str): Name of the agent
+        
+        Returns:
+            list: List of tuples with the descriptions of the observed changes of the agent and the game time
+        """
+        observations = self.observed_changes[agent_name]
+        self.observed_changes[agent_name] = []
+        return observations
     
     def get_agents_observed(self, local_observation_map: str, local_map_position: tuple, global_position: tuple, agent_orientation: int) -> list[str]:
         """
@@ -175,7 +213,7 @@ class ObservationsGenerator (object):
                     agent_id = int(char)
                     agent_name = self.players_names[agent_id]
                     agent_global_pos = self.get_element_global_pos((i,j), local_map_position, global_position, agent_orientation)
-                    agents_observed.append("Observed agent {} at position {}".format(agent_name, agent_global_pos))
+                    agents_observed.append("Observed agent {} at position {}.".format(agent_name, agent_global_pos))
                 j+=1
             i+=1
 
@@ -226,15 +264,71 @@ class ObservationsGenerator (object):
                 for apple in local_tree_data['elements']:
                     apple_global_pos = self.get_element_global_pos(apple, local_position, global_position, agent_orientation)
                     if local_map.split('\n')[apple[0]][apple[1]] == 'G':
-                        list_trees_observations.append("Observed grass to grow apples at position {}. This grass belongs to tree {}"
+                        list_trees_observations.append("Observed grass to grow apples at position {}. This grass belongs to tree {}."
                                                     .format(apple_global_pos, global_tree_id))
                         grass_count += 1
                     elif local_map.split('\n')[apple[0]][apple[1]] == 'A':
-                        list_trees_observations.append("Observed an apple at position {}. This apple belongs to tree {}"
+                        list_trees_observations.append("Observed an apple at position {}. This apple belongs to tree {}."
                                                     .format(apple_global_pos, global_tree_id ))
                         apple_count += 1
 
             if apple_count > 0 or grass_count > 0:      
-                list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remaining and {} grass for apples growing on the observed map. The tree might have more apples and grass on the global map"
+                list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remaining and {} grass for apples growing on the observed map. The tree might have more apples and grass on the global map."
                                                 .format(global_tree_id, list(global_tree_data['center']), apple_count, grass_count))
         return list_trees_observations
+    
+    def get_matrix(self, map) -> np.array:
+        """Convert a map in ascci format to a matrix
+
+        Args:
+            map (str): Map in ascci format
+
+        Returns:
+            np.array: Map in matrix format
+        """
+        return np.array([[l for l in row] for row in map.split('\n')])
+
+    def get_observed_changes(self, observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str) -> list[tuple[str, str]]:
+        """Create a list of observations of the changes in the environment
+        
+        Args:
+            observed_map (str): Map observed by the agent
+            last_observed_map (str | None): Last map observed by the agent
+            agent_local_position (tuple): Position of the agent on the observed map
+            agent_global_position (tuple): Global position of the agent
+            agent_orientation (int): Orientation of the agent
+            game_time (str): Current game time
+
+        Returns:
+            list[tuple[str, str]]: List of tuples with the changes in the environment, and the game time
+        """
+        observations = []
+        if last_observed_map == None:
+            return observations
+        
+        curr_m = self.get_matrix(observed_map)
+        last_m = self.get_matrix(last_observed_map)
+        for index in np.ndindex(curr_m.shape):
+            curr_el = curr_m[index]
+            last_el = last_m[index]
+            if curr_el != last_el:
+                # If an apple was taken
+                if last_el == 'A':
+                    agent_id = int(curr_el)
+                    agent_name = self.players_names[agent_id]
+                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                    observations.append((f"Observed that agent {agent_name} took an apple from position {el_pos}.", game_time))
+                # If grass desappeared
+                elif last_el == 'G' and curr_el == 'F':
+                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                    observations.append((f"Observed that the grass at position {el_pos} disappeared.", game_time))
+                # If grass appeared
+                elif last_el == 'F' and curr_el == 'G':
+                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                    observations.append((f"Observed that grass to grow apples appeared at position {el_pos}.", game_time))
+                # If an apple appeared
+                elif last_el == 'G' and curr_el == 'A':
+                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                    observations.append((f"Observed that an apple grew at position {el_pos}.", game_time))
+
+        return observations
