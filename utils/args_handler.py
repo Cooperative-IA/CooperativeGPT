@@ -35,10 +35,31 @@ def get_args():
     )
 
     parser.add_argument(
+        "--agents_bio_config",
+        type=str,
+        default="no_bio",
+        help="Path to the agents bio config folder, valid options are: no_bio, all_coop, 2_coop_1_selfish, all_selfish"
+    )
+
+    parser.add_argument(
+        "--evaluate_with_bots",
+        type=bool,
+        default=False,
+        help="Whether to evaluate the agents with bots or not"
+    )
+
+    parser.add_argument(
         "--record",
         type=bool,
         default=True,
         help="Whether to record the game. True/False"
+    )
+
+    parser.add_argument(
+        "--llm_model",
+        type=str,
+        default='gpt-3.5',
+        help="Which LLM model to use. Valid options are: gpt-3.5, gpt-3.5-16k, gpt-4" 
     )
 
     args = parser.parse_args()

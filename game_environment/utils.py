@@ -1,6 +1,8 @@
 import json
 import numpy as np
 from copy import deepcopy
+from scipy.ndimage import label, center_of_mass
+from collections import defaultdict
 
 from agent.agent import Agent
 
@@ -20,12 +22,18 @@ def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
     if game_name == 'commons_harvest_open':
         return  ['grab apple (x,y)', 
                  'attack player (player_name) at (x,y)',
-                 'explore']
+                 'explore',
+                 #'go to (x,y)',
+                 'leave current tree and go to tree (treeId) at (x,y)',
+                 ]
+        
     elif game_name == 'clean_up':
         return ['grab apple (x,y)', 
                 'attack player (player_name) at (x,y)',
                 'explore',
-                'clean dirt (x,y)']
+                'clean dirt of river at (x,y)',
+                'go to river bank at (x,y)',
+                'go to apples field edge at (x,y)',]
 
 
 def generate_agent_actions_map( action:str, base_action_map: dict):
@@ -105,3 +113,42 @@ def check_agent_out_of_game(observations:dict, agent: Agent):
         bool: True if the agent is out of the game, False otherwise
    """
    return len(observations[agent.name]) >0 and observations[agent.name][0].startswith('There are no observations: You were taken ')
+
+
+
+
+def connected_elems_map(ascci_map, elements_to_find):
+        """
+        Returns a dictionary with the connected components of the map and their elements
+
+        Args:
+            ascci_map (str): Map in ascci format
+            elements_to_find (list): List of elements to find in the map
+
+        Returns:
+            dict: Dictionary with the connected components of the map and their elements
+        """
+
+        # Convierte la matriz en una matriz numpy
+        matrix = np.array([list(row) for row in ascci_map.split('\n') if row != ''])
+
+        # Generate mask
+        mask = (matrix == elements_to_find[0]) 
+        for elem in elements_to_find[1:]:
+            mask |= (matrix == elem)
+
+        # Encontrar componentes conectados
+        labeled_matrix, num_features = label(mask)
+
+        # Inicializa un diccionario para almacenar los centros de los componentes y sus elementos
+        component_data = defaultdict(list)
+
+        # Calcula el centro de cada componente y almacena sus elementos
+        for i in range(1, num_features + 1):
+            component_mask = labeled_matrix == i
+            center = center_of_mass(component_mask)
+            center_coords = (int(center[0]), int(center[1]))
+            component_elements = np.argwhere(component_mask)
+            component_data[i] = {'center': center_coords, 'elements': component_elements.tolist()}
+
+        return dict(component_data)

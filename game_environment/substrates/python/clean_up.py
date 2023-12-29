@@ -600,8 +600,8 @@ def create_scene(num_players):
           {
               "component": "DirtSpawner",
               "kwargs": {
-                  "dirtSpawnProbability": 0.5,
-                  "delayStartOfDirtSpawning": 50,
+                  "dirtSpawnProbability": 0.1,  #TODO HERE TO CHANGE DIRT SPAWN PROBABILITY
+                  "delayStartOfDirtSpawning": 100,
               },
           },
           {

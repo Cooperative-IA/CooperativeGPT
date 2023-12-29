@@ -106,7 +106,7 @@ class SpatialMemory:
 
         sequence_steps = new_empty_queue()
 
-        if current_action.startswith(('grab ', 'go to ')): # TODO : Change this according to the valid actions.
+        if current_action.startswith(('grab ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
             sequence_steps = self.find_route_to_position(end_position, self.orientation)
         

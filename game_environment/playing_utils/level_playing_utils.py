@@ -362,7 +362,7 @@ class Game:
 
         # Create the game recorder
         if record:
-            game_recorder = Recorder("logs", init_timestamp, full_config)
+            game_recorder = Recorder("logs", init_timestamp, full_config, substrate_name)
             record_counter = 0
 
         self.env = env
@@ -405,6 +405,7 @@ class Game:
         self.dateFormat = load_config()['date_format']
         self.game_steps = 0 # Number of steps of the game
         self.bots = bots
+        self.game_ascii_map = game_ascii_map
 
     def end_game(self):
         """Ends the game. This function is called when the game is finished."""
@@ -440,7 +441,7 @@ class Game:
 
         action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
-        description = self.descriptor.describe_scene(self.timestep)
+        description, curr_global_map = self.descriptor.describe_scene(self.timestep)
         
         if self.first_move_done :
             # Get the next action map
@@ -476,6 +477,7 @@ class Game:
         if self.record:
             self.game_recorder.record(self.timestep, description)
             self.game_recorder.record_rewards(rewards)
+            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
             self.record_counter += 1
 
         # pygame display

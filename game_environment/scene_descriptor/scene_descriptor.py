@@ -1,7 +1,7 @@
 import re
 import numpy as np
 import logging
-from game_environment.utils import parse_string_to_matrix, matrix_to_string
+from game_environment.utils import parse_string_to_matrix, matrix_to_string, connected_elems_map
 from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ class Avatar:
         self.agents_in_observation = None
         self.murder = None
         self.avatar_state = 1
+
 
     def set_agents_in_observation(self, agents):
         self.agents_in_observation = agents
@@ -78,6 +79,7 @@ class SceneDescriptor:
         self.avatars = self.get_avatars(substrate_config.player_names)
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"{avatar.name} is player {avatar_id}")
+        
 
     def get_avatars(self, names):
         avatars = {}
@@ -90,7 +92,6 @@ class SceneDescriptor:
         map, zaps = self.parse_timestep(timestep)
         self.parse_zaps(zaps)
         self.compute_partial_observations(map)
-
         result = {}
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"Avatar {avatar_id} is in position {avatar.position}")
@@ -98,7 +99,7 @@ class SceneDescriptor:
                                  "agents_in_observation": avatar.agents_in_observation,
                                  "global_position": avatar.position,
                                  "orientation": int(avatar.orientation)}
-        return result
+        return result, map
 
     def parse_zaps(self, zaps):
         for victim_index, row in enumerate(zaps):
@@ -187,3 +188,4 @@ class SceneDescriptor:
             avatar.set_state(states[avatar_id])
 
         return map, zaps
+    
