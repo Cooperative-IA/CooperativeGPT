@@ -66,7 +66,7 @@ class Recorder:
         canvas = np.ones((600, 600, 3), dtype=np.uint8) * 255
         sub_str = "You were taken out of the game by "
         observation = description["observation"]
-        other_agents = description["agents_in_observation"]
+        other_agents = description.get("agents_in_observation", {})
         if sub_str in observation:
             murder = observation.replace(sub_str, "")
             self.put_text_on_image(canvas, sub_str, x=20, y=20)

@@ -314,3 +314,23 @@ class SpatialMemory:
                     else:
                         found_col_min = True
         return min_row, min_col, max_row, max_col
+    
+    def get_orientation_name(self) -> str:
+        """
+        Returns the name of the current orientation of the agent.
+
+        Returns:
+            str: Name of the orientation.
+        """
+        orientation = self.orientation
+        
+        if orientation == 0:
+            return 'North'
+        elif orientation == 1:
+            return 'East'
+        elif orientation == 2:
+            return 'South'
+        elif orientation == 3:
+            return 'West'
+        else:
+            raise Exception(f'Orientation {orientation} is not valid')

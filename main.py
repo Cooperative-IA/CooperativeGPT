@@ -100,7 +100,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Define the simulation mode
-    mode = "cooperative" # cooperative or None, if cooperative the agents will use the cooperative modules
+    mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
 
     # Define players
     players = ["Juan", "Laura", "Pedro"]
@@ -113,13 +113,16 @@ if __name__ == "__main__":
     agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=world_context_file, scenario_info=scenario_info, mode=mode) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=True, scenario='commons_harvest__open_0')
+    scenario = 'commons_harvest__open_0' # 'commons_harvest__open_0' or None
+    env = start_server(players, init_timestamp=logger_timestamp, record=True, scenario=scenario)
     logger = CustomAdapter(logger, game_env=env)
 
 
     llm = LLMModels()
     gpt_model = llm.get_main_model()
+    gpt_longer_context = llm.get_longer_context_fallback()
     embedding_model = llm.get_embedding_model()
+    gpt_best_model = llm.get_best_model()
     try:
         game_loop(agents)
     except KeyboardInterrupt:
@@ -130,8 +133,8 @@ if __name__ == "__main__":
     env.end_game()
        
     # LLm total cost
-    costs = gpt_model.cost_manager.get_costs()['total_cost'] + embedding_model.cost_manager.get_costs()['total_cost']
-    tokens = gpt_model.cost_manager.get_tokens()['total_tokens'] + embedding_model.cost_manager.get_tokens()['total_tokens']
+    costs = gpt_model.cost_manager.get_costs()['total_cost'] + embedding_model.cost_manager.get_costs()['total_cost'] + gpt_longer_context.cost_manager.get_costs()['total_cost'] + gpt_best_model.cost_manager.get_costs()['total_cost']
+    tokens = gpt_model.cost_manager.get_tokens()['total_tokens'] + embedding_model.cost_manager.get_tokens()['total_tokens'] + gpt_longer_context.cost_manager.get_tokens()['total_tokens'] + gpt_best_model.cost_manager.get_tokens()['total_tokens']
     logger.info("LLM total cost: %.2f, total tokens: %s", costs, tokens)
 
     end_time = time.time()

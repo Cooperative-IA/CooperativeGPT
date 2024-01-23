@@ -55,7 +55,7 @@ def update_known_agents(observations: list[str], stm: ShortTermMemory):
     known_agents = set(known_agents)
     stm.set_known_agents(known_agents)
 
-def create_memory(agent_name: str, curr_time: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str]) -> str:
+def create_memory(agent_name: str, curr_time: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str], position: list[int], orientation: str) -> str:
     """Creates a memory from the action, state changes, reward and observations.
 
     Args:
@@ -65,6 +65,8 @@ def create_memory(agent_name: str, curr_time: str, action: str|None, state_chang
         state_changes (list[str]): List of changes in the state of the environment.
         reward (float): Reward obtained by the agent.
         curr_observations (list[str]): List of observations of the environment.
+        position (list[int]): Position of the agent.
+        orientation (str): Orientation of the agent.
 
     Returns:
         str: Memory.
@@ -72,13 +74,15 @@ def create_memory(agent_name: str, curr_time: str, action: str|None, state_chang
 
     memory = ''
     if action is not None:
-        memory += f'{agent_name} took the action "{action}" in its last turn. '
+        memory += f'I took the action "{action}" in my last turn. '
     if state_changes:
         state_changes = '\n'.join(state_changes)
-        memory += f'Since then, the following changes in the environment were observed:\n{state_changes}\n'
-    memory += f'Now it\'s {curr_time} and the reward obtained by {agent_name} is {reward}.'
+        memory += f'Since then, the following changes in the environment have been observed:\n{state_changes}\n'
+    memory += f'Now it\'s {curr_time} and the reward obtained by me is {reward}. I am at the position {position} looking to the {orientation}.'
     if curr_observations:
         curr_observations = '\n'.join(curr_observations)
-        memory += f'\n{agent_name} can currently observe the following:\n{curr_observations}'
+        memory += f'\nI can currently observe the following:\n{curr_observations}'
+    else:
+        memory += f'\nI can\'t currently observe anything.'
     
     return memory

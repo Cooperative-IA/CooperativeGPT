@@ -111,6 +111,7 @@ class SceneDescriptor:
             if avatar.avatar_state == 0:
                 obs_text = f"There are no observations: You were attacked by agent {avatar.murder}"
                 avatar.set_partial_observation(obs_text)
+                avatar.set_agents_in_observation({})
             else:
                 min_padding = max(avatar.avatar_view.values())
                 padded_map = self.pad_matrix_to_square(map, min_padding)

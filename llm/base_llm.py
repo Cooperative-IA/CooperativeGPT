@@ -156,7 +156,7 @@ class BaseLLM(ABC):
                 regex = rf"^\s*{re.escape(f'<input{i+1}>')}[ \t\r\f\v]*\n"
                 prompt = re.sub(regex, "", prompt, flags=re.MULTILINE)
    
-            prompt = prompt.replace(f"<input{i+1}>", input)
+            prompt = prompt.replace(f"<input{i+1}>", str(input))
 
         # Check if there are any <input> left
         if "<input" in prompt:

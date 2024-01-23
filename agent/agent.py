@@ -12,7 +12,8 @@ from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
 from agent.cognitive_modules.act import actions_sequence
-from agent.cooperative_modules.understanding import update_understanding
+from agent.cognitive_modules.retrieve import retrieve_relevant_memories
+from agent.cooperative_modules.understanding import update_understanding, update_understanding_2, update_understanding_4
 from utils.queue_utils import list_from_queue
 from utils.logging import CustomAdapter
 from utils.time import str_to_timestamp
@@ -24,7 +25,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10, mode: Mode = 'normal', understanding_umbral = 30) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30) -> None:
         """Initializes the agent.
 
         Args:
@@ -120,7 +121,7 @@ class Agent:
 
         self.reflect(filtered_observations)
 
-        self.understand(filtered_observations)
+        self.understand(filtered_observations, state_changes)
 
         if react:
             self.plan()
@@ -163,11 +164,21 @@ class Agent:
             changes.append(f'{change} At {obs_time}')
 
         # Create a memory from the observations, the changes in the state of the environment and the reward, and add it to the long term memory
-        memory = create_memory(self.name, game_time, action_executed, changes, reward, observations)
+        position = self.spatial_memory.position
+        orientation = self.spatial_memory.get_orientation_name()
+        memory = create_memory(self.name, game_time, action_executed, changes, reward, observations, position, orientation)
         self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
 
         current_observation = '\n'.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
+
+        last_reward = self.stm.get_memory('current_reward') or 0.0
+        self.stm.add_memory(reward, 'current_reward')
+        self.stm.add_memory(last_reward, 'last_reward')
+        last_position = self.stm.get_memory('current_position') or self.spatial_memory.position
+        self.stm.add_memory(self.spatial_memory.position, 'current_position')
+        self.stm.add_memory(last_position, 'last_position')
+        self.stm.add_memory(orientation, 'current_orientation')
 
         # Decide if the agent should react to the observation
         current_plan = self.stm.get_memory('current_plan')
@@ -237,8 +248,8 @@ class Agent:
         # Get the relevant memories for each question, relevant memories is a list of lists
         relevant_memories_list = [] 
         for question in relevant_questions:
-            retrieved_memories = self.ltm.get_relevant_memories(query=question, n_results=3, return_metadata=True)
-            retrieved_memories = '\n'.join(retrieved_memories[0])
+            retrieved_memories = retrieve_relevant_memories(self, query=question, max_memories=3)
+            retrieved_memories = '\n'.join(retrieved_memories)
             # adds the retrieved memories to the relevant memories list
             relevant_memories_list.append(retrieved_memories)
         
@@ -330,7 +341,7 @@ class Agent:
 
         return agent_steps
     
-    def understand(self, observations: list[str]):
+    def understand(self, observations: list[str], state_changes: list[str]):
         """
         Improves the agent's understanding of the world and of other agents.
 
@@ -340,4 +351,6 @@ class Agent:
         Returns:
             None
         """
-        update_understanding(observations, self, self.stm.get_memory('game_time'), understanding_umbral = self.understanding_umbral)
+        last_reward = self.stm.get_memory('last_reward')
+        current_reward = self.stm.get_memory('current_reward')
+        update_understanding_4(observations, self, self.stm.get_memory('game_time'), last_reward, current_reward, state_changes, understanding_umbral = self.understanding_umbral)

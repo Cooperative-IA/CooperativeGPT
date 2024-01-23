@@ -108,13 +108,14 @@ class LongTermMemory:
         
         return memories
     
-    def get_memories(self, limit: int = 50, filter: dict = None, include_embeddings : bool = False) -> dict:
+    def get_memories(self, limit: int = 50, filter: dict = None, include_embeddings : bool = False, reversed_order = False) -> dict:
         """Gets memories from the long term memory and return them sorted in descending order.
 
         Args:
             limit (int, optional): Number of results to return. Defaults to 50.
             filter (dict, optional):  A dictionary with the metadata to filter the memories. Defaults to None. This filter must be specified as the "where" filter for the query as defined for chromadb: https://docs.trychroma.com/usage-guide#using-where-filters.
             include_embeddings (bool, optional): Whether to include the embeddings in the results. Defaults to False.
+            reversed_order (bool, optional): The most recent memories are returned, but from the oldest to the most recent. Defaults to False.
 
         Returns:
             dict: List of memories. The memories are returned as a dictionary with the following structure: {"ids": list[str], "documents": list[str], "metadatas": list[dict], "embeddings": list[list[float]]}
@@ -130,6 +131,13 @@ class LongTermMemory:
         results['documents'] = results['documents'][::-1][:limit]
         results['metadatas'] = results['metadatas'][::-1][:limit]
         results['embeddings'] = results['embeddings'][::-1][:limit] if include_embeddings else None
+
+        if reversed_order:
+            results['ids'] = results['ids'][::-1]
+            results['documents'] = results['documents'][::-1]
+            results['metadatas'] = results['metadatas'][::-1]
+            results['embeddings'] = results['embeddings'][::-1] if include_embeddings else None
+            
         return results
     
     def create_embedding(self, text: str) -> list[float]:

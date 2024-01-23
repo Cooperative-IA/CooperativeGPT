@@ -1,6 +1,6 @@
 from llm import LLMModels
 from utils.time import str_to_timestamp
-from utils.llm import extract_answers
+from utils.llm import extract_answers, extract_text, extract_tags
 
 def update_understanding(current_observations: list[str], agent, game_time: str, understanding_umbral = 30):
     """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
@@ -90,3 +90,231 @@ def update_understanding(current_observations: list[str], agent, game_time: str,
 
     # Update the time of the understanding update
     agent.stm.add_memory(game_time, 'understanding_updated_on')
+
+def update_understanding_2(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30):
+    """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
+    if the agent has no understanding about the world yet, in that case the current observations are used instead of the reflections.
+
+    Args:
+        current_observations (list[str]): List of the current observations.
+        agent (Agent): Agent to update the understanding.
+        game_time (str): Current game time.
+        understanding_umbral (int, optional): Minimum poignancy to update the understanding (only reflections are taken in account). Defaults to 6.
+    """
+    # Decide if the understanding should be updated
+    last_world_representation = agent.stm.get_memory('world_representation')
+    last_understanding_update = agent.stm.get_memory('understanding_updated_on')
+    if current_observations:
+        current_observations = '\n'.join(current_observations)
+    else:
+        current_observations = 'You cannot see anything within your vision range.'
+    llm = LLMModels().get_main_model()
+    response = llm.completion(prompt='world_representation.txt', inputs=[current_observations])
+    current_world_representation = str(extract_answers(response))
+    agent.stm.add_memory(current_world_representation, 'world_representation')
+        
+    # Update the understanding
+
+    # Prompt the language model
+    action = agent.stm.get_memory('current_action') or 'No action executed yet.'
+    state_changes = '\n'.join(state_changes) if state_changes else 'There were no changes observed.'
+    if last_world_representation is not None:
+        last_world_rules = agent.stm.get_memory('world_rules') or ''
+        try:
+            world_rules = llm.completion(prompt='world_rules.txt', inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules])
+        except ValueError as e:
+            if str(e) == 'Prompt is too long':
+                llm = LLMModels().get_longer_context_fallback()
+                world_rules = llm.completion(prompt='world_rules.txt', inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules])
+            else:
+                raise e
+        agent.stm.add_memory(world_rules, 'world_rules')
+        agent.stm.add_memory(f'{current_world_representation}\n{world_rules}', 'world_context')
+    else:
+        agent.stm.add_memory(current_world_representation, 'world_context')
+
+    # Update the time of the understanding update
+    agent.stm.add_memory(game_time, 'understanding_updated_on')
+
+
+def update_understanding_3(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30):
+    """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
+    if the agent has no understanding about the world yet, in that case the current observations are used instead of the reflections.
+
+    Args:
+        current_observations (list[str]): List of the current observations.
+        agent (Agent): Agent to update the understanding.
+        game_time (str): Current game time.
+        understanding_umbral (int, optional): Minimum poignancy to update the understanding (only reflections are taken in account). Defaults to 6.
+    """
+    # Decide if the understanding should be updated
+    last_world_representation = agent.stm.get_memory('world_representation')
+    last_understanding_update = agent.stm.get_memory('understanding_updated_on')
+    last_position = agent.stm.get_memory('last_position')
+    if current_observations:
+        current_observations = '\n'.join(current_observations)
+    else:
+        current_observations = 'You cannot see anything within your vision range.'
+    current_world_representation = current_observations
+    agent.stm.add_memory(current_world_representation, 'world_representation')
+        
+    # Update the understanding
+
+    # Prompt the language model
+    action = agent.stm.get_memory('current_action') or 'No action executed yet.'
+    state_changes = '\n'.join(state_changes) if state_changes else 'There were no changes observed.'
+    current_position = agent.stm.get_memory('current_position')
+    llm = LLMModels().get_main_model()
+    if last_world_representation is not None:
+        last_world_rules = agent.stm.get_memory('world_rules') or ''
+        if last_world_rules:
+            last_world_rules = f'The previous knowledge of the world:\n{last_world_rules}'
+        try:
+            response = llm.completion(prompt='world_rules.txt', inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules, last_position, current_position])
+        except ValueError as e:
+            if str(e) == 'Prompt is too long':
+                llm = LLMModels().get_longer_context_fallback()
+                response = llm.completion(prompt='world_rules.txt', inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules, current_position, last_position, current_position])
+            else:
+                raise e
+        world_rules = extract_text(response)
+        agent.stm.add_memory(world_rules, 'world_rules')
+        agent.stm.add_memory(world_rules, 'world_context')
+    else:
+        agent.stm.add_memory('No current knowledge of the world yet.', 'world_context')
+
+    # Update the time of the understanding update
+    agent.stm.add_memory(game_time, 'understanding_updated_on')
+
+def update_understanding_4(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30):
+    """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
+    if the agent has no understanding about the world yet, in that case the current observations are used instead of the reflections.
+
+    Args:
+        current_observations (list[str]): List of the current observations.
+        agent (Agent): Agent to update the understanding.
+        game_time (str): Current game time.
+        understanding_umbral (int, optional): Minimum poignancy to update the understanding (only reflections are taken in account). Defaults to 6.
+    """
+    # Decide if the understanding should be updated
+    # last_world_representation = agent.stm.get_memory('world_representation')
+    # last_understanding_update = agent.stm.get_memory('understanding_updated_on')
+    # last_position = agent.stm.get_memory('last_position')
+
+
+    if current_observations:
+        current_observations = '\n'.join(current_observations)
+    else:
+        current_observations = 'You cannot see anything within your vision range.'
+        
+    # Get the most recent observations
+    previous_observations = agent.ltm.get_memories(limit=6, reversed_order=True, filter={'$and': [{'type': 'perception'}, {'created_at': {'$ne': game_time}}]})
+    previous_observations = '\n'.join([f'<observation>\n{observation}\n<\observation>' for observation in previous_observations['documents']]) if previous_observations['documents'] else '<observation>\nThere are no previous observations yet.\n<\observation>'
+    # Get the last changes observed
+    action = agent.stm.get_memory('current_action') or 'No action executed yet.'
+    previous_changes = f'I took the action "{action}" in my last turn. Since then, the following changes in the environment were observed:\n'
+    previous_changes += '\n'.join(state_changes) if state_changes else 'There were no changes observed.'
+    previous_observations += f'<observation>\n{previous_changes}\n<\observation>'
+    # Get the current state
+    reward = agent.stm.get_memory('current_reward')
+    position = list(agent.stm.get_memory('current_position'))
+    orientation = agent.stm.get_memory('current_orientation')
+    current_state = f'Now it\'s {game_time} and the reward obtained by me is {reward}. I am at the position {position} looking to the {orientation}.\nI can observe the following:'
+    current_state += f'\n{current_observations}'
+
+    # Prompt the language model
+    world_rules = agent.stm.get_memory('world_rules')
+    number_of_rules = len(world_rules) if world_rules else 0
+    world_hypotheses = agent.stm.get_memory('world_hypotheses') or {}
+    world_hypotheses = [item['value'] for item in world_hypotheses.values()]
+    world_rules = '\n'.join([f'<{i+1}>{rule}<\{i+1}>' for i, rule in enumerate(world_rules)]) if world_rules else None
+    world_hypotheses = '\n'.join([f'<{i+1+number_of_rules}>{hypothesis}<\{i+1+number_of_rules}>' for i, hypothesis in enumerate(world_hypotheses)]) if world_hypotheses else None
+
+    llm = LLMModels().get_best_model()
+    try:
+        response = llm.completion(prompt='world_understanding.txt', inputs=[world_rules, world_hypotheses, previous_observations, current_state, game_time])
+    except ValueError as e:
+        if str(e) == 'Prompt is too long':
+            llm = LLMModels().get_longer_context_fallback()
+            response = llm.completion(prompt='world_understanding.txt', inputs=[world_rules, world_hypotheses, previous_observations, current_state, game_time])
+        else:
+            raise e
+    answers = extract_tags(response)
+
+    # Convert the hypotheses that were used to explain the world into theories if they meet an umbral of usage.
+    used_rules = answers.get('used_knowledge', None)
+    total_rules = hypotheses_to_theories(used_rules, agent)
+
+    # Extract the new hypotheses
+    new_hypotheses = answers.get('new_world_knowledge', None)
+    total_hypotheses = save_new_hypotheses(new_hypotheses, agent)
+
+    # Save the new world context
+    total_rules = '\n'.join(total_rules) if total_rules else 'There are no rules yet.'
+    total_hypotheses = '\n'.join(total_hypotheses) if total_hypotheses else 'There are no hypotheses yet.'
+    predictions = answers.get('future_observations', 'No future predictions yet.')
+    world_context = f'\n{total_rules}\nHypotheses about the world:\n{total_hypotheses}\nFuture predictions of the world state:\n{predictions}'
+    agent.stm.add_memory(world_context, 'world_context')
+
+    # Update the time of the understanding update
+    agent.stm.add_memory(game_time, 'understanding_updated_on')
+
+def hypotheses_to_theories(used_rules: str | None, agent) -> list[str]:
+    """Converts the hypotheses that were used to explain the world into theories if they meet an umbral of usage.
+
+    Args:
+        used_rules (str): Rules used. A string with the id of the rules separated by commas.
+        agent (Agent): Agent to update the understanding.
+
+    Returns:
+        list[str]: List of the current theories.
+    """
+    world_rules = agent.stm.get_memory('world_rules') or []
+
+    if used_rules is None or used_rules == 'None':
+        return world_rules
+    used_rules = [id.strip() for id in used_rules.split(',')]
+    hypotheses = agent.stm.get_memory('world_hypotheses')
+    if hypotheses is None:
+        return world_rules
+    
+    new_rules = []
+    
+    # Update the usage of the hypotheses
+    for id in used_rules:
+        # Only update the usage of the hypothesis if it exists
+        hypothesis = hypotheses.get(id, None)
+        if hypothesis is None:
+            continue
+        hypothesis['usage'] += 1
+
+        # Convert the hypothesis into a theory if it meets the umbral
+        if hypothesis['usage'] >= 2: # TODO: Move the umbral
+            new_rules.append(hypothesis['value'])
+            del hypotheses[id]
+
+    # Add the new rules to the world rules
+    world_rules += new_rules
+    agent.stm.add_memory(world_rules, 'world_rules')
+
+    return world_rules
+
+def save_new_hypotheses(hypotheses: str | None, agent) -> list[str]:
+    """Saves the new hypotheses.
+
+    Args:
+        hypotheses (str): New hypotheses. A string with the hypotheses in numbered XML tags.
+        agent (Agent): Agent to update the understanding.
+
+    Returns:
+        list[str]: List of the current hypotheses.
+    """
+    world_hypotheses = agent.stm.get_memory('world_hypotheses') or {}
+    if hypotheses is not None and hypotheses != 'None':
+        hypotheses = extract_tags(hypotheses)
+        current_id = len(world_hypotheses.keys())
+        hypotheses = {str(current_id + i + 1): {'value': hypothesis, 'usage': 0} for i, hypothesis in enumerate(hypotheses.values())}
+        world_hypotheses.update(hypotheses)
+        agent.stm.add_memory(world_hypotheses, 'world_hypotheses')
+
+    return [item['value'] for item in world_hypotheses.values()]
