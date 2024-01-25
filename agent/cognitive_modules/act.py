@@ -39,9 +39,6 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
 
         try:
             actions = list(response_dict.values())
-            print('-'*100)
-            print(actions)
-            print('-'*100)
             for i in range(len(actions)):
                 actions_seq_queue.put(actions[i]['action'])
         except:

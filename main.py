@@ -32,8 +32,6 @@ def game_loop(agents: list[Agent]) -> None:
     global rounds_count
     actions = None
     rounds_count, steps_count, max_rounds = 0, 0, 100 
-    # Define bots number of steps per action
-    bots_steps_per_action = 0
 
     # Get the initial observations and environment information
     observations, scene_descriptions = env.step(actions)
@@ -43,7 +41,8 @@ def game_loop(agents: list[Agent]) -> None:
         actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
         # Execute an action for each agent on each step
         for agent in agents:
-            bots_steps_per_action = 0
+            # Helps to define the dynamic number of bot steps per action as acumulated number
+            accumulated_steps = 0
             
             #Updates the observations for the current agent
             observations, scene_descriptions = env.step({player_name: default_agent_actions_map() for player_name in env.player_prefixes})
@@ -73,7 +72,7 @@ def game_loop(agents: list[Agent]) -> None:
                 try: 
                     observations, scene_descriptions = env.step(actions)
                     steps_count += 1
-                    bots_steps_per_action += 1
+                    accumulated_steps += 1
                 except:
                     logger.exception("Error executing action %s", step_action)
                     step_actions = new_empty_queue()
@@ -85,7 +84,8 @@ def game_loop(agents: list[Agent]) -> None:
         if env.bots:
             for bot in env.bots:
                 actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
-                for _ in range(bots_steps_per_action//3): 
+                steps_current_round = accumulated_steps//len(agents)
+                for _ in range(steps_current_round): 
                     bot_action = bot.move(env.timestep)
                     actions[bot.name] = bot_action
                     env.step(actions)
