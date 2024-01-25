@@ -7,11 +7,13 @@ import numpy as np
 from skimage import io
 from skimage.transform import resize
 from game_environment.recorder import recreate_simulation
+from game_environment.utils import parse_string_to_matrix, matrix_to_string, connected_elems_map
 
 
 class Recorder:
 
-    def __init__(self, log_path, init_timestamp, substrate_config):
+    def __init__(self, log_path, init_timestamp, substrate_config, substrate_name):
+        self.substrate_name = substrate_name
         self.substrate_config = substrate_config
         self.n_players = self.substrate_config.lab2d_settings.numPlayers
         self.experiment_id = init_timestamp
@@ -23,23 +25,23 @@ class Recorder:
     def create_log_tree(self):
         self.create_or_replace_directory(self.log_path)
         self.create_or_replace_directory(os.path.join(self.log_path, "world"))
-        self.logs["world"] = []
-        self.logs["avatars"] = {}
         for player_id in range(self.n_players):
-            self.logs["avatars"][player_id] = []
             self.create_or_replace_directory(os.path.join(self.log_path, str(player_id)))
 
     def record(self, timestep, description):
         world_view = timestep.observation["WORLD.RGB"]
-        self.logs["world"].append(world_view)
+        world_path = os.path.join(self.log_path, "world", f"{self.step}.png")
+        self.save_image(world_view, world_path)
+
         for player_id in range(self.n_players):
             agent_observation = timestep.observation[f"{player_id + 1}.RGB"]
             description_image = self.add_description(description[player_id])
-            agent_observation = resize(agent_observation, (description_image.shape[0], description_image.shape[1]),
-                                       anti_aliasing=True)
+            agent_observation = resize(agent_observation, (description_image.shape[0], description_image.shape[1]), anti_aliasing=True)
             agent_observation = (agent_observation * 255).astype(np.uint8)
             agent_observation = np.hstack([agent_observation, description_image])
-            self.logs["avatars"][player_id].append(agent_observation)
+            avatar_path = os.path.join(self.log_path, str(player_id), f"{self.step}.png")
+            self.save_image(agent_observation, avatar_path)
+
         self.step += 1
 
     def record_rewards(self, rewards: Mapping[str, float])->None:
@@ -48,19 +50,48 @@ class Recorder:
             rewards = {i: int(rr) for i, rr in enumerate(list(rewards.values()))}
             f.write(f"{self.step}: {rewards}\n")
 
+    def record_elements_status(self, initial_map, current_map):
+        # Transform list map to string map
+        if self.substrate_name == "commons_harvest_open":
+            connected_elements = connected_elems_map(initial_map, ['A'])
+
+            trees = {}
+
+            for elem_key in connected_elements:
+                elements = connected_elements[elem_key]['elements']
+                if len(elements) > 1:
+                    apples_count = len([elem for elem in elements if current_map[elem[0]][elem[1]] == 'A'])
+                    trees[elem_key] = apples_count
+
+            with open(os.path.join(self.log_path, "trees_history.txt"), "a") as f:
+                f.write(f"{self.step}: {trees}\n")
+
+        elif self.substrate_name == 'clean_up':
+            apples = 0
+            dirt = 0
+
+            for row in current_map:
+                for elem in row:
+                    if elem == 'A':
+                        apples += 1
+                    elif elem == 'D':
+                        dirt += 1
+            
+            with open(os.path.join(self.log_path, "apples_history.txt"), "a") as f:
+                f.write(f"{self.step}: A_{apples} - D_{dirt}\n ")
+
+
+
+
 
     def save_log(self):
-
-        self.save_images(self.logs["world"], os.path.join(self.log_path, "world"))
-        for avatar_id, avatar_images in self.logs["avatars"].items():
-            self.save_images(avatar_images, os.path.join(self.log_path, str(avatar_id)))
         recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)
 
     @staticmethod
-    def save_images(images, path):
-        for i, image in enumerate(images):
-            io.imsave(os.path.join(path, f"{i}.png"), image)
+    def save_image(image, path):
+        io.imsave(path, image)
 
+        
     def add_description(self, description):
         canvas = np.ones((600, 600, 3), dtype=np.uint8) * 255
         sub_str = "You were taken out of the game by "

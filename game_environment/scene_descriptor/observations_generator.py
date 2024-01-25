@@ -10,6 +10,7 @@ import ast
 from scipy.ndimage import label, center_of_mass
 from collections import defaultdict
 import re
+from game_environment.utils import connected_elems_map
 
 
 class ObservationsGenerator (object):
@@ -19,57 +20,27 @@ class ObservationsGenerator (object):
             scene descriptor module which provides the observations in ascci format
     """
 
-    def __init__(self, global_map:str, players_names: list):
+    def __init__(self, global_map:str, players_names: list, substrate_name:str):
         """
         Description: Initializes the observations generator
 
         Args:
             global_map (str): Global map in ascci format
             players_names (list): List with the names of the players
+            substrate_name (str): Name of the substrate
         """
         
         self.global_map = global_map
-        self.global_trees = self.connected_elems_map(self.global_map, ['A', 'G'])
         self.players_names = players_names
         self.self_symbol = '#'
         self.other_players_symbols = [str(i) for i in range(len(players_names))]
+        self.substrate_name = substrate_name
 
-
-    def connected_elems_map(self, ascci_map, elements_to_find):
-        """
-        Returns a dictionary with the connected components of the map and their elements
-
-        Args:
-            ascci_map (str): Map in ascci format
-            elements_to_find (list): List of elements to find in the map
-
-        Returns:
-            dict: Dictionary with the connected components of the map and their elements
-        """
-
-        # Convierte la matriz en una matriz numpy
-        matrix = np.array([list(row) for row in ascci_map.split('\n') if row != ''])
-
-        # Generate mask
-        mask = (matrix == elements_to_find[0]) 
-        for elem in elements_to_find[1:]:
-            mask |= (matrix == elem)
-
-        # Encontrar componentes conectados
-        labeled_matrix, num_features = label(mask)
-
-        # Inicializa un diccionario para almacenar los centros de los componentes y sus elementos
-        component_data = defaultdict(list)
-
-        # Calcula el centro de cada componente y almacena sus elementos
-        for i in range(1, num_features + 1):
-            component_mask = labeled_matrix == i
-            center = center_of_mass(component_mask)
-            center_coords = (int(center[0]), int(center[1]))
-            component_elements = np.argwhere(component_mask)
-            component_data[i] = {'center': center_coords, 'elements': component_elements.tolist()}
-
-        return dict(component_data)
+        if self.substrate_name == 'commons_harvest_open':
+            self.global_trees = connected_elems_map(self.global_map, ['A', 'G'])
+        elif self.substrate_name == 'clean_up':
+            self.river_bank =  connected_elems_map(self.global_map, ['=','+']) # Chars that represent the river bank
+            self.apple_field_edge = connected_elems_map(self.global_map, ['^','T']) # Chars that represent the apple field edge
 
 
     def get_element_global_pos(self, el_local_pos, self_local_pos, self_global_pos, agent_orientation=0) -> list[int]:
@@ -141,25 +112,27 @@ class ObservationsGenerator (object):
             global_position = agent_dict['global_position']
             agent_orientation = agent_dict['orientation']
 
-            # Get trees descriptions
-            trees_descriptions = self.get_trees_descriptions(local_observation_map, local_map_position, global_position, agent_orientation) 
-            list_of_observations.extend(trees_descriptions)
+
+            if self.substrate_name == 'commons_harvest_open':
+                # Get trees descriptions
+                trees_descriptions = self.get_trees_descriptions(local_observation_map, local_map_position, global_position, agent_orientation) 
+                list_of_observations.extend(trees_descriptions)
+            elif self.substrate_name == 'clean_up':
+                # Get objects of clean up descriptions
+                items_descriptions = self.get_clean_up_descriptions(local_observation_map, local_map_position, global_position, agent_orientation)
+                list_of_observations.extend(items_descriptions)
 
             # Get agents observed descriptions
-            i = 0
-            for row in local_observation_map.split('\n'):
-                j=0
-                for char in row:
+            for i, row in enumerate(local_observation_map.split('\n')):
+                for j, char in enumerate(row):
                     if re.match(r'^[0-9]$', char):
                         agent_id = int(char)
                         agent_global_pos = self.get_element_global_pos((i,j), local_map_position, global_position, agent_orientation)
                         list_of_observations.append("Observed agent {} at position {}".format(agent_id, agent_global_pos))
-                    j+=1
-                i+=1
         
         return list_of_observations
 
-    def get_trees_descriptions(self, local_map, local_position, global_position, agent_orientation):
+    def get_trees_descriptions(self, local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int):
         """
         Description: Returns a list with the descriptions of the trees observed by the agent
 
@@ -174,7 +147,7 @@ class ObservationsGenerator (object):
         """
         tree_elements = ['A', 'G']
         elements_to_find = tree_elements + self.other_players_symbols + [self.self_symbol]
-        local_tree_elements = self.connected_elems_map(local_map, elements_to_find=elements_to_find)
+        local_tree_elements = connected_elems_map(local_map, elements_to_find=elements_to_find)
         list_trees_observations = []
         trees_observed = {}
 
@@ -216,3 +189,42 @@ class ObservationsGenerator (object):
                 list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remaining and {} grass for apples growing on the observed map. The tree might have more apples and grass on the global map"
                                                 .format(global_tree_id, list(global_tree_data['center']), apple_count, grass_count))
         return list_trees_observations
+
+
+    def get_clean_up_descriptions (self, local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int):
+        """
+        Description: Returns a list with the descriptions of the objects observed by the agent
+
+        Args:
+            local_map (str): Local map in ascci format
+            local_position (tuple): Local position of the agent
+            global_position (tuple): Global position of the agent
+            agent_orientation (int): Orientation of the agent
+            
+        Returns:
+            list: List with the descriptions of the objects observed by the agent
+        """
+        
+        items_observed = []
+        # Get apples (A) and dirt (D) observed descriptions
+        for i, row in enumerate(local_map.split('\n')):
+            for j, char in enumerate(row):
+                if char == 'A':
+                    apple_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                    items_observed.append("Observed an apple at position {}".format(apple_global_pos))
+
+                elif char == 'D':
+                    dirt_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                    items_observed.append("Observed dirt on the river at position {}".format(dirt_global_pos))
+
+                for elm in self.river_bank.values():
+                    if (i,j) in elm['elements']:
+                        river_bank_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                        items_observed.append("Observed river bank at position {}".format(river_bank_global_pos))
+                
+                for elm in self.apple_field_edge.values():
+                    if (i,j) in elm['elements']:
+                        apple_field_edge_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                        items_observed.append("Observed apple field edge at position {}".format(apple_field_edge_global_pos))
+
+        return items_observed

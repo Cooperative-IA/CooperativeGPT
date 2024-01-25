@@ -4,11 +4,12 @@ from dotenv import load_dotenv
 import time
 import traceback
 from utils.logging import setup_logging, CustomAdapter
-from game_environment.utils import generate_agent_actions_map,  default_agent_actions_map, check_agent_out_of_game
+from game_environment.utils import generate_agent_actions_map, check_agent_out_of_game, get_defined_valid_actions
 from agent.agent import Agent
-from game_environment.server import start_server, get_scenario_map
+from game_environment.server import start_server, get_scenario_map,  default_agent_actions_map
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
+from utils.args_handler import get_args
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -30,19 +31,19 @@ def game_loop(agents: list[Agent]) -> None:
     """
     global rounds_count
     actions = None
-    rounds_count, steps_count, max_steps = 0, 0, 200
-
-    # Define bots number of steps per action
-    bots_steps_per_action = 3
+    rounds_count, steps_count, max_rounds = 0, 0, 100 
 
     # Get the initial observations and environment information
     observations, scene_descriptions = env.step(actions)
 
-    while rounds_count < max_steps:
+    while rounds_count < max_rounds:
         # Reset the actions for each agent
         actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
         # Execute an action for each agent on each step
         for agent in agents:
+            # Helps to define the dynamic number of bot steps per action as acumulated number
+            accumulated_steps = 0
+            
             #Updates the observations for the current agent
             observations, scene_descriptions = env.step({player_name: default_agent_actions_map() for player_name in env.player_prefixes})
             steps_count += 1
@@ -65,12 +66,13 @@ def game_loop(agents: list[Agent]) -> None:
             while not step_actions.empty():
                 step_action = step_actions.get()
                 # Update the actions map for the agent
-                actions[agent.name] = generate_agent_actions_map(step_action)
+                actions[agent.name] = generate_agent_actions_map(step_action, default_agent_actions_map())
                 logger.info('Agent %s action map: %s', agent.name, actions[agent.name] )
                 # Execute each step one by one until the agent has executed all the steps for the high level action
                 try: 
                     observations, scene_descriptions = env.step(actions)
                     steps_count += 1
+                    accumulated_steps += 1
                 except:
                     logger.exception("Error executing action %s", step_action)
                     step_actions = new_empty_queue()
@@ -82,7 +84,8 @@ def game_loop(agents: list[Agent]) -> None:
         if env.bots:
             for bot in env.bots:
                 actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
-                for _ in range(bots_steps_per_action): 
+                steps_current_round = accumulated_steps//len(agents)
+                for _ in range(steps_current_round): 
                     bot_action = bot.move(env.timestep)
                     actions[bot.name] = bot_action
                     env.step(actions)
@@ -94,28 +97,36 @@ def game_loop(agents: list[Agent]) -> None:
         time.sleep(0.01)
 
 if __name__ == "__main__":
+    args = get_args()
     setup_logging(logger_timestamp)
-
     logger.info("Program started")
     start_time = time.time()
 
 
     # Define players
-    players = ["Juan", "Laura", "Pedro"]
-    players_context = ["juan_context.json", "laura_context.json", "pedro_context.json"]
-    valid_actions = ['grab apple (x,y)', 'attack player (player_name) at (x,y)','explore'] # TODO : Change this.
+    players = args.players
+    agents_bio_dir = args.agents_bio_config
+    game_scenario = args.scenario if args.scenario != "default" else None
+    players_context = [f'{agents_bio_dir}/{player.lower()}_context.json' for player in players]
+    valid_actions = get_defined_valid_actions(game_name=args.substrate)
     scenario_obstacles  = ['W', '$'] # TODO : Change this.
-    scenario_info = {'scenario_map': get_scenario_map(), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
+    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
     # Create agents
-    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file="world_context.txt", scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
+    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=f"world_context_{args.substrate}.txt", scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=True, scenario='commons_harvest__open_0')
+    env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name= args.substrate, scenario=args.scenario)
     logger = CustomAdapter(logger, game_env=env)
 
 
     llm = LLMModels()
-    gpt_model = llm.get_main_model()
+    if args.llm_model == "gpt-3.5-16k":
+        gpt_model = llm.get_longer_context_fallback()
+    elif args.llm_model == "gpt-4":
+        gpt_model = llm.get_best_model()
+    else:
+        gpt_model = llm.get_main_model() # gpt-3.5 by default
+        
     embedding_model = llm.get_embedding_model()
     try:
         game_loop(agents)

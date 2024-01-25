@@ -1,5 +1,5 @@
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
-from game_environment.substrates.python.commons_harvest_language import ASCII_MAP
+from game_environment.substrates.python.commons_harvest_open import ASCII_MAP
 from agent.memory_structures.spatial_memory import SpatialMemory
 
 spatial_memory = SpatialMemory(ASCII_MAP)

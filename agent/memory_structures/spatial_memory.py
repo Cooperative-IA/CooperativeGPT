@@ -106,7 +106,7 @@ class SpatialMemory:
 
         sequence_steps = new_empty_queue()
 
-        if current_action.startswith(('grab ', 'go to ')): # TODO : Change this according to the valid actions.
+        if current_action.startswith(('grab ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
             sequence_steps = self.find_route_to_position(end_position, self.orientation)
         
@@ -115,7 +115,12 @@ class SpatialMemory:
             sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False)
             sequence_steps.put('attack')
             sequence_steps.put('attack') # Put it twice to ensure enemy agent will be dead on its turn
-        
+
+        elif current_action.startswith('clean '):
+            dirt_pos = self.get_position_from_action(current_action)
+            sequence_steps = self.find_route_to_position(dirt_pos, self.orientation, include_last_pos=False)
+            sequence_steps.put('clean')
+
         elif current_action.startswith('explore'):
             sequence_steps = self.generate_explore_sequence()
     
@@ -226,7 +231,7 @@ class SpatialMemory:
         random_row = random.randint(min_row, max_row)
         random_col = random.randint(min_col, max_col)
         # Is the destination a valid position? '-' means that the position does not exist on the map
-        while current_map_matrix[random_row][random_col] not in ['F', 'A']:
+        while current_map_matrix[random_row][random_col] in ['W', '$', '-', '#']:
             random_row = random.randint(min_row, max_row)
             random_col = random.randint(min_col, max_col)
         

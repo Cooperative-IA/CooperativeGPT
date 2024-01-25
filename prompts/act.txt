@@ -1,5 +1,7 @@
 You have this information about an agent called <input1>:
 
+<input10>
+
 <input1>'s world understanding: <input2>
 
 <input1>'s goals: <input9>
