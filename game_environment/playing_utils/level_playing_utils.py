@@ -243,6 +243,7 @@ class Game:
             reset_env_when_done: bool = False,
             record: bool = False,
             bots: Optional[list[Bot]] = None,
+            substrate_name: str = 'commons_harvest_open'
             ):
         """Run multiplayer environment, with per player rendering and actions.
 
@@ -300,6 +301,7 @@ class Game:
             will cause this function to loop infinitely.
         record: Whether to record the game.
         bots: A list of Bot objects. This bots have a predefined policy.
+        substrate_name: The name of the substrate to use. By default it is 'commons_harvest_open'.
         """
         # Update the config with the overrides.
         full_config.lab2d_settings.update(config_overrides)
@@ -361,7 +363,7 @@ class Game:
 
         # Create the game recorder
         if record:
-            game_recorder = Recorder("logs", init_timestamp, full_config, player_prefixes)
+            game_recorder = Recorder("logs", init_timestamp, full_config, substrate_name, player_prefixes)
             record_counter = 0
 
         self.env = env
@@ -399,12 +401,14 @@ class Game:
         self.game_display = game_display
         self.clock = clock
         self.record = record
-        self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes)
+        self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes, substrate_name)
         self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         self.dateFormat = load_config()['date_format']
         self.game_steps = 0 # Number of steps of the game
         self.bots = bots
         self.curr_scene_description = None
+        self.game_ascii_map = game_ascii_map
+        self.substrate_name = substrate_name
 
     def end_game(self):
         """Ends the game. This function is called when the game is finished."""
@@ -439,6 +443,8 @@ class Game:
         self.game_steps += 1
 
         action_reader = ActionReader(self.env, self.action_map)
+        # Get the raw observations from the environment
+        description, curr_global_map = self.descriptor.describe_scene(self.timestep)
         
         if self.first_move_done :
             # Get the next action map
@@ -469,6 +475,13 @@ class Game:
             # Only print events on timesteps when there are events to print.
             if events:
                 logger.info('Env events: %s', events)
+
+        # Record the game
+        if self.record:
+            self.game_recorder.record(self.timestep, description)
+            self.game_recorder.record_rewards(rewards)
+            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
+            self.record_counter += 1
 
         # pygame display
         if self.interactive == RenderType.PYGAME:
@@ -503,19 +516,10 @@ class Game:
             # Update the time: One hour per step
             self.time += datetime.timedelta(hours=1)
 
-        # Get the raw observations from the environment
-        description = self.descriptor.describe_scene(self.timestep)
-
-        # Record the game
-        if self.record:
-            self.game_recorder.record(self.timestep, description)
-            self.game_recorder.record_rewards(rewards)
-            self.record_counter += 1
-
         # Get the agents that are observing and didn't move
         agents_observing = []
         if current_actions_map:
-            agents_observing = [agent_name for agent_name, action_map in current_actions_map.items() if action_map == default_agent_actions_map()]
+            agents_observing = [agent_name for agent_name, action_map in current_actions_map.items() if action_map == default_agent_actions_map(self.substrate_name)]
         
         # Update the observations generator
         game_time = self.get_time()

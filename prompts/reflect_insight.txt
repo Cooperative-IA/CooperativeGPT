@@ -1,5 +1,7 @@
 You have this information about an agent called <input1>:
 
+<input4>
+
 <input1>'s world understanding: <input2>
 
 Here you have a list of memory statements separated in groups of memories:

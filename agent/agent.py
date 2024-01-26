@@ -56,6 +56,7 @@ class Agent:
         # Initialize steps sequence in empty queue
         self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
         self.stm.add_memory(memory=scenario_info['valid_actions'], key='valid_actions')
+        self.stm.add_memory(memory= f"{self.name}'s bio: {self.stm.get_memory('bio')} \nImportant: make all your decisions taking into account {self.name}'s bio."  if self.stm.get_memory('bio') else "", key='bio_str')
 
 
 
@@ -183,8 +184,9 @@ class Agent:
         # Decide if the agent should react to the observation
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
+        agent_bio_str = self.stm.get_memory('bio_str')
         actions_sequence = list_from_queue(copy.copy(self.stm.get_memory('actions_sequence')))
-        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, game_time)
+        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, game_time, agent_bio_str)
         self.stm.add_memory(reasoning, 'reason_to_react')
         self.logger.info(f'{self.name} should react to the observation: {react}')
         return react, observations, changes
@@ -196,12 +198,13 @@ class Agent:
         current_observation = self.stm.get_memory('current_observation') or 'None'
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
+        agent_bio_str = self.stm.get_memory('bio_str')
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
         reason_to_react = self.stm.get_memory('reason_to_react')
         assert reason_to_react is not None, 'Reason to react is None. This should not happen because the agent only plans if it should react to the observation'
 
-        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react)
+        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str)
         self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
         if new_plan is None or new_goals is None:
             self.logger.warn(f'{self.name} could not generate a new plan or new goals')
@@ -241,9 +244,10 @@ class Agent:
         observations_str = '\n'.join(filtered_observations['documents'])
 
         world_context = self.stm.get_memory('world_context')
+        agent_bio_str = self.stm.get_memory('bio_str')
 
         # Get the relevant questions
-        relevant_questions = reflect_questions(self.name, world_context, observations_str)
+        relevant_questions = reflect_questions(self.name, world_context, observations_str, agent_bio_str)
         self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
         # Get the relevant memories for each question, relevant memories is a list of lists
         relevant_memories_list = [] 
@@ -256,7 +260,7 @@ class Agent:
         # Convert the relevant memories list to a list of strings
         self.logger.info(f'{self.name} relevant memories: {relevant_memories_list}')
         # Get the insights reflections
-        reflections = reflect_insights(self.name, world_context, relevant_memories_list, relevant_questions)
+        reflections = reflect_insights(self.name, world_context, relevant_memories_list, relevant_questions, agent_bio_str)
         self.logger.info(f'{self.name} reflections: {reflections}')
         # Add the reflections to the long term memory, checks if the reflection  is not empty
         for reflection in reflections:
@@ -274,6 +278,7 @@ class Agent:
         Stores the actions sequence in the short term memory.
         """
         world_context = self.stm.get_memory('world_context')
+        agent_bio_str = self.stm.get_memory('bio_str')
         current_plan = self.stm.get_memory('current_plan')
         valid_actions = self.stm.get_memory('valid_actions') 
         observations = self.stm.get_memory('current_observation') or 'None'
@@ -281,7 +286,7 @@ class Agent:
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
         # Generate new actions sequence and add it to the short term memory
-        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations, self.spatial_memory.position, valid_actions, current_goals)
+        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations, self.spatial_memory.position, valid_actions, current_goals, agent_bio = agent_bio_str)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
         
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')

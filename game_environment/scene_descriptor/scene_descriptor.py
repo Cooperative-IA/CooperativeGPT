@@ -1,7 +1,7 @@
 import re
 import numpy as np
 import logging
-from game_environment.utils import parse_string_to_matrix, matrix_to_string
+from game_environment.utils import parse_string_to_matrix, matrix_to_string, connected_elems_map
 from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ class Avatar:
         self.agents_in_observation = None
         self.murder = None
         self.avatar_state = 1
+
 
     def set_agents_in_observation(self, agents):
         self.agents_in_observation = agents
@@ -62,6 +63,16 @@ class Avatar:
         self.reward = None
         self.partial_observation = None
         self.agents_in_observation = None
+    
+    def __str__(self):
+        return (f"Avatar(name={self.name}, view={self.avatar_view}, position={self.position}, "
+                f"orientation={self.orientation}, reward={self.reward}, "
+                f"partial_observation={self.partial_observation}, "
+                f"agents_in_observation={self.agents_in_observation}, murder={self.murder}, "
+                f"state={self.avatar_state})")
+
+
+        
 
 
 class SceneDescriptor:
@@ -73,6 +84,7 @@ class SceneDescriptor:
         self.last_map = None # Map of the inmediately last step
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"{avatar.name} is player {avatar_id}")
+        
 
     def get_avatars(self, names):
         avatars = {}
@@ -97,7 +109,7 @@ class SceneDescriptor:
                                  "orientation": int(avatar.orientation),
                                  "last_observation": avatar.last_partial_observation,
                                 }
-        return result
+        return result, map
 
     def parse_zaps(self, zaps):
         for victim_index, row in enumerate(zaps):
@@ -178,9 +190,11 @@ class SceneDescriptor:
             avatar.reset_observation_variables()
 
     def parse_timestep(self, timestep):
+        
         map = timestep.observation["GLOBAL.TEXT"].item().decode("utf-8")
         map = parse_string_to_matrix(map)
         zaps = timestep.observation["WORLD.WHO_ZAPPED_WHO"]
+
         states = timestep.observation["WORLD.AVATAR_STATES"]
         for avatar_id, avatar in self.avatars.items():
             _id = avatar_id + 1
@@ -192,3 +206,4 @@ class SceneDescriptor:
             avatar.set_state(states[avatar_id])
 
         return map, zaps
+    

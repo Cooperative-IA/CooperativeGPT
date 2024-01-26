@@ -1,11 +1,15 @@
 You have this information about an agent called <input1>:
 
+<input6>
+
 <input1>'s world understanding: <input2>
 
 Current observations at <input7>:
 <input3>
 
 <input6>
+
+<input8>
 
 Current plan: <input4>
 

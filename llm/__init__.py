@@ -16,7 +16,7 @@ class LLMModels():
             "ada": Ada()
             }
             self.instance.main_model = "gpt-3.5"
-            self.instance.best_model = "gpt-3.5"
+            self.instance.best_model = "gpt-3.5" # Avoid using gpt-4 for now
             self.instance.longer_context_fallback = "gpt-3.5-16k"
             self.instance.embedding_model = "ada"
         return self.instance

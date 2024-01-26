@@ -73,9 +73,24 @@ Create and configure your own `.ENV` file to store API keys and local paths. Thi
 ### 3. **Install the Required Dependencies**
 
 ```bash
-pip install openai scikit-image chromadb tiktoken
+pip install openai scikit-image chromadb tiktoken AzureOpenAI
 sudo apt-get install python3-tk
 ```
+
+If you are getting following error while trying to run chromadb example code using my python3.10.8 venv3.10:
+File "~/venv3.10/lib/python3.10/site-packages/chromadb/__init__.py", line 36, in <module> raise RuntimeError( RuntimeError: Your system has an unsupported version of sqlite3. Chroma requires sqlite3 >= 3.35.0.
+
+Execute following steps to resolve this error:
+
+Inside my python3.10.8's virtual environment i.e. venv3.10, installed pysqlite3-binary using command: pip install pysqlite3-binary
+Added these 3 lines in **venv3.10/lib/python3.10/site-packages/chromadb/__init__.py** at the beginning:
+
+```python
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+```
+
 
 ### 4. **Run the Application**
 
@@ -84,6 +99,42 @@ Test the setup by running the main script:
 ```bash
 python main.py
 ```
+
+### 5. Running Simulations
+
+To run the simulation, use the following command:
+
+```bash
+python main.py [--substrate SUBSTRATE] [--scenario SCENARIO] [--players PLAYER1 PLAYER2 ...] [--record RECORD]
+```
+
+#### Arguments
+
+- `--substrate`: Specifies the name of the game to run. The name must match a folder in `game_environment/substrates/python`. Default is `commons_harvest_language`.
+- `--scenario`: Specifies the name of the scenario to run. This must be one of the predefined scenarios for the chosen game. Default is `commons_harvest__open_0`.
+- `--players`: Specifies a list of player names to run the game with. Provide each player name as a separate argument. Default is `Juan`, `Laura`, `Pedro`.
+- `--record`: Specifies whether to record the game. Acceptable values are `True` or `False`. Default is `True`.
+
+#### Examples
+
+Run the simulation with specific values:
+
+```bash
+python main.py --substrate "your_game_name" --scenario "your_scenario_name" --players Player1 Player2 Player3 --record True
+```
+
+Run the simulation with default values for substrate, scenario, and record, but specify player names:
+
+```bash
+python main.py --players Alice Bob Charlie
+```
+
+Run the simulation with all default values:
+
+```bash
+python main.py
+```
+
 
 
 

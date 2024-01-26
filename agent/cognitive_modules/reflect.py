@@ -3,7 +3,7 @@ from utils.llm import extract_answers
 
 
 
-def reflect_questions(name: str , world_context:str, statements: list[str]|str) -> list[str]:
+def reflect_questions(name: str , world_context:str, statements: list[str]|str, agent_bio: str = "") -> list[str]:
     """
     Description: Returns the relevant questions for the agent given its name, the world context and the statements
 
@@ -21,13 +21,13 @@ def reflect_questions(name: str , world_context:str, statements: list[str]|str) 
 
     llm = LLMModels().get_longer_context_fallback()
     try:
-        response = llm.completion(prompt='reflect_questions.txt', inputs=[name, world_context, statements])
+        response = llm.completion(prompt='reflect_questions.txt', inputs=[name, world_context, statements, agent_bio])
         relevant_questions_dict = extract_answers(response)
         relevant_questions = [q['Question'] for q in relevant_questions_dict.values()]
     except ValueError as e:
         if str(e) == 'Prompt is too long':
             llm = LLMModels().get_longer_context_fallback()
-            response = llm.completion(prompt='reflect_questions.txt', inputs=[name, world_context, statements])
+            response = llm.completion(prompt='reflect_questions.txt', inputs=[name, world_context, statements, agent_bio])
             relevant_questions_dict = extract_answers(response)
             relevant_questions = [q['Question'] for q in relevant_questions_dict.values()]
         else:
@@ -37,7 +37,7 @@ def reflect_questions(name: str , world_context:str, statements: list[str]|str) 
 
 
 
-def reflect_insights(name, world_context, memory_statements, questions: list[str]) -> list[str]:
+def reflect_insights(name, world_context, memory_statements, questions: list[str], agent_bio: str = "") -> list[str]:
     """
     Description: Returns the insights for the agent given its name, the world context and the memory statements
     
@@ -45,21 +45,22 @@ def reflect_insights(name, world_context, memory_statements, questions: list[str
         name (str): Name of the agent
         world_context (str): World context
         memory_statements (list[str]): Memory statements
+        agent_bio (str, optional): Agent bio. Defaults to "".
     
     Returns:
         list[str]: Insights for the agent
     """
 
-    llm = LLMModels().get_longer_context_fallback()
+    llm = LLMModels().get_main_model()
     memory_statements = list_statements_to_string(memory_statements, questions)
     try:
-        response = llm.completion(prompt='reflect_insight.txt', inputs=[name, world_context, memory_statements])
+        response = llm.completion(prompt='reflect_insight.txt', inputs=[name, world_context, memory_statements, agent_bio])
         insights_dict = extract_answers(response)
         insights = [i['Insight'] for i in insights_dict.values()]
     except ValueError as e:
         if str(e) == 'Prompt is too long':
             llm = LLMModels().get_longer_context_fallback()
-            response = llm.completion(prompt='reflect_insight.txt', inputs=[name, world_context, memory_statements])
+            response = llm.completion(prompt='reflect_insight.txt', inputs=[name, world_context, memory_statements, agent_bio])
             insights_dict = extract_answers(response)
             insights = [i['Insight'] for i in insights_dict.values()]
         else:
