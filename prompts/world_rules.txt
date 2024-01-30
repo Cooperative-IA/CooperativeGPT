@@ -1,0 +1,21 @@
+World environment state at <input1>. I was in the position <input11> and observed:
+<input2>
+
+Text descriptions of the changes in the environment:
+<input3> had a reward of <input4>. It then took the action <input5>. Since then, the following changes in the environment have been observed:
+<input6>
+Now it's <input7> and the reward obtained by <input3> is <input8>.
+
+Current world environment state at <input7>. Now I'am in the position <input12> and observe:
+<input9>
+
+<input10>
+
+Update your world knowledge by infering and hypothesizing about the rules of the environment and extracting knowledge of how the world works.
+
+Please keep the markdown snippet formatted when indiceted "```text" and "```". Answer only in the following format:
+Changes observed: <analysis of the changes in Text descriptions of the changes in the environment that I should use to update <input3>'s knowledge>
+New information: <use the Current world environment to find new information that I should use to update <input3>'s knowledge>
+```text
+<The new updated understanding of the world>
+```

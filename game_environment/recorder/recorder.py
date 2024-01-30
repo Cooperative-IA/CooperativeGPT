@@ -12,15 +12,15 @@ from game_environment.utils import parse_string_to_matrix, matrix_to_string, con
 
 class Recorder:
 
-    def __init__(self, log_path, init_timestamp, substrate_config, substrate_name):
+    def __init__(self, log_path, init_timestamp, substrate_config, substrate_name, player_names):
         self.substrate_name = substrate_name
         self.substrate_config = substrate_config
         self.n_players = self.substrate_config.lab2d_settings.numPlayers
         self.experiment_id = init_timestamp
         self.log_path = os.path.join(log_path, str(self.experiment_id))
         self.step = 0
-        self.logs = {}
         self.create_log_tree()
+        self.player_names = player_names
 
     def create_log_tree(self):
         self.create_or_replace_directory(self.log_path)
@@ -33,9 +33,9 @@ class Recorder:
         world_path = os.path.join(self.log_path, "world", f"{self.step}.png")
         self.save_image(world_view, world_path)
 
-        for player_id in range(self.n_players):
+        for player_id, name in enumerate(self.player_names):
             agent_observation = timestep.observation[f"{player_id + 1}.RGB"]
-            description_image = self.add_description(description[player_id])
+            description_image = self.add_description(description[name])
             agent_observation = resize(agent_observation, (description_image.shape[0], description_image.shape[1]), anti_aliasing=True)
             agent_observation = (agent_observation * 255).astype(np.uint8)
             agent_observation = np.hstack([agent_observation, description_image])
@@ -94,9 +94,9 @@ class Recorder:
         
     def add_description(self, description):
         canvas = np.ones((600, 600, 3), dtype=np.uint8) * 255
-        sub_str = "You were taken out of the game by "
+        sub_str = "You were attacked by agent "
         observation = description["observation"]
-        other_agents = description["agents_in_observation"]
+        other_agents = description.get("agents_in_observation", {})
         if sub_str in observation:
             murder = observation.replace(sub_str, "")
             self.put_text_on_image(canvas, sub_str, x=20, y=20)

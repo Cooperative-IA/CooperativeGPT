@@ -28,7 +28,7 @@ def read_rewards_from_file(file_path:str)-> tuple[dict, dict, list[str]]:
             lines = f.readlines()
     except FileNotFoundError:
         logger.error("File with the rewards history not found: %s", file_path)
-        return {}, {}
+        return {}, {}, []
             
     rewards_per_step = {}
 
