@@ -107,7 +107,7 @@ class ObservationsGenerator (object):
             list: List with the descriptions of the observations of the agent
         """
         list_of_observations = []
-        if agent_dict['observation'].startswith('There are no observations: You were taken '):
+        if agent_dict['observation'].startswith('There are no observations: You were attacked'):
             list_of_observations.append(str(agent_dict['observation'] + ' at position {}'.format(agent_dict['global_position'])))
             return list_of_observations
         else:

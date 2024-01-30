@@ -45,6 +45,7 @@ def reflect_insights(name, world_context, memory_statements, questions: list[str
         name (str): Name of the agent
         world_context (str): World context
         memory_statements (list[str]): Memory statements
+        questions (list[str]): List of questions, one for each group of statements
         agent_bio (str, optional): Agent bio. Defaults to "".
     
     Returns:

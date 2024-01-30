@@ -138,9 +138,9 @@ if __name__ == "__main__":
     env.end_game()
        
     # LLm total cost
-    costs = gpt_model.cost_manager.get_costs()['total_cost'] + embedding_model.cost_manager.get_costs()['total_cost'] + gpt_longer_context.cost_manager.get_costs()['total_cost'] + gpt_best_model.cost_manager.get_costs()['total_cost']
-    tokens = gpt_model.cost_manager.get_tokens()['total_tokens'] + embedding_model.cost_manager.get_tokens()['total_tokens'] + gpt_longer_context.cost_manager.get_tokens()['total_tokens'] + gpt_best_model.cost_manager.get_tokens()['total_tokens']
-    logger.info("LLM total cost: %.2f, total tokens: %s", costs, tokens)
+    costs = llm.get_costs()
+    tokens = llm.get_tokens()
+    logger.info("LLM total cost: {:,.2f}, Cost by model: {}, Total tokens: {:,}, Tokens by model: {}".format(costs['total'], costs,  tokens['total'], tokens))
 
     end_time = time.time()
     logger.info("Execution time: %.2f minutes", (end_time - start_time)/60)

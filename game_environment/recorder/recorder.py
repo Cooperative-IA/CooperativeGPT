@@ -94,7 +94,7 @@ class Recorder:
         
     def add_description(self, description):
         canvas = np.ones((600, 600, 3), dtype=np.uint8) * 255
-        sub_str = "You were taken out of the game by "
+        sub_str = "You were attacked by agent "
         observation = description["observation"]
         other_agents = description.get("agents_in_observation", {})
         if sub_str in observation:

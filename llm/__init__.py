@@ -9,7 +9,7 @@ class LLMModels():
         # Singleton pattern
         if not hasattr(self, 'instance'):
             self.instance = super(LLMModels, self).__new__(self)
-            self.instance.llm_models = {
+            self.instance.llm_models: dict[str, BaseLLM] = {
             "gpt-3.5": GPT35(),
             "gpt-3.5-16k": GPT35_16K(),
             "gpt-4": GPT4(),
@@ -48,3 +48,35 @@ class LLMModels():
             BaseLLM: Best model
         """
         return self.llm_models[self.best_model]
+    
+    def get_costs(self) -> dict:
+        """Get the costs of the models
+        Returns:
+            dict: Costs of the models
+        """
+        costs = {}
+        total_cost = 0
+        for model_name, model in self.llm_models.items():
+            model_cost = model.cost_manager.get_costs()['total_cost']
+            costs[model_name] = model_cost
+            total_cost += model_cost
+
+        costs['total'] = total_cost
+
+        return costs
+    
+    def get_tokens(self) -> dict:
+        """Get the tokens used by the models
+        Returns:
+            dict: Tokens used by model
+        """
+        tokens = {}
+        total_tokens = 0
+        for model_name, model in self.llm_models.items():
+            model_tokens = model.cost_manager.get_tokens()['total_tokens']
+            tokens[model_name] = model_tokens
+            total_tokens += model_tokens
+
+        tokens['total'] = total_tokens
+
+        return tokens

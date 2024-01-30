@@ -25,7 +25,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10) -> None:
         """Initializes the agent.
 
         Args:
@@ -36,7 +36,9 @@ class Agent:
             scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
             att_bandwidth (int, optional): Attention bandwidth. The attention bandwidth is the number of observations that the agent can attend to at the same time. Defaults to 10.
             reflection_umbral (int, optional): Reflection umbral. The reflection umbral is the number of poignancy that the agent needs to accumulate to reflect on its observations. Defaults to 30.
+            mode (Mode, optional): Defines the type of architecture to use. Defaults to 'normal'.
             understanding_umbral (int, optional): Understanding umbral. The understanding umbral is the number of poignancy that the agent needs to accumulate to update its understanding (only the poignancy of reflections are taken in account). Defaults to 6.
+            observations_poignancy (int, optional): Poignancy of the observations. Defaults to 10.
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
@@ -45,7 +47,7 @@ class Agent:
         self.mode = mode
         self.att_bandwidth = att_bandwidth
         self.reflection_umbral = reflection_umbral
-        self.observations_poignancy = 10
+        self.observations_poignancy = observations_poignancy
         self.ltm = LongTermMemory(agent_name=name, data_folder=data_folder)
         self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
