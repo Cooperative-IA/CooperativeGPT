@@ -34,6 +34,25 @@ def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
                 'clean dirt of river at (x,y)',
                 'go to river bank at (x,y)',
                 'go to apples field edge at (x,y)',]
+    
+def default_agent_actions_map(substrate_name:str = 'commons_harvest_open'):
+    """
+    Description: Returns the base action map for the agent
+    """
+
+    if substrate_name == 'commons_harvest_open':
+        return {
+            'move': 0,
+            'turn': 0,
+            'fireZap': 0,
+        }
+    elif substrate_name == 'clean_up':
+        return {
+            'move': 0,
+            'turn': 0,
+            'fireZap': 0,
+            'fireClean': 0,
+        }
 
 
 def generate_agent_actions_map( action:str, base_action_map: dict):
@@ -64,6 +83,9 @@ def generate_agent_actions_map( action:str, base_action_map: dict):
                         else 0 
         elif kind == 'turn':
             int_dir = 1 if dir == 'right' else -1 if dir == 'left' else 0
+        elif action == 'stay put':
+            kind = 'move'
+            int_dir = 0
 
         base_action_map[kind] = int_dir
 
@@ -101,18 +123,17 @@ def get_element_global_pos( element_local_pos, local_position, global_position, 
 
 
 
-def check_agent_out_of_game(observations:dict, agent: Agent):
+def check_agent_out_of_game(observations:list[str]):
    """
     Description: Checks if the agent is out of the game
     
     Args:
-        observations (dict): Observations of the agents
-        agent (Agent): Agent to check
+        observations (list[str]): Observations of the agents
     
     Returns:
         bool: True if the agent is out of the game, False otherwise
    """
-   return len(observations[agent.name]) >0 and observations[agent.name][0].startswith('There are no observations: You were taken ')
+   return len(observations) >0 and observations[0].startswith('There are no observations: You were attacked')
 
 
 

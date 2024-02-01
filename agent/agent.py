@@ -2,23 +2,30 @@ import logging
 from datetime import datetime
 from queue import Queue
 import copy
+from typing import Union, Literal
 
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
-from agent.cognitive_modules.perceive import should_react
+from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
 from agent.cognitive_modules.act import actions_sequence
+from agent.cognitive_modules.retrieve import retrieve_relevant_memories
+from agent.cooperative_modules.understanding import update_understanding, update_understanding_2, update_understanding_4
 from utils.queue_utils import list_from_queue
 from utils.logging import CustomAdapter
+from utils.time import str_to_timestamp
+
+# Define a custom type to determine the congnitive modules to use
+Mode = Union[Literal['normal'], Literal['cooperative']]
 
 class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10) -> None:
         """Initializes the agent.
 
         Args:
@@ -29,18 +36,23 @@ class Agent:
             scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
             att_bandwidth (int, optional): Attention bandwidth. The attention bandwidth is the number of observations that the agent can attend to at the same time. Defaults to 10.
             reflection_umbral (int, optional): Reflection umbral. The reflection umbral is the number of poignancy that the agent needs to accumulate to reflect on its observations. Defaults to 30.
+            mode (Mode, optional): Defines the type of architecture to use. Defaults to 'normal'.
+            understanding_umbral (int, optional): Understanding umbral. The understanding umbral is the number of poignancy that the agent needs to accumulate to update its understanding (only the poignancy of reflections are taken in account). Defaults to 6.
+            observations_poignancy (int, optional): Poignancy of the observations. Defaults to 10.
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
 
         self.name = name
+        self.mode = mode
         self.att_bandwidth = att_bandwidth
         self.reflection_umbral = reflection_umbral
-        self.observations_poignancy = 1
+        self.observations_poignancy = observations_poignancy
         self.ltm = LongTermMemory(agent_name=name, data_folder=data_folder)
         self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.att_bandwidth = att_bandwidth
+        self.understanding_umbral = understanding_umbral
         self.stm.add_memory(memory = self.name, key = 'name')
         
         # Initialize steps sequence in empty queue
@@ -50,7 +62,7 @@ class Agent:
 
 
 
-    def move(self, observations: list[str], agent_current_scene:dict, game_time: str, agent_is_out:bool = False) -> Queue:
+    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
@@ -59,17 +71,21 @@ class Agent:
                 -> global_position (tuple): Current position of the agent in the global map.
                 -> orientation (int): Current orientation of the agent. 0: North, 1: East, 2: South, 3: West.
                 -> observation (str): ascii representation of the scene.
+            changes_in_state (list[tuple[str, str]]): List of changes in the state of the environment and its game time.
             game_time (str): Current game time.
+            agent_reward (float, optional): Current reward of the agent. Defaults to 0.
             agent_is_out (bool, optional): True if the agent is out of the scenario (was taken), False otherwise. Defaults to False.
 
         Returns:
             Queue: Steps sequence for the current action.
         """
+        if self.mode == 'cooperative':
+            return self.move_cooperative(observations, agent_current_scene, changes_in_state, game_time, agent_reward, agent_is_out)
 
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
                                                     agent_current_scene['observation'])
-        react, filtered_observations = self.perceive(observations, game_time)
+        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward)
         if react:
             self.plan()
             self.generate_new_actions()
@@ -82,17 +98,57 @@ class Agent:
             step_actions = Queue()
             
         return step_actions
+    
+    def move_cooperative(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, reward: float, agent_is_out:bool = False) -> Queue:
+        """Use all the congnitive sequence (including the cooperative modules) of the agent to decide an action to take
 
-    def perceive(self, observations: list[str], game_time: str) -> None:
+        Args:
+            observations (list[str]): List of observations of the environment.
+            agent_current_scene (dict): Dictionary with the current scene of the agent. It contains the agent position, orientation and the scene description.
+                -> global_position (tuple): Current position of the agent in the global map.
+                -> orientation (int): Current orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+                -> observation (str): ascii representation of the scene.
+            changes_in_state (list[tuple[str, str]]): List of changes in the state of the environment and its game time.
+            game_time (str): Current game time.
+            reward (float): Current reward of the agent.
+            agent_is_out (bool, optional): True if the agent is out of the scenario (was taken), False otherwise. Defaults to False.
+
+        Returns:
+            Queue: Steps sequence for the current action.
+        """
+
+        #Updates the position of the agent in the spatial memory 
+        self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
+                                                    agent_current_scene['observation'])
+        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward)
+
+        self.reflect(filtered_observations)
+
+        self.understand(filtered_observations, state_changes)
+
+        if react:
+            self.plan()
+            self.generate_new_actions()
+        
+
+        if not agent_is_out:
+            step_actions = self.get_actions_to_execute(filtered_observations)
+        else :
+            step_actions = Queue()
+            
+        return step_actions
+
+    def perceive(self, observations: list[str], changes_in_state: list[tuple[str, str]], game_time: str, reward: float) -> tuple[bool, list[str], list[str]]:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
         It also filters the observations to only store the closest ones, and asign a poignancy to the observations.
         Game time is also stored in the short term memory.
         Args:
             observations (list[str]): List of observations of the environment.
             game_time (str): Current game time.
+            reward (float): Current reward of the agent.
         
         Returns:
-            bool: True if the agent should react to the observation, False otherwise.
+            tuple[bool, list[str], list[str]]: Tuple with True if the agent should react to the observation, False otherwise, the filtered observations and the changes in the state of the environment.
         """
 
         # Add the game time to the short term memory
@@ -100,25 +156,42 @@ class Agent:
         # Observations are filtered to only store the closest ones. The att_bandwidth defines the number of observations that the agent can attend to at the same time
         sorted_observations = self.spatial_memory.sort_observations_by_distance(observations)
         observations = sorted_observations[:self.att_bandwidth]
-        
-        # Open AI Only allows 16 observations per request
-        batch_size = 16
-        for i in range(0, len(observations), batch_size):
-            batch = observations[i:i+batch_size]
-            self.ltm.add_memory(batch, game_time, self.observations_poignancy, {'type': 'perception'}) # For now we set the poignancy to 1 to all observations
 
-        current_observation = '.\n'.join(observations)
+        # Update the agent known agents
+        update_known_agents(observations, self.stm)
+
+        action_executed = self.stm.get_memory('current_action')
+        # Parse the changes in the state of the environment observed by the agent
+        changes = []
+        for change, obs_time in changes_in_state:
+            changes.append(f'{change} At {obs_time}')
+
+        # Create a memory from the observations, the changes in the state of the environment and the reward, and add it to the long term memory
+        position = self.spatial_memory.position
+        orientation = self.spatial_memory.get_orientation_name()
+        memory = create_memory(self.name, game_time, action_executed, changes, reward, observations, position, orientation)
+        self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+
+        current_observation = '\n'.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
+
+        last_reward = self.stm.get_memory('current_reward') or 0.0
+        self.stm.add_memory(reward, 'current_reward')
+        self.stm.add_memory(last_reward, 'last_reward')
+        last_position = self.stm.get_memory('current_position') or self.spatial_memory.position
+        self.stm.add_memory(self.spatial_memory.position, 'current_position')
+        self.stm.add_memory(last_position, 'last_position')
+        self.stm.add_memory(orientation, 'current_orientation')
 
         # Decide if the agent should react to the observation
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
         agent_bio_str = self.stm.get_memory('bio_str')
         actions_sequence = list_from_queue(copy.copy(self.stm.get_memory('actions_sequence')))
-        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, agent_bio_str)
+        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, game_time, agent_bio_str)
         self.stm.add_memory(reasoning, 'reason_to_react')
         self.logger.info(f'{self.name} should react to the observation: {react}')
-        return react, observations
+        return react, observations, changes
     
     def plan(self,) -> None:
         """Plans the next actions of the agent and its main goals.
@@ -148,26 +221,29 @@ class Agent:
 
         Args:
             filtered_observations (list[str]): List of filtered observations.
+            state_changes (list[str]): List of changes in the state of the environment.
         """
         # Extract the relevant memories, game time and world context from the short term memory
-        observations_str = self.stm.get_memory('current_observation')
         game_time = self.stm.get_memory('game_time')
         # Decide if the agent should reflect on the observations
-        poignancy_of_current_observations = len(filtered_observations) * self.observations_poignancy
+        poignancy_of_current_observations = self.observations_poignancy
         accumulated_poignancy = (self.stm.get_memory('accumulated_poignancy') or 0) + poignancy_of_current_observations
         if accumulated_poignancy < self.reflection_umbral:
             self.stm.add_memory(accumulated_poignancy, 'accumulated_poignancy')
             self.logger.info(f'{self.name} should not reflect on the observations. Accumulated poignancy: {accumulated_poignancy}')
             return
+        
+        # Reset the accumulated poignancy
+        self.stm.add_memory(0, 'accumulated_poignancy')
 
         # Get observations to reflect on
         last_reflection = self.stm.get_memory('last_reflection')
-        filter = {'type': 'perception', 'timestamp': {'$gt': last_reflection}}
+        filter = {'$and': [{'type': 'perception'}, {'timestamp': {'$gt': str_to_timestamp(last_reflection, self.ltm.date_format)}}]}
         if last_reflection is None:
             filter = {'type': 'perception'}
-        filtered_observations = self.ltm.get_memories(filter=filter)['documents']
+        filtered_observations = self.ltm.get_memories(filter=filter)
 
-        observations_str = filtered_observations
+        observations_str = '\n'.join(filtered_observations['documents'])
 
         world_context = self.stm.get_memory('world_context')
         agent_bio_str = self.stm.get_memory('bio_str')
@@ -178,20 +254,23 @@ class Agent:
         # Get the relevant memories for each question, relevant memories is a list of lists
         relevant_memories_list = [] 
         for question in relevant_questions:
-            retrieved_memories = self.ltm.get_relevant_memories(query=question, n_results=10)
+            retrieved_memories = retrieve_relevant_memories(self, query=question, max_memories=3)
+            retrieved_memories = '\n'.join(retrieved_memories)
             # adds the retrieved memories to the relevant memories list
             relevant_memories_list.append(retrieved_memories)
         
         # Convert the relevant memories list to a list of strings
-        relevant_memories_str = ['\n'.join([str(memory) for memory in retrieved_memory]) for retrieved_memory in relevant_memories_list] 
-        self.logger.info(f'{self.name} relevant memories: {relevant_memories_str}')
+        self.logger.info(f'{self.name} relevant memories: {relevant_memories_list}')
         # Get the insights reflections
-        reflections = reflect_insights(self.name, world_context, relevant_memories_str, agent_bio_str)
+        reflections = reflect_insights(self.name, world_context, relevant_memories_list, relevant_questions, agent_bio_str)
         self.logger.info(f'{self.name} reflections: {reflections}')
         # Add the reflections to the long term memory, checks if the reflection  is not empty
         for reflection in reflections:
             if reflection:
-                self.ltm.add_memory(reflection, game_time, 1, {'type': 'reflection'})
+                self.ltm.add_memory(f'{reflection} Reflection made at {game_time}.', game_time, self.observations_poignancy, {'type': 'reflection'})
+        
+        # Add the last reflection to the short term memory
+        self.stm.add_memory(game_time, 'last_reflection')
   
 
 
@@ -269,3 +348,16 @@ class Agent:
 
         return agent_steps
     
+    def understand(self, observations: list[str], state_changes: list[str]):
+        """
+        Improves the agent's understanding of the world and of other agents.
+
+        Args:
+            observations (list[str]): List of observations of the environment.
+        
+        Returns:
+            None
+        """
+        last_reward = self.stm.get_memory('last_reward')
+        current_reward = self.stm.get_memory('current_reward')
+        update_understanding_4(observations, self, self.stm.get_memory('game_time'), last_reward, current_reward, state_changes, understanding_umbral = self.understanding_umbral)

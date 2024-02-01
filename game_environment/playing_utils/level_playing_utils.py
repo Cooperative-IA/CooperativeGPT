@@ -40,6 +40,7 @@ from game_environment.scene_descriptor.observations_generator import Observation
 from utils.files import load_config
 from utils.logging import CustomAdapter
 from game_environment.bots import Bot
+from game_environment.utils import default_agent_actions_map
 
 import sys
 import ast
@@ -362,7 +363,7 @@ class Game:
 
         # Create the game recorder
         if record:
-            game_recorder = Recorder("logs", init_timestamp, full_config, substrate_name)
+            game_recorder = Recorder("logs", init_timestamp, full_config, substrate_name, player_prefixes)
             record_counter = 0
 
         self.env = env
@@ -405,7 +406,9 @@ class Game:
         self.dateFormat = load_config()['date_format']
         self.game_steps = 0 # Number of steps of the game
         self.bots = bots
+        self.curr_scene_description = None
         self.game_ascii_map = game_ascii_map
+        self.substrate_name = substrate_name
 
     def end_game(self):
         """Ends the game. This function is called when the game is finished."""
@@ -513,8 +516,34 @@ class Game:
             # Update the time: One hour per step
             self.time += datetime.timedelta(hours=1)
 
+        # Get the agents that are observing and didn't move
+        agents_observing = []
+        if current_actions_map:
+            agents_observing = [agent_name for agent_name, action_map in current_actions_map.items() if action_map == default_agent_actions_map(self.substrate_name)]
+        
+        # Update the observations generator
+        game_time = self.get_time()
+        self.observationsGenerator.update_state_changes(description, agents_observing, game_time)
+
+        self.curr_scene_description = description
         # Return the observations of each player and the descriptions
-        return self.observationsGenerator.get_all_observations_descriptions(str(description).strip()), description
+        # return self.observationsGenerator.get_all_observations_descriptions(str(description).strip(), agents_observing), description
+    
+    def get_observations_by_player(self, player_prefix: str) -> dict:
+        """Returns the observations of the given player.
+        Args:
+            player_prefix: The prefix of the player
+        Returns:
+            A dictionary with the observations of the player
+        """
+        curr_state = self.observationsGenerator.get_all_observations_descriptions(str(self.curr_scene_description).strip())[player_prefix]
+        scene_description = self.curr_scene_description[player_prefix]
+        state_changes = self.observationsGenerator.get_observed_changes_per_agent(player_prefix)
+        return {
+            'curr_state': curr_state,
+            'scene_description': scene_description,
+            'state_changes': state_changes
+        }
     
     def get_time(self) -> str:
         """Returns the current time of the game. The time will be formatted as specified in the config file."""

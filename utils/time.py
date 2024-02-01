@@ -10,4 +10,6 @@ def str_to_timestamp(date: str, date_format: str) -> int:
     Returns:
         int: Timestamp.
     """
+    if date is None:
+        return 0
     return int(datetime.strptime(date, date_format).timestamp())

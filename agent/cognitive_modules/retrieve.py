@@ -3,7 +3,6 @@ import traceback
 from datetime import datetime
 import numpy as np
 
-from agent.agent import Agent
 from utils.files import load_config
 from utils.math import normalize_values, cosine_similarity
 from utils.logging import CustomAdapter
@@ -11,7 +10,7 @@ from utils.logging import CustomAdapter
 logger = logging.getLogger(__name__)
 logger = CustomAdapter(logger)
 
-def retrieve_relevant_memories(agent: Agent, query: str, max_memories: int = 10, metadata_filter: dict = None) -> list[str]:
+def retrieve_relevant_memories(agent, query: str, max_memories: int = 10, metadata_filter: dict = None) -> list[str]:
     """
     Retrieve the most relevant memories for the given query. Calculate a relevancy score for each memory and return the top N memories.
     The relevancy score is calculated with the following formula:
@@ -100,7 +99,7 @@ def get_poignancy_scores(memories: list[list]) -> list[float]:
 
     return poignancy_scores
 
-def get_similarity_scores(agent: Agent, memories: list[list], query: str) -> list[float]:
+def get_similarity_scores(agent, memories: list[list], query: str) -> list[float]:
     """Calculate the similarity score for each memory. The similarity score is normalized between 0 and 1.
 
     Args:
