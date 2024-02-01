@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import os
 from dotenv import load_dotenv
 import time
 import traceback
@@ -10,6 +11,7 @@ from game_environment.server import start_server, get_scenario_map,  default_age
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
+from utils.files import extract_players
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -104,15 +106,20 @@ if __name__ == "__main__":
 
 
     # Define players
-    players = args.players
-    agents_bio_dir = args.agents_bio_config
+    experiment_path = os.path.join("data", "defined_experiments", args.substrate)
+    agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
     game_scenario = args.scenario if args.scenario != "default" else None
-    players_context = [f'{agents_bio_dir}/{player.lower()}_context.json' for player in players]
+    
+    players_context = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
+
+    players = extract_players(players_context)
+    
+    world_context_path = os.path.join(experiment_path, "world_context", args.world_context)
     valid_actions = get_defined_valid_actions(game_name=args.substrate)
-    scenario_obstacles  = ['W', '$'] # TODO : Change this.
-    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
+    scenario_obstacles  = ['W', '$'] # TODO : Change this. This should be also loaded from the scenario file
+    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
     # Create agents
-    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=f"world_context_{args.substrate}.txt", scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
+    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=world_context_path, scenario_info=scenario_info) for player, player_context in zip(players, players_context)]
 
     # Start the game server
     env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name= args.substrate, scenario=args.scenario)
