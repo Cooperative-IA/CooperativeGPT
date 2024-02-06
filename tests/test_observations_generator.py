@@ -2,7 +2,7 @@ from game_environment.scene_descriptor.observations_generator import Observation
 from game_environment.substrates.python.commons_harvest_open import ASCII_MAP
 
 players = ['agent1', 'agent2', 'agent3']
-obs_gen = ObservationsGenerator(ASCII_MAP, players)
+obs_gen = ObservationsGenerator(ASCII_MAP, players, 'commons_harvest_open')
 orientation_map = {0: 'North', 1: 'East', 2: 'South', 3: 'West'}
 
 def test_get_element_global_pos():
@@ -165,6 +165,18 @@ def test_get_trees_descriptions():
     trees_descriptions = obs_gen.get_trees_descriptions(observed_map, local_map_position, global_position, agent_orientation)
     assert sorted(trees_descriptions) == sorted(expected_output), f"Expected {expected_output}, got {trees_descriptions}."
 
+
+def test_get_new_observed_trees():
+    # When agent is on a corner 
+    observed_map = '-----------\n-----------\n-----------\n-----------\n-----------\n-----------\n-----------\n-----------\n----WWWWWWW\n----W#AAFFF\n----WGAFFFF'
+    local_map_position = (9,5)
+    global_position = (1, 22)
+    agent_orientation = 0
+    expected_output = [
+        'Observed an apple at position [3, 10]. This apple belongs to tree 2.',]
+    trees_descriptions = obs_gen.get_trees_descriptions(observed_map, local_map_position, global_position, agent_orientation)
+    assert sorted(trees_descriptions) == sorted(expected_output), f"Expected {expected_output}, got {trees_descriptions}."
+    
 def test_get_observed_agents():
     observed_map = 'FFA\nFFF\n0FF\nAFF\nA#F\nAGA'
     local_map_position = (4,1)

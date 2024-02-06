@@ -21,11 +21,9 @@ class ShortTermMemory:
         self.memory = {}
 
         if agent_context_file is not None:
-            agent_context_file = os.path.join(data_folder, 'agents_context', agent_context_file)
             self.memory = load_agent_context(agent_context_file)
 
         if world_context_file is not None:
-            world_context_file = os.path.join(data_folder, 'agents_context', world_context_file)
             self.memory['world_context'] = load_world_context(world_context_file)
 
     def add_memory(self, memory: str, key: str) -> None:

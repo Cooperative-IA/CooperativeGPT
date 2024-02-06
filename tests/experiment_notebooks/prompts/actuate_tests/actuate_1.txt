@@ -1,0 +1,76 @@
+You have this information about an agent called Juan:
+
+Juan's world understanding: Your are a controller Game Master. Your responsibilities involves overseeing and directing the immediate actions of specific agents. Each decision you make should carefully consider the individual behavior of each agent, the primary objective of each scenario, and the rules of the entire environment.
+
+Scenario: Apples are spread around and can be consumed for a reward of 1. Apples that have been consumed regrow with a per-step probability that depends on the number of current apples in a L2 norm neighborhood of radius 2. As a consequence, a patch of apples that collectively doesn't have other apples within a distance of 2 from them, can be irrevocably lost if all apples in the patch are consumed. Therefore, agents must exercise restraint when consuming apples within a patch. Each apple tree contains multiple apples.
+
+Roles: 
+There are 1 kind of roles in this scenario : (Consumer). Each role has its own valid actions and an agent have to act according to his role.
+- Consumer role: The primary goal of a Consumer agent is to maximize their reward by efficiently collecting apples and avoiding unnecessary actions.
+
+Considerations and constrains:
+- Harvest the last apple of a tree implies the tree will be removed from the game.
+- Avoid consuming last apples from trees
+
+
+Remember, the goal for each agent in this world is to maximize its rewards (gathered apples).
+
+Juan's goals: 1. Continuously monitor and adapt to regrowth probability of consumed apples within a distance of 2, including unexpected positions such as [8, 2].
+2. Update the plan to consider the new observations and prioritize efficient apple collection.
+3. Maximize the number of apples gathered to maximize rewards while exercising restraint to prevent the irrevocable loss of apple patches.
+4. Coordinate actions with other agents, particularly Pedro, to optimize apple consumption and maximize apple regrowth.
+
+Current plan: 1. Continuously monitor the regrowth probability of consumed apples and adjust actions accordingly, considering both expected and unexpected regrowth positions.
+2. Review and update the plan based on the new observations and prioritize efficient apple collection. This includes gathering apples at positions [9, 2], [10, 3], [9, 3], [7, 3], [9, 4], and [7, 4], as well as any additional regrown apples.
+3. Exercise restraint when consuming apples within a patch to prevent irrevocable loss. Leave behind some apples in each patch for regrowth.
+4. Coordinate with Pedro and other agents to optimize apple consumption and maximize apple regrowth.
+5. Adjust strategies and actions based on the evolving dynamics of the environment and feedback from past experiences to continuously improve apple collection efficiency and maximize rewards.
+
+Analysis of past experiences: 
+The availability of grass may affect the regrowth of consumed apples, but further investigation is needed for a conclusive insight. Reflection made at 2024-02-25 05:00:00.
+Agent Pedro's strategy is to wait for the regrowth of apples before consuming them. Reflection made at 2024-02-25 05:00:00.
+Consuming apples can trigger the regrowth of other apples. Reflection made at 2024-02-25 05:00:00.
+Agent Pedro took an apple from position [8, 4] at 2024-02-24 06:00:00 Reflection made at 2024-02-24 07:00:00.
+Grass at position [8, 1] disappeared at 2024-02-23 23:00:00 Reflection made at 2024-02-24 07:00:00.
+The reward obtained in the last turn was 61.0 Reflection made at 2024-02-24 07:00:00.
+There are no other agents within 3 steps upwards of my current position. Reflection made at 2024-02-22 18:00:00.
+An apple grew at position [9, 3] at 2024-02-21 14:00:00. Reflection made at 2024-02-22 18:00:00.
+No other agents have taken any actions since my last turn. Reflection made at 2024-02-22 18:00:00.
+The action that Juan took and resulted in a decrease in his reward was consuming one apple at position [7, 2]. Reflection made at 2024-02-21 04:00:00. 
+
+Current observations: 
+Observed one apple at position [8, 4], this is the last apple of the tree 5.
+Observed tree 5 at position [8, 3]. This tree has 1 apples remaining and 4 grass for apples growing on the observed map. The tree might have more apples and grass on the global map.
+Observed agent Pedro at position [8, 3].
+Observed nine apples at positions [2, 9], [4, 9], [2, 8], [4, 8], [5, 8], [2, 7], [3, 7], [4, 7] and [3, 6]. These apples belong to tree 2.
+Observed tree 2 at position [3, 8]. This tree has 9 apples remaining and 3 grass for apples growing on the observed map. The tree might have more apples and grass on the global map.
+Observed tree 3 at position [3, 15]. This tree has 0 apples remaining and 1 grass for apples growing on the observed map. The tree might have more apples and grass on the global map.
+
+Create a sequence of 3 actions that Juan should take to get closer to achieve its goals following the current plan.
+Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
+Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
+
+Valid actions: 
+['consume one apple at (x,y)', 'avoid consuming for this round','attack player (player_name) at (x,y)', 'explore', 'go to (x,y)']
+
+Important: if you consider there is not enough information to create a sequence of actions,
+your answer should be the action "explore".
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Juan:
+
+
+```json
+{
+    "Actions": [
+        {
+            "Details": {
+                "Reasoning": string // Detailed explanation of why this action is chosen,
+                "Consequences": string // Detailed immediate and future consequences. 
+                "Risk level": string // High, Medium, Low. Classify according to consequences 
+
+            },
+            "Action": string \\ Must be one of the valid actions with the position replaced, should take care of consequences
+        },
+        // Continue for other actions
+    ]
+}```

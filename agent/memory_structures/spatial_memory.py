@@ -129,7 +129,7 @@ class SpatialMemory:
 
         sequence_steps = new_empty_queue()
 
-        if current_action.startswith(('grab ')) or "go to " in current_action:
+        if current_action.startswith(('grab ')) or current_action.startswith(('consume ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
             sequence_steps = self.find_route_to_position(end_position, self.orientation)
         
@@ -149,6 +149,8 @@ class SpatialMemory:
             if not self.is_position_valid(explore_pos):
                 explore_pos = None
             sequence_steps = self.generate_explore_sequence(explore_pos)
+        elif current_action.startswith('avoid consuming'):
+            sequence_steps.put('stay put')
     
         self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')
         return sequence_steps

@@ -9,6 +9,7 @@ logs/
 
 # Data
 data/*/*.db/
+data/*/*/*.db/
 
 # Cache
 *.pyc

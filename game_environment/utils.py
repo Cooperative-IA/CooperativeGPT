@@ -20,11 +20,11 @@ def matrix_to_string(matrix):
 
 def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
     if game_name == 'commons_harvest_open':
-        return  ['grab apple (x,y)', 
+        return  ['consume one apple at (x,y)',
+                 'avoid consuming for this round', 
                  'attack player (player_name) at (x,y)',
                  'explore',
-                 #'go to (x,y)',
-                 'leave current tree and go to tree (treeId) at (x,y)',
+                 'go to (x,y)',
                  ]
         
     elif game_name == 'clean_up':

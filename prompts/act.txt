@@ -22,23 +22,23 @@ Valid actions:
 <input8>
 
 Important: if you consider there is not enough information to create a sequence of actions,
-your answer should be one only action, and it must to be "explore".
+your answer should be the action "explore".
 
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
 
 
 ```json
-{   
-    "Action_1": {
-        "Reasoning": string \\ Reasoning behind the action 1
-        "Action": string \\ Must be one of the valid actions with the position replaced
-    },
-    "Action_2": {
-        "Reasoning": string \\ Reasoning behind the action 2
-        "Action": string \\ Must be one of the valid actions with the position replaced
-    },
-    "Action_3": {
-        "Reasoning": string \\ Reasoning behind the action 3
-        "Action": string \\ Must be one of the valid actions with the position replaced
-    }
+{
+    "Actions": [
+        {
+            "Details": {
+                "Reasoning": string // Detailed explanation of why this action is chosen,
+                "Consequences": string // Detailed immediate and future consequences. 
+                "Risk level": string // High, Medium, Low. Classify according to consequences 
+
+            },
+            "Action": string \\ Must be one of the valid actions with the position replaced, should take care of consequences
+        },
+        // Continue for other actions
+    ]
 }```
