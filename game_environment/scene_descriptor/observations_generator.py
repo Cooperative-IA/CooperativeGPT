@@ -246,34 +246,16 @@ class ObservationsGenerator (object):
                 for apple in local_tree_data['elements']:
                     apple_global_pos = self.get_element_global_pos(apple, local_position, global_position, agent_orientation)
                     if local_map.split('\n')[apple[0]][apple[1]] == 'G':
-                        #list_trees_observations.append("Observed grass to grow apples at position {}. This grass belongs to tree {}."
-                        #                            .format(apple_global_pos, global_tree_id))
+                        list_trees_observations.append("Observed grass to grow apples at position {}. This grass belongs to tree {}."
+                                                    .format(apple_global_pos, global_tree_id))
                         grass_list.append(apple_global_pos)
                         grass_count += 1
                     elif local_map.split('\n')[apple[0]][apple[1]] == 'A':
-                        #list_trees_observations.append("Observed an apple at position {}. This apple belongs to tree {}."
-                        #                            .format(apple_global_pos, global_tree_id ))
+                        list_trees_observations.append("Observed an apple at position {}. This apple belongs to tree {}."
+                                                    .format(apple_global_pos, global_tree_id ))
                         apple_list.append(apple_global_pos)
                         apple_count += 1
 
-            if apple_count == 1:
-                apple_txt_list = str(apple_list[0])
-                observation = f"Observed one apple at position {apple_txt_list}, this is the last apple of the tree {global_tree_id}."
-                list_trees_observations.append(observation)
-            elif apple_count > 1:
-                apple_txt_list = ', '.join([str(apple) for apple in apple_list[:-1]]) + " and " + str(apple_list[-1])
-                observation = f"Observed {self.number_to_words(apple_count)} apples at positions {apple_txt_list}. These apples belong to tree {global_tree_id}."
-                list_trees_observations.append(observation)
-            
-            if grass_count == 1:
-                grass_txt_list = str(grass_list[0])
-                observation = f"Observed grass to grow apples at position {grass_txt_list}. This grass belongs to tree {global_tree_id}."
-                list_trees_observations.append(observation)
-            elif grass_count > 1:
-                grass_txt_list = ', '.join([str(grass) for grass in grass_list[:-1]]) + " and " + str(grass_list[-1])
-                observation = f"Observed {self.number_to_words(grass_count)} grass to grow apples at positions {grass_txt_list}. These grass belong to tree {global_tree_id}."
-                list_trees_observations.append(observation)
-            
             if apple_count > 0 or grass_count > 0:      
                 list_trees_observations.append("Observed tree {} at position {}. This tree has {} apples remaining and {} grass for apples growing on the observed map. The tree might have more apples and grass on the global map."
                                                 .format(global_tree_id, list(global_tree_data['center']), apple_count, grass_count))
