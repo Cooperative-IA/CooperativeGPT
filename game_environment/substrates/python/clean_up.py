@@ -615,9 +615,9 @@ def create_scene(num_players):
           {
               "component": "StochasticIntervalEpisodeEnding",
               "kwargs": {
-                  "minimumFramesPerEpisode": 1000,
-                  "intervalLength": 100,  # Set equal to unroll length.
-                  "probabilityTerminationPerInterval": 0
+                  "minimumFramesPerEpisode": 1000000,
+                  "intervalLength": 100000,  # Set equal to unroll length.
+                  "probabilityTerminationPerInterval": 0.001
               }
           },
           {

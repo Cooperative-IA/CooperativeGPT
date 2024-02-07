@@ -15,3 +15,9 @@ data/*/*/*.db/
 *.pyc
 __pycache__/
 .pytest_cache/
+
+# Recorder imgs
+game_environment/recorder/*.png 
+
+# Test experiments results
+tests/experiment_notebooks/experiment_results/*.txt

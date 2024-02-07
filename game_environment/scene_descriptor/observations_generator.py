@@ -358,6 +358,14 @@ class ObservationsGenerator (object):
 
     @staticmethod
     def number_to_words(number):
+        """
+        Description: Returns the number in words
+        
+        Args:
+            number (int): Number to convert to words
+        Returns:
+            str: Number in words
+        """
         p = inflect.engine()
         words = p.number_to_words(number)
         return words

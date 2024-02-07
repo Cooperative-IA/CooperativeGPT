@@ -24,9 +24,9 @@ The main script serves as the gateway to the simulation, orchestrating the setup
     - 7.2. Continuously running the game loop until the maximum number of rounds is reached.
     - 7.3. Sequentially allowing each agent to take their turn, which involves:
         - 7.3.1. Acquiring accumulated observations for the agent via `env.get_observations_by_player(agent.name)`.
-        - 7.3.2. Passing these observations to the agent's `move` function. Depending on the scenario, the agent either:
+        - 7.3.2. Passing these observations to the agent's `agent.move` function. Depending on the scenario, the agent either:
             - a. Executes its move, completing its turn and generating step actions.
-            - b. Is preempted by another agent but eventually takes its turn after all module processes except action execution are completed.
+            - b. Only perceives the environment and does not take any actions if agent has been incapacitated for this round by another agent.
         - 7.3.3. Executing the `env.step` function with the `actions` variable, which is updated for the current agent by the `generate_agent_actions_map` function. This translates textual commands into game actions.
     - 7.4 Resetting the actions map for the current agent before proceeding to the next agent's turn.
     - 7.5 Detailed explanations of the `agent.move` function and agent script are provided in the following sections.

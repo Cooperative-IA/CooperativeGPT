@@ -1,5 +1,6 @@
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
 from game_environment.substrates.python.commons_harvest_open import ASCII_MAP
+from game_environment.utils import connected_elems_map
 
 players = ['agent1', 'agent2', 'agent3']
 obs_gen = ObservationsGenerator(ASCII_MAP, players, 'commons_harvest_open')
@@ -55,13 +56,13 @@ def test_connected_elems_map():
     observed_map = "A"
     elements_to_find = ["A"]
     expected_output = {1: {'center': (0, 0), 'elements': [[0, 0]]}}
-    assert obs_gen.connected_elems_map(observed_map, elements_to_find) == expected_output, f"Failed for a single element"
+    assert connected_elems_map(observed_map, elements_to_find) == expected_output, f"Failed for a single element"
 
     # Test case 2: A single connected component
     observed_map = "AB\nBA"
     elements_to_find = ["A", "B"]
     expected_output = {1: {'center': (0, 0), 'elements': [[0, 0], [0, 1], [1, 0], [1, 1]]}} # All elements are connected
-    elements_found = obs_gen.connected_elems_map(observed_map, elements_to_find)
+    elements_found = connected_elems_map(observed_map, elements_to_find)
     assert elements_found == expected_output, f"Expected {expected_output}, got {elements_found}. Failed for a single connected component"
 
     # Test case 3: Multiple connected components
@@ -74,7 +75,7 @@ def test_connected_elems_map():
     observed_map = "\n".join(observed_map)
     elements_to_find = ["A", "G"]
     expected_output = {1: {'center': (0, 1), 'elements': [[0, 1], [0, 2], [1, 0], [1, 1]]}, 2: {'center': (2, 4), 'elements': [[2, 4], [2, 5], [3, 4], [3, 5]]}}
-    elements_found = obs_gen.connected_elems_map(observed_map, elements_to_find)
+    elements_found = connected_elems_map(observed_map, elements_to_find)
     assert elements_found == expected_output, f"Expected {expected_output}, got {elements_found}. Failed for multiple connected components"
 
 
@@ -82,7 +83,7 @@ def test_connected_elems_map():
     observed_map = "AB\nCD"
     elements_to_find = ["E"]
     expected_output = {}
-    elements_found = obs_gen.connected_elems_map(observed_map, elements_to_find)
+    elements_found = connected_elems_map(observed_map, elements_to_find)
     assert elements_found == expected_output, f"Expected {expected_output}, got {elements_found}. Failed for multiple connected components"
 
     print("All test cases pass")
@@ -165,18 +166,21 @@ def test_get_trees_descriptions():
     trees_descriptions = obs_gen.get_trees_descriptions(observed_map, local_map_position, global_position, agent_orientation)
     assert sorted(trees_descriptions) == sorted(expected_output), f"Expected {expected_output}, got {trees_descriptions}."
 
-
-def test_get_new_observed_trees():
     # When agent is on a corner 
     observed_map = '-----------\n-----------\n-----------\n-----------\n-----------\n-----------\n-----------\n-----------\n----WWWWWWW\n----W#AAFFF\n----WGAFFFF'
     local_map_position = (9,5)
     global_position = (1, 22)
-    agent_orientation = 0
+    agent_orientation = 1
     expected_output = [
-        'Observed an apple at position [3, 10]. This apple belongs to tree 2.',]
+        'Observed an apple at position [2, 21]. This apple belongs to tree 4.',
+        'Observed an apple at position [2, 22]. This apple belongs to tree 4.',
+        'Observed an apple at position [3, 22]. This apple belongs to tree 4.',
+        'Observed grass to grow apples at position [1, 21]. This grass belongs to tree 4.',
+        'Observed tree 4 at position [1, 21]. This tree has 3 apples remaining and 1 grass for apples growing on the observed map. The tree might have more apples and grass on the global map.',
+        ]
     trees_descriptions = obs_gen.get_trees_descriptions(observed_map, local_map_position, global_position, agent_orientation)
     assert sorted(trees_descriptions) == sorted(expected_output), f"Expected {expected_output}, got {trees_descriptions}."
-    
+  
 def test_get_observed_agents():
     observed_map = 'FFA\nFFF\n0FF\nAFF\nA#F\nAGA'
     local_map_position = (4,1)
