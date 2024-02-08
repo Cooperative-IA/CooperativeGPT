@@ -11,6 +11,7 @@ from scipy.ndimage import label, center_of_mass
 from collections import defaultdict
 import re
 from game_environment.utils import connected_elems_map
+import inflect 
 
 
 class ObservationsGenerator (object):
@@ -214,14 +215,18 @@ class ObservationsGenerator (object):
         local_tree_elements = connected_elems_map(local_map, elements_to_find=elements_to_find)
         list_trees_observations = []
         trees_observed = {}
-
         for global_tree_id, global_tree_data in self.global_trees.items():
             apple_count, grass_count = 0, 0
+            apple_list, grass_list = [], []
             for local_tree_data in local_tree_elements.values():
                 # Check if the group is a tree element
                 first_element = local_tree_data['elements'][0]
                 element_type = local_map.split('\n')[first_element[0]][first_element[1]]
-                if element_type not in tree_elements:
+                second_element_type = None
+                if len(local_tree_data['elements'])>1: # We'll make a double check to verify if the first elelment is being overlapped by another element
+                    second_element = local_tree_data['elements'][1] 
+                    second_element_type = local_map.split('\n')[second_element[0]][second_element[1]]
+                if (element_type not in tree_elements) and (second_element_type not in tree_elements):
                     continue
 
                 # Continue if the tree has already been observed
@@ -243,10 +248,12 @@ class ObservationsGenerator (object):
                     if local_map.split('\n')[apple[0]][apple[1]] == 'G':
                         list_trees_observations.append("Observed grass to grow apples at position {}. This grass belongs to tree {}."
                                                     .format(apple_global_pos, global_tree_id))
+                        grass_list.append(apple_global_pos)
                         grass_count += 1
                     elif local_map.split('\n')[apple[0]][apple[1]] == 'A':
                         list_trees_observations.append("Observed an apple at position {}. This apple belongs to tree {}."
                                                     .format(apple_global_pos, global_tree_id ))
+                        apple_list.append(apple_global_pos)
                         apple_count += 1
 
             if apple_count > 0 or grass_count > 0:      
@@ -348,3 +355,17 @@ class ObservationsGenerator (object):
                         items_observed.append("Observed apple field edge at position {}".format(apple_field_edge_global_pos))
 
         return items_observed
+
+    @staticmethod
+    def number_to_words(number):
+        """
+        Description: Returns the number in words
+        
+        Args:
+            number (int): Number to convert to words
+        Returns:
+            str: Number in words
+        """
+        p = inflect.engine()
+        words = p.number_to_words(number)
+        return words

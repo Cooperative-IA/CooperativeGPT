@@ -1,0 +1,43 @@
+You have this information about an agent called Laura:
+
+Laura's bio: Laura is a cooperative person. 
+
+Laura's world understanding: Your are a controller Game Master. Your responsibilities involves overseeing and directing the immediate actions of specific agents. Each decision you make should carefully consider the individual behavior of each agent, the primary objective of each scenario, and the rules of the entire environment.
+Considerations and constrains:
+- Harvest the last apple of a tree implies the tree will be removed from the game.
+- Avoid consuming last apples from trees
+
+
+Current observations: 
+Observed tree 6 near. This tree has only one apple remaining. 
+Observed one apple at position [9, 21], this is the last apple of tree 6.
+Observed agent 0 at position [8, 22].
+Observed two apples at positions [3, 22] and [3, 21], these are the last 2 apples of tree 3.
+
+Create a sequence of 3 actions that Laura should take to get closer to achieve its goals following the current plan.
+Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
+Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
+
+Valid actions: 
+['consume one apple at (x,y)', 'avoid consuming for this round', 'attack player (player_name) at (x,y)', 'explore', 'go to position (x,y)', 'skip turn' ]
+
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:
+
+
+
+```json
+{
+    "Actions": [
+        {
+            "Details": {
+                "Reasoning": string // Detailed explanation of why this action is chosen,
+                "Consequences": string // Detailed immediate and future consequences. 
+                "Risk level": string \\ High, Medium, Low. Classify according to consequences 
+
+            },
+            "Action": string \\ Must be one of the valid actions with the position replaced, should take care of consequences, If consequences have negative impact, avoid consuming and skip turn.
+        },
+        // Continue for other actions
+    ]
+}```

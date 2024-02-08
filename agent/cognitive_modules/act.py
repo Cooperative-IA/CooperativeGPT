@@ -38,9 +38,9 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
         response_dict = extract_answers(response.lower())
 
         try:
-            actions = list(response_dict.values())
-            for i in range(len(actions)):
-                actions_seq_queue.put(actions[i]['action'])
+            actions = list(response_dict['actions'])
+            for act in actions:
+                actions_seq_queue.put(act['action'])
         except:
             logger.warning(f'Could not find action in the response_dict: {response_dict}')
             

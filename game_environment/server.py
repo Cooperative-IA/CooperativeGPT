@@ -192,6 +192,12 @@ def change_avatars_appearance(lab2d_settings: Dict[str, Any],is_focal_player: li
 
     """
     Change the avatars appearance in the game environment
+    
+    Args:
+        lab2d_settings: The lab2d settings for the game environment
+        is_focal_player: List with the focal players
+    Returns:
+        A dictionary with the overrided configurations
     """
     new_color =  (0, 0, 0, 255)  # Example new color
     game_objects = lab2d_settings['simulation']['gameObjects']

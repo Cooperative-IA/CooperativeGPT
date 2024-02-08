@@ -28,24 +28,17 @@ def get_args():
     )
 
     parser.add_argument(
-        "--players",
-        nargs='+',
-        default=["Juan", "Laura", "Pedro"],
-        help="List with the player names to run the game with"
+        "--world_context",
+        type=str,
+        default="detailed_context",
+        help="Path to the world context file that contains the information about the game world and agents rules and objectives"
     )
 
     parser.add_argument(
         "--agents_bio_config",
         type=str,
         default="no_bio",
-        help="Path to the agents bio config folder, valid options are: no_bio, all_coop, 2_coop_1_selfish, all_selfish"
-    )
-
-    parser.add_argument(
-        "--evaluate_with_bots",
-        type=bool,
-        default=False,
-        help="Whether to evaluate the agents with bots or not"
+        help="Path to the agents bio config folder, basic valid options are: no_bio, all_coop, 2_coop_1_selfish, all_selfish"
     )
 
     parser.add_argument(

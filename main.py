@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import os
 from dotenv import load_dotenv
 import time
 import traceback
@@ -10,6 +11,7 @@ from game_environment.server import start_server, get_scenario_map,  default_age
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
+from utils.files import extract_players
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -22,7 +24,7 @@ rounds_count = 0
 
 def game_loop(agents: list[Agent]) -> None:
     """Main game loop. The game loop is executed until the game ends or the maximum number of steps is reached.
-    
+
     Args:
         agents (list[Agent]): List of agents.
 
@@ -33,7 +35,7 @@ def game_loop(agents: list[Agent]) -> None:
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 100 
+    rounds_count, steps_count, max_rounds = 0, 0, 100
     bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
@@ -46,7 +48,7 @@ def game_loop(agents: list[Agent]) -> None:
         for agent in agents:
             # Helps to define the dynamic number of bot steps per action as acumulated number
             accumulated_steps = 0
-            
+
             #Updates the observations for the current agent
             all_observations =  env.get_observations_by_player(agent.name)
             observations = all_observations['curr_state']
@@ -82,14 +84,14 @@ def game_loop(agents: list[Agent]) -> None:
                             actions[bot.name] = default_agent_actions_map()
 
                 # Execute each step one by one until the agent has executed all the steps for the high level action
-                try: 
+                try:
                     env.step(actions)
                     steps_count += 1
                     accumulated_steps += 1
                 except:
                     logger.exception("Error executing action %s", step_action)
                     step_actions = new_empty_queue()
-                    
+
             # Reset actions for the agent until its next turn
             actions[agent.name] = default_agent_actions_map()
 
@@ -108,15 +110,20 @@ if __name__ == "__main__":
     mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
 
     # Define players
-    players = args.players
-    agents_bio_dir = args.agents_bio_config
+    experiment_path = os.path.join("data", "defined_experiments", args.substrate)
+    agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
     game_scenario = args.scenario if args.scenario != "default" else None
-    players_context = [f'{agents_bio_dir}/{player.lower()}_context.json' for player in players]
+
+    players_context = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
+
+    players = extract_players(players_context)
+
+    world_context_path = os.path.join(experiment_path, "world_context", args.world_context)
     valid_actions = get_defined_valid_actions(game_name=args.substrate)
-    scenario_obstacles  = ['W', '$'] # TODO : Change this.
-    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles}
+    scenario_obstacles  = ['W', '$'] # TODO : Change this. This should be also loaded from the scenario file
+    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
     # Create agents
-    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=f"world_context_{args.substrate}.txt", scenario_info=scenario_info, mode=mode) for player, player_context in zip(players, players_context)]
+    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode) for player, player_context in zip(players, players_context)]
 
     # Start the game server
     env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name= args.substrate, scenario=args.scenario)
@@ -134,9 +141,9 @@ if __name__ == "__main__":
         logger.info("Program interrupted. %s rounds executed.", rounds_count)
     except Exception as e:
         logger.exception("Rounds executed: %s. Exception: %s", rounds_count, e)
-    
+
     env.end_game()
-       
+
     # LLm total cost
     costs = llm.get_costs()
     tokens = llm.get_tokens()

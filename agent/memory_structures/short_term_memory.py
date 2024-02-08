@@ -21,11 +21,9 @@ class ShortTermMemory:
         self.memory = {}
 
         if agent_context_file is not None:
-            agent_context_file = os.path.join(data_folder, 'agents_context', agent_context_file)
             self.memory = load_agent_context(agent_context_file)
 
         if world_context_file is not None:
-            world_context_file = os.path.join(data_folder, 'agents_context', world_context_file)
             self.memory['world_context'] = load_world_context(world_context_file)
 
     def add_memory(self, memory: str, key: str) -> None:
@@ -48,7 +46,7 @@ class ShortTermMemory:
             str or None: Memory if it exists, None otherwise.
         """
         return self.memory.get(key, None)
-    
+
     def get_known_agents(self) -> set[str]:
         """Gets the known agents from the short term memory.
 
@@ -56,7 +54,7 @@ class ShortTermMemory:
             set[str]: Set of known agents.
         """
         return self.memory.get('known_agents', set())
-    
+
     def set_known_agents(self, known_agents: set[str]) -> None:
         """Sets the known agents in the short term memory.
 
@@ -64,4 +62,3 @@ class ShortTermMemory:
             known_agents (set[str]): Set of known agents.
         """
         self.add_memory(known_agents, 'known_agents')
-        

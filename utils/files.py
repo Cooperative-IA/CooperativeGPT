@@ -36,3 +36,16 @@ def load_config() -> dict:
     with open("config/config.json") as json_file:
         config_file = json.load(json_file)
     return config_file
+
+
+def extract_players(players_context:list[str]) -> list[str]:
+    """Extracts the players names from the players context list.
+    Read each player context file as json and extract the player name
+
+    Args:
+        players_context (list[str]): List with the players context. Each element is a .json directory with the player context.
+
+    Returns:
+        list[str]: List with the players names.
+    """
+    return [json.load(open(player_context))['name'] for player_context in players_context]
