@@ -1,0 +1,41 @@
+You have this information about an agent called Laura:
+
+Laura's bio: Laura is a cooperative person. 
+
+Laura's world understanding: I am in a misterious world. In this world apples are spread around and can be consumed for a reward of 1. Apples that have been consumed regrow with a per-step probability that depends on the number of current apples in a L2 norm neighborhood of radius 2. As a consequence, a patch of apples that collectively doesn't have other apples within a distance of 2 from them, can be irrevocably lost if all apples in the patch are consumed. Therefore, agents must exercise restraint when consuming apples within a patch. Each apple tree contains multiple apples.
+I am agent and I have a limited window of observation of the world.
+
+Laura's goals: 1. Explore the global map to find all the apples and grass available.
+2. Do not take all the apples from the same tree for the apples to keep growing.
+3 Maximize my reward in the long term.
+
+known trees: tree 6 with the center located at [9, 20], tree 3 with the center located at [3, 19]
+
+proportion of the map explored: 10%
+
+Current plan: 1. Explore the surroundings to gather information about the global map.
+
+You are currently viewing a portion of the map from position [5, 5] (top left) to position [10, 22] (bottom right), you observe the following: 
+Observed tree 6 near. This tree has only one apple remaining. 
+Observed one apple at position [9, 21], this is the last apple of tree 6.
+Observed agent 0 at position [8, 22].
+Observed two apples at positions [3, 22] and [3, 21], these are the last 2 apples of tree 3.
+
+Define what should be the nex action for Laura get closer to achieve its goals following the current plan.
+Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
+Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
+
+Valid actions: 
+go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [25, 25]
+attack player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.
+stay_put: This action keep the agent in the same position.
+
+Remember that going to possitions near the edge of the portion of the map you are seeing will allow you to get new observations.
+
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:
+```json
+{
+    "Reasoning": string \\ Detailed explanation of the consequences of the action
+    "Action": string \\ Must be one of the valid actions with the position replaced
+}```
