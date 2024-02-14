@@ -17,14 +17,16 @@ import importlib
 import os
 
 # Import functions 
-def import_game(substrate_name:str):
+def import_game(substrate_name:str, adversarial_event:bool = False):
     """
     Import the game module from the game_environment/substrates/python folder
     Args:
         substrate_name: Name of the game to import
+        adversarial_event: Whether to include adversarial events in the game
     Returns:
         The game module
     """
+    substrate_name = substrate_name if not adversarial_event else f'{substrate_name}___adversarial'
     game_module_path = f'game_environment.substrates.python.{substrate_name}'
     game_module = importlib.import_module(game_module_path)
     return game_module
@@ -151,21 +153,21 @@ def run_episode(game_name: str, record: bool, players: list[str], init_timestamp
     return game_env
 
 
-def start_server(players: list[str],init_timestamp: str,  game_name: str = "commons_harvest_language", record: bool = False, scenario: str = None):
+def start_server(players: list[str],init_timestamp: str,  game_name: str = "commons_harvest_open", record: bool = False, scenario: str = None, adversarial_event: bool = False):
     """Start the game simulation server
     Args:
         players: List with the player names to run the game with
         game_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
         record: Whether to record the game
         scenario: Name of the scenario to run, the must be one of the predefined scenarios for the chosen game
-    
+        adversarial_event: Whether to include adversarial events in the game
     Returns:
         A game environment
     """
     #global ASCII_MAP
     global game
     #Imports the game module
-    game = import_game(game_name)
+    game = import_game(game_name, adversarial_event)
 
     return run_episode(game_name, record, players, init_timestamp, scenario)
 
@@ -178,7 +180,6 @@ def get_scenario_map  (game_name:str)-> str:
     """
     global ASCII_MAP
     ASCII_MAP = import_game(game_name).ASCII_MAP
-    #return import_game(game_name).ASCII_MAP
     return ASCII_MAP
 
 def default_agent_actions_map():
@@ -225,3 +226,22 @@ def change_avatars_appearance(lab2d_settings: Dict[str, Any],is_focal_player: li
     return overrided_configs
     
 
+
+def condition_to_end_game(substrate_name:str, current_map:list[str]):
+    """
+    Check if the game has ended
+    Args:
+        substrate_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
+        current_map: The current map of the game
+    Returns:
+        A boolean indicating if the game has ended if condition for the specific substrate is met
+    """
+    
+    if substrate_name == "commons_harvest_open":
+        # Checks if there's any apple "A" in the current map
+        for row in current_map:
+            if "A" in row:
+                return False
+    
+    
+    return True

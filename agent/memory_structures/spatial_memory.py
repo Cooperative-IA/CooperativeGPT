@@ -73,7 +73,6 @@ class SpatialMemory:
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
-        
         route = get_shortest_valid_route(self.explored_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
 
         # Adds a change on orientation on the last step of the route

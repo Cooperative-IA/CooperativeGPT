@@ -26,7 +26,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0") -> None:
         """Initializes the agent.
 
         Args:
@@ -55,6 +55,7 @@ class Agent:
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.att_bandwidth = att_bandwidth
         self.understanding_umbral = understanding_umbral
+        self.prompts_folder = prompts_folder
         self.stm.add_memory(memory = self.name, key = 'name')
         
         # Initialize steps sequence in empty queue
@@ -190,7 +191,7 @@ class Agent:
         world_context = self.stm.get_memory('world_context')
         agent_bio_str = self.stm.get_memory('bio_str')
         actions_sequence = list_from_queue(copy.copy(self.stm.get_memory('actions_sequence')))
-        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, game_time, agent_bio_str)
+        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, game_time, agent_bio_str, self.prompts_folder)
         self.stm.add_memory(reasoning, 'reason_to_react')
         self.logger.info(f'{self.name} should react to the observation: {react}')
         return react, observations, changes
@@ -208,7 +209,7 @@ class Agent:
         reason_to_react = self.stm.get_memory('reason_to_react')
         assert reason_to_react is not None, 'Reason to react is None. This should not happen because the agent only plans if it should react to the observation'
 
-        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str)
+        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str, self.prompts_folder)
         self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
         if new_plan is None or new_goals is None:
             self.logger.warn(f'{self.name} could not generate a new plan or new goals')
@@ -251,7 +252,7 @@ class Agent:
         agent_bio_str = self.stm.get_memory('bio_str')
 
         # Get the relevant questions
-        relevant_questions = reflect_questions(self.name, world_context, observations_str, agent_bio_str)
+        relevant_questions = reflect_questions(self.name, world_context, observations_str, agent_bio_str, self.prompts_folder)
         self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
         # Get the relevant memories for each question, relevant memories is a list of lists
         relevant_memories_list = [] 
@@ -264,7 +265,7 @@ class Agent:
         # Convert the relevant memories list to a list of strings
         self.logger.info(f'{self.name} relevant memories: {relevant_memories_list}')
         # Get the insights reflections
-        reflections = reflect_insights(self.name, world_context, relevant_memories_list, relevant_questions, agent_bio_str)
+        reflections = reflect_insights(self.name, world_context, relevant_memories_list, relevant_questions, agent_bio_str, self.prompts_folder)
         self.logger.info(f'{self.name} reflections: {reflections}')
         # Add the reflections to the long term memory, checks if the reflection  is not empty
         for reflection in reflections:
