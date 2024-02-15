@@ -1,0 +1,25 @@
+You have this information about an agent called <input1>:
+
+<input1>'s world understanding: <input2>
+
+<input3>
+
+Recent analysis of past observations:
+<input4>
+
+<input6>
+
+<input7>
+
+Check all the observations and try to find some new information that can be added to the <input1>'s understanding of the world or to <input1>'s understanding of another agent. If you find some new information, then restate <input1>'s understanding without leaving anything behind.
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
+
+```json
+{
+ "Reasoning": string, \\ Step by step thinking of the observations analysis
+ "Context": string, \\ Do all the observations can be explained with current <input1>'s knowledge of the world? What question can be asked about observations than aren't fully explained with the current <input1>'s knowledge of the world? Consider the time passed and how the environment changed to identify the inner workings or rules of the world
+ "World_knowledge": string, \\ Updated <input1>'s understanding of the world adding its past knowledge and the new insights
+ <input5>
+ "Remaining_doubts": string \\ After updating <input1>'s understanding what questions or doubts remains?
+}```

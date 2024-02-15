@@ -290,8 +290,14 @@ class Agent:
         current_goals = self.stm.get_memory('current_goals')
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
+        current_position = self.spatial_memory.position
+        known_trees = self.spatial_memory.get_known_trees()
+        percentage_explored = self.spatial_memory.get_percentage_explored()
+        
         # Generate new actions sequence and add it to the short term memory
-        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations, self.spatial_memory.position, valid_actions, current_goals, agent_bio = agent_bio_str)
+        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
+                                                  current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
+                                                  known_trees, percentage_explored)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
         
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')

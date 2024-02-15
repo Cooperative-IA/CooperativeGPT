@@ -23,17 +23,18 @@ class SpatialMemory:
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
         self.scenario_map = scenario_map.split('\n')[1:-1]
-        #self.exploredMap = ["$"*mapSize[1] for _ in range(mapSize[0])]
-        self.explored_map = self.scenario_map # CHANGE THIS TO LINE ABOVE
         self.position = (-1,-1) # Inits the position of the agent
         self.orientation = 0
         self.current_observed_map = None
         self.mapSize = (len(self.scenario_map), len(self.scenario_map[0]))
         self.scenario_obstacles = scenario_obstacles 
+        self.explored_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
+        print(self.scenario_map)
+        print(self.explored_map)
 
     def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
         """
-        Updates the current position of the agent.
+        Updates the spatial information of the agent.
 
         Args:
             new_position (tuple): New position of the agent.
@@ -44,17 +45,36 @@ class SpatialMemory:
         self.position = new_position
         self.orientation = orientation
         self.current_observed_map = current_observed_map
+        
+        # By using the current observed map, we can update the explored map
+        #self.update_explored_map()
 
 
-    def update_explored_map(self, pos: tuple) -> None:
+    def update_explored_map(self) -> None:
         """
-        Updates the map with a new object.
-
-        Args:
-            pos (tuple): Position of the new object.
+        Updates the map with a new current map.
         """
-        self.explored_map[pos[0]][pos[1]] = self.scenario_map[pos[0]][pos[1]]
+        for i, row in enumerate(self.current_observed_map.split('\n')[1:-1]):
+            for j, element in enumerate(row):
+                if element != '-':
+                    global_position = self.get_global_position((i,j), self.get_local_self_position())
+                    if self.explored_map[global_position[0]][global_position[1]] == '?':
+                        # Replaces the char of the string global_position[0] at that is in the list of strings
+                        self.explored_map[global_position[0]] = self.explored_map[global_position[0]][:global_position[1]] + element + self.explored_map[global_position[0]][global_position[1]+1:]
 
+    def get_known_trees(self) -> list[str]:
+        # TODO: Implement this function
+        return ""
+
+    def get_percentage_explored(self) -> float:
+        """
+        Returns the percentage of the map that has been explored.
+
+        Returns:
+            float: Percentage of the map that has been explored.
+        """
+        n_explored = sum([row.count('?') for row in self.explored_map])
+        return  (1 - n_explored / (self.mapSize[0] * self.mapSize[1])) * 100
 
     def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True ) -> Queue[str] | list[str]:
         """
@@ -69,7 +89,7 @@ class SpatialMemory:
         Returns:
             Queue(str): Steps sequence for the route.
         """
-        self.logger.info(f'Finding route from {self.position} to {position_end}')
+        self.logger.info(f'Finding route from {self.scenario_map} to {position_end}')
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
