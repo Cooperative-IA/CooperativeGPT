@@ -28,6 +28,13 @@ def get_args():
     )
 
     parser.add_argument(
+        "--adversarial_event",
+        type=bool,
+        default=False,
+        help="Whether to include adversarial events in the game. True/False"
+    )
+    
+    parser.add_argument(
         "--world_context",
         type=str,
         default="detailed_context",
@@ -54,7 +61,14 @@ def get_args():
         default='gpt-3.5',
         help="Which LLM model to use. Valid options are: gpt-3.5, gpt-3.5-16k, gpt-4" 
     )
-
+    
+    parser.add_argument(
+        "--prompts_source",
+        type=str,
+        default='base_prompts_v0',
+        help="Path to the prompts folder, some valid options are: base_prompts_v0, base_prompts_v1"
+    )
+    
     args = parser.parse_args()
     return args
 

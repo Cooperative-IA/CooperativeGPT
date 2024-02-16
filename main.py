@@ -7,7 +7,7 @@ import traceback
 from utils.logging import setup_logging, CustomAdapter
 from game_environment.utils import generate_agent_actions_map, check_agent_out_of_game, get_defined_valid_actions
 from agent.agent import Agent
-from game_environment.server import start_server, get_scenario_map,  default_agent_actions_map
+from game_environment.server import start_server, get_scenario_map,  default_agent_actions_map, condition_to_end_game
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
@@ -19,15 +19,14 @@ logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
-
 rounds_count = 0
 
-def game_loop(agents: list[Agent]) -> None:
+def game_loop(agents: list[Agent], substrate_name:str) -> None:
     """Main game loop. The game loop is executed until the game ends or the maximum number of steps is reached.
 
     Args:
         agents (list[Agent]): List of agents.
-
+        substrate_name (str): Name of the substrate.
     Returns:
         None
     """
@@ -40,8 +39,8 @@ def game_loop(agents: list[Agent]) -> None:
 
     # Get the initial observations and environment information
     env.step(actions)
-
-    while rounds_count < max_rounds:
+    
+    while rounds_count < max_rounds and not condition_to_end_game(substrate_name, env.get_current_global_map()):
         # Reset the actions for each agent
         actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
         # Execute an action for each agent on each step
@@ -110,33 +109,32 @@ if __name__ == "__main__":
     mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
 
     # Define players
+    substrate_real_name = args.substrate.split("___")[0] #Takes the first part of the substrate name
     experiment_path = os.path.join("data", "defined_experiments", args.substrate)
     agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
     game_scenario = args.scenario if args.scenario != "default" else None
-
     players_context = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
 
     players = extract_players(players_context)
-
-    world_context_path = os.path.join(experiment_path, "world_context", args.world_context)
-    valid_actions = get_defined_valid_actions(game_name=args.substrate)
+    
+    world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
+    valid_actions = get_defined_valid_actions(game_name= args.substrate)
     scenario_obstacles  = ['W', '$'] # TODO : Change this. This should be also loaded from the scenario file
     scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
     # Create agents
-    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode) for player, player_context in zip(players, players_context)]
+    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode, prompts_folder=args.prompts_source) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name= args.substrate, scenario=args.scenario)
+    env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name= args.substrate, scenario=args.scenario, adversarial_event = args.adversarial_event)
     logger = CustomAdapter(logger, game_env=env)
-
-
+    # We are setting args.prompts_source as a global variable to be used in the LLMModels class
     llm = LLMModels()
     gpt_model = llm.get_main_model()
     gpt_longer_context = llm.get_longer_context_fallback()
     embedding_model = llm.get_embedding_model()
     gpt_best_model = llm.get_best_model()
     try:
-        game_loop(agents)
+        game_loop(agents, args.substrate)
     except KeyboardInterrupt:
         logger.info("Program interrupted. %s rounds executed.", rounds_count)
     except Exception as e:

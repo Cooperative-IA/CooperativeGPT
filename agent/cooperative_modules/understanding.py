@@ -1,8 +1,9 @@
+import os
 from llm import LLMModels
 from utils.time import str_to_timestamp
 from utils.llm import extract_answers, extract_text, extract_tags
 
-def update_understanding(current_observations: list[str], agent, game_time: str, understanding_umbral = 30):
+def update_understanding(current_observations: list[str], agent, game_time: str, understanding_umbral = 30, prompts_folder = "base_prompts_v0") -> None:
     """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
     if the agent has no understanding about the world yet, in that case the current observations are used instead of the reflections.
 
@@ -65,13 +66,14 @@ def update_understanding(current_observations: list[str], agent, game_time: str,
 
     # Prompt the language model
     llm = LLMModels().get_main_model()
+    prompt_path = os.path.join(prompts_folder, 'understanding.txt')
     try:
-        response = llm.completion(prompt='understanding.txt', inputs=[agent.name, world_understanding, knowledge_about_agents, observations, other_agents_prompt, remaining_doubts_info, memories_about_other_agents])
+        response = llm.completion(prompt=prompt_path, inputs=[agent.name, world_understanding, knowledge_about_agents, observations, other_agents_prompt, remaining_doubts_info, memories_about_other_agents])
         answers = extract_answers(response)
     except ValueError as e:
         if str(e) == 'Prompt is too long':
             llm = LLMModels().get_longer_context_fallback()
-            response = llm.completion(prompt='understanding.txt', inputs=[agent.name, world_understanding, knowledge_about_agents, observations, other_agents_prompt, remaining_doubts_info, memories_about_other_agents])
+            response = llm.completion(prompt=prompt_path, inputs=[agent.name, world_understanding, knowledge_about_agents, observations, other_agents_prompt, remaining_doubts_info, memories_about_other_agents])
             answers = extract_answers(response)
         else:
             raise e
@@ -91,7 +93,7 @@ def update_understanding(current_observations: list[str], agent, game_time: str,
     # Update the time of the understanding update
     agent.stm.add_memory(game_time, 'understanding_updated_on')
 
-def update_understanding_2(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30):
+def update_understanding_2(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30, prompts_folder = "base_prompts_v0"):
     """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
     if the agent has no understanding about the world yet, in that case the current observations are used instead of the reflections.
 
@@ -109,7 +111,8 @@ def update_understanding_2(current_observations: list[str], agent, game_time: st
     else:
         current_observations = 'You cannot see anything within your vision range.'
     llm = LLMModels().get_main_model()
-    response = llm.completion(prompt='world_representation.txt', inputs=[current_observations])
+    prompt_wr_path = os.path.join(prompts_folder, 'world_representation.txt')
+    response = llm.completion(prompt=prompt_wr_path, inputs=[current_observations])
     current_world_representation = str(extract_answers(response))
     agent.stm.add_memory(current_world_representation, 'world_representation')
         
@@ -120,12 +123,13 @@ def update_understanding_2(current_observations: list[str], agent, game_time: st
     state_changes = '\n'.join(state_changes) if state_changes else 'There were no changes observed.'
     if last_world_representation is not None:
         last_world_rules = agent.stm.get_memory('world_rules') or ''
+        prompt_rules_path = os.path.join(prompts_folder, 'world_rules.txt')
         try:
-            world_rules = llm.completion(prompt='world_rules.txt', inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules])
+            world_rules = llm.completion(prompt=prompt_rules_path, inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules])
         except ValueError as e:
             if str(e) == 'Prompt is too long':
                 llm = LLMModels().get_longer_context_fallback()
-                world_rules = llm.completion(prompt='world_rules.txt', inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules])
+                world_rules = llm.completion(prompt=prompt_rules_path, inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules])
             else:
                 raise e
         agent.stm.add_memory(world_rules, 'world_rules')
@@ -137,7 +141,7 @@ def update_understanding_2(current_observations: list[str], agent, game_time: st
     agent.stm.add_memory(game_time, 'understanding_updated_on')
 
 
-def update_understanding_3(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30):
+def update_understanding_3(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30, prompts_folder = "base_prompts_v0"):
     """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
     if the agent has no understanding about the world yet, in that case the current observations are used instead of the reflections.
 
@@ -167,14 +171,15 @@ def update_understanding_3(current_observations: list[str], agent, game_time: st
     llm = LLMModels().get_main_model()
     if last_world_representation is not None:
         last_world_rules = agent.stm.get_memory('world_rules') or ''
+        prompt_rules_path = os.path.join(prompts_folder, 'world_rules.txt')
         if last_world_rules:
             last_world_rules = f'The previous knowledge of the world:\n{last_world_rules}'
         try:
-            response = llm.completion(prompt='world_rules.txt', inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules, last_position, current_position])
+            response = llm.completion(prompt=prompt_rules_path, inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules, last_position, current_position])
         except ValueError as e:
             if str(e) == 'Prompt is too long':
                 llm = LLMModels().get_longer_context_fallback()
-                response = llm.completion(prompt='world_rules.txt', inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules, current_position, last_position, current_position])
+                response = llm.completion(prompt=prompt_rules_path, inputs=[last_understanding_update, last_world_representation, agent.name, last_reward, action, state_changes, game_time, reward, current_world_representation, last_world_rules, current_position, last_position, current_position])
             else:
                 raise e
         world_rules = extract_text(response)
@@ -186,7 +191,7 @@ def update_understanding_3(current_observations: list[str], agent, game_time: st
     # Update the time of the understanding update
     agent.stm.add_memory(game_time, 'understanding_updated_on')
 
-def update_understanding_4(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30):
+def update_understanding_4(current_observations: list[str], agent, game_time: str, last_reward, reward, state_changes: list[str], understanding_umbral = 30, prompts_folder = "base_prompts_v0"):
     """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
     if the agent has no understanding about the world yet, in that case the current observations are used instead of the reflections.
 
@@ -231,12 +236,13 @@ def update_understanding_4(current_observations: list[str], agent, game_time: st
     world_hypotheses = '\n'.join([f'<{i+1+number_of_rules}>{hypothesis}<\{i+1+number_of_rules}>' for i, hypothesis in enumerate(world_hypotheses)]) if world_hypotheses else None
 
     llm = LLMModels().get_best_model()
+    prompt_path = os.path.join(prompts_folder, 'world_understanding.txt')
     try:
-        response = llm.completion(prompt='world_understanding.txt', inputs=[world_rules, world_hypotheses, previous_observations, current_state, game_time])
+        response = llm.completion(prompt=prompt_path, inputs=[world_rules, world_hypotheses, previous_observations, current_state, game_time])
     except ValueError as e:
         if str(e) == 'Prompt is too long':
             llm = LLMModels().get_longer_context_fallback()
-            response = llm.completion(prompt='world_understanding.txt', inputs=[world_rules, world_hypotheses, previous_observations, current_state, game_time])
+            response = llm.completion(prompt=prompt_path, inputs=[world_rules, world_hypotheses, previous_observations, current_state, game_time])
         else:
             raise e
     answers = extract_tags(response)

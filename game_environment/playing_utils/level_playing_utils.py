@@ -526,6 +526,7 @@ class Game:
         self.observationsGenerator.update_state_changes(description, agents_observing, game_time)
 
         self.curr_scene_description = description
+        self.curr_global_map = curr_global_map
         # Return the observations of each player and the descriptions
         # return self.observationsGenerator.get_all_observations_descriptions(str(description).strip(), agents_observing), description
     
@@ -565,3 +566,8 @@ class Game:
         with open(f'logs/{logger_timestamp}/steps_history.txt', 'a') as file:
             # Write round_number and actions_count in the history file
             file.write(f'{step_count} {actions_count}\n')
+            
+    
+    def get_current_global_map(self) -> dict:
+        """Returns the current scene description."""
+        return self.curr_global_map
