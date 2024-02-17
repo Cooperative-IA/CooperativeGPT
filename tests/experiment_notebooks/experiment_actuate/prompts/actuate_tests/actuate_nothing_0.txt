@@ -7,17 +7,15 @@ FFFFFFFFFFF
 FFFFFFFFFFF
 FFFFFFFFFFF
 FFFFFFFFFFF
-FFFFGFFFFFF
-FFFGA#1FFFF
-FFFGGGFFFFF
+FFFFFFFFFFF
+FFFFF#1FFFF
+FFFFFFFFFFF
 """
 agents = ["Laura", "Pedro"]
 orientation = 2
 position = (9, 2)
 
 You have this information about an agent called Laura:
-
-Laura's bio: Laura is a cooperative person. 
 
 Laura's world understanding: I am in a misterious grid world. In this world there are the following elements:
 Apple: This object can be taken by any agent. The apple is taken when I go to its position. Apples only grow on grass tiles. When an apple is taken it gives the agent who took it a reward of 1.
@@ -33,6 +31,10 @@ Laura's goals: 1. Explore the global map to find all the apples and grass availa
 
 Current plan: 1. Explore the surroundings to gather information about the global map.
 
+Known trees: tree 1 with the center located at [1, 1], tree 2 with the center located at [3, 6], tree 5 with the center located at [8, 3]
+
+Proportion of the map explored: 50%
+
 The following changes in the environment were observed:
 Observed agent Pedro took apple from tree 5 at position [10, 2].
 Observed agent Pedro took apple from tree 5 at position [9, 2].
@@ -40,11 +42,8 @@ Observed agent Pedro took apple from tree 5 at position [9, 5].
 Observed that the grass at position [8, 1] disappeared. 
 Now it's and the reward obtained by me is 35.0. I am at the position (9, 2) looking to the South.
 
-Current observations: 
-Observed one apple at position [9, 3], this is the last apple of the tree 5.
-Observed five grass to grow apples at positions [10, 3], [9, 4], [8, 4], [8, 3] and [8, 2]. These grass belong to tree 5.
+Current observations:
 Observed agent Pedro at position [9, 1].
-Observed tree 5 at position [8, 3]. This tree has 1 apples remaining and 5 grass for apples growing on the observed map. The tree might have more apples and grass on the global map.
 
 Define what should be the nex action for Laura get closer to achieve its goals following the current plan.
 Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
@@ -61,9 +60,9 @@ Remember that going to possitions near the edge of the portion of the map you ar
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:
 ```json
 {
-    "Opportunities": string \\ What are the most relevant opportunities? those that can yield the best benefit for you in the long term
-    "Threats": string \\ What are the biggest threats?, what observations you should carefully follow to avoid potential harm in your wellfare in the long term?
-    "Options: string \\ Which actions you could take to address both the opportunities ans the threats?
+    "Opportunities": string \\ What are the most relevant opportunities? those that can yield the best benefit for you in the long term (list all the possibilities)
+    "Threats": string \\ What are the biggest threats?, what observations you should carefully follow to avoid potential harm in your wellfare in the long term? (list all the possibilities)
+    "Options: string \\ Which actions you could take to address both the opportunities ans the threats? (list all the possibilities. Consider all the valid actions)
     "Consequences": string \\ What are the consequences of each of the options?
     "Final analysis: string \\ The analysis of the consequences to reason about what is the best action to take
     "Answer": string \\ Must be one of the valid actions with the position replaced

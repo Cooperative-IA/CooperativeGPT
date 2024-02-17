@@ -17,8 +17,6 @@ position = (9, 2)
 
 You have this information about an agent called Laura:
 
-Laura's bio: Laura is a cooperative person. 
-
 Laura's world understanding: I am in a misterious grid world. In this world there are the following elements:
 Apple: This object can be taken by any agent. The apple is taken when I go to its position. Apples only grow on grass tiles. When an apple is taken it gives the agent who took it a reward of 1.
 Grass: Grass tiles are visible when an apple is taken. Apples will regrow only in this type of tile based on a probability that depends on the number of current apples in a L2 norm neighborhood of radius 2. When there are no apples in a radius of 2 from the grass tile, the grass will disappear. On the other hand, if an apple grows at a determined position, all grass tiles that had beeen lost will reappear if they are between a radius of two from the apple.
@@ -42,7 +40,7 @@ Now it's and the reward obtained by me is 35.0. I am at the position (9, 2) look
 
 Current observations: 
 Observed one apple at position [9, 3], this is the last apple of the tree 5.
-Observed five grass to grow apples at positions [10, 3], [9, 4], [8, 4], [8, 3] and [8, 2]. These grass belong to tree 5.
+Observed five grasses at positions [10, 3], [9, 4], [8, 4], [8, 3] and [8, 2]. These grass belong to tree 5.
 Observed agent Pedro at position [9, 1].
 Observed tree 5 at position [8, 3]. This tree has 1 apples remaining and 5 grass for apples growing on the observed map. The tree might have more apples and grass on the global map.
 
@@ -61,9 +59,9 @@ Remember that going to possitions near the edge of the portion of the map you ar
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:
 ```json
 {
-    "Opportunities": string \\ What are the most relevant opportunities? those that can yield the best benefit for you in the long term
-    "Threats": string \\ What are the biggest threats?, what observations you should carefully follow to avoid potential harm in your wellfare in the long term?
-    "Options: string \\ Which actions you could take to address both the opportunities ans the threats?
+    "Opportunities": string \\ What are the most relevant opportunities? those that can yield the best benefit for you in the long term (list all the possibilities)
+    "Threats": string \\ What are the biggest threats?, what observations you should carefully follow to avoid potential harm in your wellfare in the long term? (list all the possibilities)
+    "Options: string \\ Which actions you could take to address both the opportunities ans the threats? (list all the possibilities. Consider all the valid actions)
     "Consequences": string \\ What are the consequences of each of the options?
     "Final analysis: string \\ The analysis of the consequences to reason about what is the best action to take
     "Answer": string \\ Must be one of the valid actions with the position replaced
