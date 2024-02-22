@@ -29,9 +29,7 @@ class SpatialMemory:
         self.mapSize = (len(self.scenario_map), len(self.scenario_map[0]))
         self.scenario_obstacles = scenario_obstacles 
         self.explored_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
-        print(self.scenario_map)
-        print(self.explored_map)
-
+        
     def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
         """
         Updates the spatial information of the agent.
@@ -47,25 +45,25 @@ class SpatialMemory:
         self.current_observed_map = current_observed_map
         
         # By using the current observed map, we can update the explored map
-        #self.update_explored_map()
+        self.update_explored_map()
 
 
     def update_explored_map(self) -> None:
         """
         Updates the map with a new current map.
         """
-        for i, row in enumerate(self.current_observed_map.split('\n')[1:-1]):
+        for i, row in enumerate(self.current_observed_map.split('\n')):
             for j, element in enumerate(row):
                 if element != '-':
-                    global_position = self.get_global_position((i,j), self.get_local_self_position())
-                    if self.explored_map[global_position[0]][global_position[1]] == '?':
-                        # Replaces the char of the string global_position[0] at that is in the list of strings
-                        self.explored_map[global_position[0]] = self.explored_map[global_position[0]][:global_position[1]] + element + self.explored_map[global_position[0]][global_position[1]+1:]
+                    try:
+                        global_position = self.get_global_position((i,j), self.get_local_self_position())
+                        if self.explored_map[global_position[0]][global_position[1]] == '?':
+                            # Replaces the char of the string global_position[0] at that is in the list of strings
+                            self.explored_map[global_position[0]] = self.explored_map[global_position[0]][:global_position[1]] + element + self.explored_map[global_position[0]][global_position[1]+1:]
 
-    def get_known_trees(self) -> list[str]:
-        # TODO: Implement this function
-        return ""
-
+                    except:
+                        self.logger.error(f'Error updating the explored map with the element {element} {(i,j)} at position {global_position}')
+                        continue
     def get_percentage_explored(self) -> float:
         """
         Returns the percentage of the map that has been explored.
@@ -74,7 +72,8 @@ class SpatialMemory:
             float: Percentage of the map that has been explored.
         """
         n_explored = sum([row.count('?') for row in self.explored_map])
-        return  (1 - n_explored / (self.mapSize[0] * self.mapSize[1])) * 100
+        percentage = (1 - n_explored / (self.mapSize[0] * self.mapSize[1])) * 100
+        return float("{:.2f}".format(percentage))
 
     def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True ) -> Queue[str] | list[str]:
         """
@@ -93,7 +92,7 @@ class SpatialMemory:
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
-        route = get_shortest_valid_route(self.explored_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
+        route = get_shortest_valid_route(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
 
         # Adds a change on orientation on the last step of the route
         if len(route) > 0:
@@ -152,7 +151,7 @@ class SpatialMemory:
             end_position = self.get_position_from_action(current_action)
             sequence_steps = self.find_route_to_position(end_position, self.orientation)
         
-        elif current_action.startswith('attack '):
+        elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)
             sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False)
             sequence_steps.put('attack')

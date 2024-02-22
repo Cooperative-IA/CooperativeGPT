@@ -11,6 +11,10 @@ LOG_DIR = "logs"
 
 def setup_logging(timestamp):
     """Load logging configuration"""
+    # Create the log directory if it doesn't exist
+    if not os.path.exists(os.path.join(LOG_DIR,str(timestamp))):
+        os.makedirs(os.path.join( LOG_DIR,str(timestamp)))
+        
     log_configs = {"dev": "logging.dev.ini", "prod": "logging.prod.ini", "debug": "logging.debug.ini"}
     config = log_configs.get(os.getenv("ENV"), "logging.dev.ini")
     config_path = os.path.join(CONFIG_DIR, config)
@@ -20,7 +24,7 @@ def setup_logging(timestamp):
     logging.config.fileConfig(
         config_path,
         disable_existing_loggers=False,
-        defaults={"logfilename": timestamp, "customArg": "Hello"},
+        defaults={"logfilename":f'{str(timestamp)}/{str(timestamp)}', "customArg": "Hello"},
     )
 
 class CustomAdapter(logging.LoggerAdapter):

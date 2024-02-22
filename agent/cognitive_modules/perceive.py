@@ -58,6 +58,33 @@ def update_known_agents(observations: list[str], stm: ShortTermMemory):
     known_agents = set(known_agents)
     stm.set_known_agents(known_agents)
 
+
+def update_known_objects(observations: list[str], stm: ShortTermMemory, substrate_name: str):
+    """Updates the known agents in the short term memory.
+
+    Args:
+        observations (list[str]): List of observations of the environment.
+        stm (ShortTermMemory): Short term memory of the agent.
+
+    Returns:
+        None
+    """
+    
+    if substrate_name == 'commons_harvest_open':
+        known_trees = list(stm.get_known_objects_by_key(object_key='known_trees'))
+
+        for observation in observations:
+            # Trees observations are like "Observed tree 2" we stract the number of the tree
+            if 'Observed tree' in observation:
+                tree_number = observation.split(' ')[2]
+                tree_position = ''.join(observation.split(' ')[5:7])[:-1]
+                if tree_number not in known_trees:
+                    known_trees.append((tree_number,tree_position))
+        
+        known_trees = set(known_trees)
+        stm.set_known_objects_by_key(known_trees, 'known_trees')
+
+
 def create_memory(agent_name: str, curr_time: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str], position: list[int], orientation: str) -> str:
     """Creates a memory from the action, state changes, reward and observations.
 

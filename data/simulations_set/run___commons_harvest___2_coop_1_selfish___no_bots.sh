@@ -1,3 +1,3 @@
-for i in {1..5}; do 
-python main.py --substrate="commons_harvest_open" --scenario="" --adversarial_event=True  --agents_bio_config="no_bio" --world_context="detailed_context" --llm_model="gpt-3.5"
+for i in {1..6}; do 
+python main.py --substrate="commons_harvest_open" --scenario="" --kind_experiment="adversarial"  --agents_bio_config="all_coop" --world_context="context_with_definitions" --llm_model="gpt-3.5"
 done

@@ -23,7 +23,7 @@ class Recorder:
         self.player_names = player_names
 
     def create_log_tree(self):
-        self.create_or_replace_directory(self.log_path)
+        self.create_directory_if_not_exists(self.log_path)
         self.create_or_replace_directory(os.path.join(self.log_path, "world"))
         for player_id in range(self.n_players):
             self.create_or_replace_directory(os.path.join(self.log_path, str(player_id)))
@@ -50,6 +50,12 @@ class Recorder:
             rewards = {i: int(rr) for i, rr in enumerate(list(rewards.values()))}
             f.write(f"{self.step}: {rewards}\n")
 
+    def record_scene_tracking(self, time:datetime, current_map: list[list[str]], agents_status=None) -> None:
+        #Writes the map to a file
+        with open(os.path.join(self.log_path, "scene_track.txt"), "a") as f:
+            scene_dict = {'step':self.step,  'memory_time': str(time), 'current_map': matrix_to_string(current_map), 'agents_status': agents_status}
+            f.write(f"{scene_dict}\n")
+        
     def record_elements_status(self, initial_map, current_map):
         # Transform list map to string map
         if self.substrate_name == "commons_harvest_open":
@@ -124,3 +130,8 @@ class Recorder:
         if os.path.exists(directory_path):
             shutil.rmtree(directory_path)
         os.makedirs(directory_path)
+
+    @staticmethod 
+    def create_directory_if_not_exists(directory_path):
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)

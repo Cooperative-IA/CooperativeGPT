@@ -21,7 +21,7 @@ def matrix_to_string(matrix):
 def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
     if game_name == 'commons_harvest_open':
         return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
-                 'attack player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
+                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
                  'stay put: This action keep the agent in the same position.',
                  'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
                  ]

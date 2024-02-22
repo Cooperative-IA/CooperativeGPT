@@ -8,7 +8,7 @@ from typing import Union, Literal
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
-from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory
+from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory, update_known_objects
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
@@ -26,7 +26,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0") -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None ) -> None:
         """Initializes the agent.
 
         Args:
@@ -40,6 +40,8 @@ class Agent:
             mode (Mode, optional): Defines the type of architecture to use. Defaults to 'normal'.
             understanding_umbral (int, optional): Understanding umbral. The understanding umbral is the number of poignancy that the agent needs to accumulate to update its understanding (only the poignancy of reflections are taken in account). Defaults to 6.
             observations_poignancy (int, optional): Poignancy of the observations. Defaults to 10.
+            prompts_folder (str, optional): Folder where the prompts are stored. Defaults to "base_prompts_v0".
+            substrate_name (str, optional): Name of the substrate. Defaults to "commons_harvest_open".
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
@@ -57,13 +59,17 @@ class Agent:
         self.understanding_umbral = understanding_umbral
         self.prompts_folder = prompts_folder
         self.stm.add_memory(memory = self.name, key = 'name')
+        self.substrate_name = substrate_name
         
         # Initialize steps sequence in empty queue
         self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
         self.stm.add_memory(memory=scenario_info['valid_actions'], key='valid_actions')
         self.stm.add_memory(memory= f"{self.name}'s bio: {self.stm.get_memory('bio')} \nImportant: make all your decisions taking into account {self.name}'s bio."  if self.stm.get_memory('bio') else "", key='bio_str')
-
-
+        self.stm.add_memory(memory=("You have not performed any actions yet.",""), key='previous_actions')
+        
+        if start_from_scene:
+            self.ltm.load_memories_from_scene(scene_path = start_from_scene, agent_name=name)
+            self.stm.load_memories_from_scene(scene_path = start_from_scene, agent_name=name)
 
     def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
@@ -162,6 +168,9 @@ class Agent:
 
         # Update the agent known agents
         update_known_agents(observations, self.stm)
+        # Update the agent known objects
+        update_known_objects(observations, self.stm, self.substrate_name)
+        
 
         action_executed = self.stm.get_memory('current_action')
         # Parse the changes in the state of the environment observed by the agent
@@ -291,13 +300,14 @@ class Agent:
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
         current_position = self.spatial_memory.position
-        known_trees = self.spatial_memory.get_known_trees()
+        known_trees = self.stm.get_memory('known_trees')
+        known_trees = "These are the known trees: "+' '.join([f"tree {tree[0]} with center at {tree[1]}" for tree in known_trees]) if known_trees else "There are no known trees yet"
         percentage_explored = self.spatial_memory.get_percentage_explored()
         
         # Generate new actions sequence and add it to the short term memory
         actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
                                                   current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
-                                                  known_trees, percentage_explored)
+                                                  known_trees, percentage_explored, self.stm)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
         
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')

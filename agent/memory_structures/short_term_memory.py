@@ -46,6 +46,14 @@ class ShortTermMemory:
             str or None: Memory if it exists, None otherwise.
         """
         return self.memory.get(key, None)
+    
+    def get_memories(self) -> dict:
+        """Gets all the memories from the short term memory.
+
+        Returns:
+            dict: All the memories.
+        """
+        return self.memory
 
     def get_known_agents(self) -> set[str]:
         """Gets the known agents from the short term memory.
@@ -62,3 +70,39 @@ class ShortTermMemory:
             known_agents (set[str]): Set of known agents.
         """
         self.add_memory(known_agents, 'known_agents')
+
+
+    def get_known_objects_by_key(self, object_key:str) -> set[str]:
+        """Gets the known objects from the short term memory.
+        Allows to get objects like known trees, known sectors, etc.
+        
+        Returns:
+            set[str]: Set of known objects.
+        """
+        return self.memory.get(object_key, set())
+    
+    def set_known_objects_by_key(self, known_objects: set[str], object_key:str) -> None:
+        """Sets the known objects in the short term memory.
+        It lets set objects like known trees, known sectors, etc.
+        Args:
+            known_objects (set[str]): Set of known objects.
+        """
+        self.add_memory(known_objects, object_key)
+        
+        
+      
+    
+    def load_memories_from_scene(self, scene_path: str, agent_name:str) -> None:
+        """Loads memories from a scene file.
+
+        Args:
+            scene_path (str): Path to the scene file.
+            agent_name (str): Name of the agent.
+        """
+        source_stm_path = os.path.join(scene_path, "short_term_memories.txt")
+        
+        #Read the file and load the memories
+        scene_memories = eval(open(source_stm_path).read())
+        agent_memory = scene_memories.get(agent_name, self.memory)
+        self.memory = agent_memory
+        logging.info(f"Loaded memories from scene for agent {agent_name}. Memories: {agent_memory}")

@@ -150,3 +150,17 @@ class LongTermMemory:
             list[float]: Embedding for the text.
         """
         return self.collection._embedding_function([text])[0]
+    
+    
+    def load_memories_from_scene(self, scene_path: str, agent_name:str) -> None:
+        """Loads memories from a scene file.
+
+        Args:
+            scene_path (str): Path to the scene file.
+            agent_name (str): Name of the agent.
+        """
+        source_db_path = os.path.join(scene_path, "ltm_database", agent_name, "long_term_memory.db")
+        chroma_scene_client = chromadb.PersistentClient(path=source_db_path)
+        source_collection = chroma_scene_client.get_collection(agent_name)
+        source_data = source_collection.get()
+        self.collection.add(documents=source_data['documents'], metadatas=source_data['metadatas'], ids=source_data['ids'])

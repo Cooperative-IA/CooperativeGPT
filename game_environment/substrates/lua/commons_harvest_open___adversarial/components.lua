@@ -120,6 +120,8 @@ function GlobalStateTracker:reset()
   self.states = tensor.Int32Tensor(self._config.numPlayers):fill(0)
 end
 
+
+
 local AdversarialEvent = class.Class(component.Component)
 
 function AdversarialEvent:__init__(kwargs)
@@ -205,6 +207,7 @@ function PatchTracker:getApplePatch(apple)
     local patchId = self.patchMap[applePosition]
     return patchId
 end
+
 
 
 
@@ -387,7 +390,7 @@ local allComponents = {
     AvatarsStateObserver = AvatarsStateObserver,
     GlobalStateTracker = GlobalStateTracker,
     PatchTracker = PatchTracker,
-    AdversarialEvent = AdversarialEvent
+    AdversarialEvent = AdversarialEvent,
 }
 
 component_registry.registerAllComponents(allComponents)
