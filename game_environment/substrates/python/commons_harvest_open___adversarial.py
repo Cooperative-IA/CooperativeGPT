@@ -706,7 +706,7 @@ def build(
             (Mapping[str, Any]): A substrate definition
     """
     num_players = config.num_players
-    events_times = [50, 250]
+    events_times = [250]
     events_magnitude = 0.3
     # Build the rest of the substrate definition.
     substrate_definition = dict(

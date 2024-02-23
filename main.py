@@ -42,6 +42,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     env.step(actions)
     actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
     env.step(actions)
+    
     while rounds_count < max_rounds and not condition_to_end_game(substrate_name, env.get_current_global_map()):
         # Reset the actions for each agent
         actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}

@@ -160,6 +160,10 @@ class LongTermMemory:
             agent_name (str): Name of the agent.
         """
         source_db_path = os.path.join(scene_path, "ltm_database", agent_name, "long_term_memory.db")
+        # Si no encuentra el archivo, no carga nada, retorna
+        if not os.path.exists(source_db_path):
+            self.logger.warning(f"Could not find the long term memory database at {source_db_path}")
+            return
         chroma_scene_client = chromadb.PersistentClient(path=source_db_path)
         source_collection = chroma_scene_client.get_collection(agent_name)
         source_data = source_collection.get()
