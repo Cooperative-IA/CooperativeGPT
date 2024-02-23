@@ -23,7 +23,7 @@ def get_args():
     parser.add_argument(
         "--scenario",
         type=str,
-        default="commons_harvest__open_0",
+        default="",
         help="Name of the scenario to run, the must be one of the predefined scenarios for the chosen game"
     )
 
