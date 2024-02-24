@@ -445,6 +445,14 @@ class Game:
         action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
+
+        # Get the agents that are observing and didn't move
+        agents_observing = []
+        if current_actions_map:
+            agents_observing = [agent_name for agent_name, action_map in current_actions_map.items() if action_map == default_agent_actions_map(self.substrate_name)]
+
+        if self.record:
+            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, agents_observing)
         
         if self.first_move_done :
             # Get the next action map
@@ -480,7 +488,7 @@ class Game:
         if self.record:
             self.game_recorder.record(self.timestep, description)
             self.game_recorder.record_rewards(rewards)
-            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
+            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map, agents_observing)
             self.record_counter += 1
 
         # pygame display
@@ -515,11 +523,6 @@ class Game:
 
             # Update the time: One hour per step
             self.time += datetime.timedelta(hours=1)
-
-        # Get the agents that are observing and didn't move
-        agents_observing = []
-        if current_actions_map:
-            agents_observing = [agent_name for agent_name, action_map in current_actions_map.items() if action_map == default_agent_actions_map(self.substrate_name)]
         
         # Update the observations generator
         game_time = self.get_time()

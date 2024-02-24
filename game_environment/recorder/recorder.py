@@ -8,6 +8,7 @@ from skimage import io
 from skimage.transform import resize
 from game_environment.recorder import recreate_simulation
 from game_environment.utils import parse_string_to_matrix, matrix_to_string, connected_elems_map
+import importlib
 
 
 class Recorder:
@@ -21,6 +22,17 @@ class Recorder:
         self.step = 0
         self.create_log_tree()
         self.player_names = player_names
+        self.agents_ids = {name: str(agent_id) for agent_id, name in enumerate(player_names)}
+
+        # Import custom recorder functions for the substrate
+        # Try to import the custom recorder functions for the substrate
+        try:
+            custom_recorder_module = importlib.import_module(f"game_environment.substrates.{substrate_name}_utilities.recorder")
+            self._record_game_state_before_actions = custom_recorder_module.record_game_state_before_actions if hasattr(custom_recorder_module, 'record_game_state_before_actions') else None
+            self._record_elements_status = custom_recorder_module.record_elements_status if hasattr(custom_recorder_module, 'record_elements_status') else None
+            self._save_custom_indicators = custom_recorder_module.save_custom_indicators if hasattr(custom_recorder_module, 'save_custom_indicators') else None
+        except ModuleNotFoundError:
+            pass
 
     def create_log_tree(self):
         self.create_or_replace_directory(self.log_path)
@@ -50,22 +62,17 @@ class Recorder:
             rewards = {i: int(rr) for i, rr in enumerate(list(rewards.values()))}
             f.write(f"{self.step}: {rewards}\n")
 
-    def record_elements_status(self, initial_map, current_map):
-        # Transform list map to string map
-        if self.substrate_name == "commons_harvest_open":
-            connected_elements = connected_elems_map(initial_map, ['A'])
+    def record_elements_status(self, initial_map, current_map, agents_observing: list[str]):
+        """
+        Record some elements status of the map
 
-            trees = {}
-
-            for elem_key in connected_elements:
-                elements = connected_elements[elem_key]['elements']
-                if len(elements) > 1:
-                    apples_count = len([elem for elem in elements if current_map[elem[0]][elem[1]] == 'A'])
-                    trees[elem_key] = apples_count
-
-            with open(os.path.join(self.log_path, "trees_history.txt"), "a") as f:
-                f.write(f"{self.step}: {trees}\n")
-
+        Args:
+            initial_map (str): Initial map
+            current_map (list[list[str]]): Current map
+            agents_observing (list[str]): Agent names of the agents that are not going to take any action
+        """
+        if self._record_elements_status:
+            self._record_elements_status(self, initial_map, current_map, agents_observing)
         elif self.substrate_name == 'clean_up':
             apples = 0
             dirt = 0
@@ -80,12 +87,22 @@ class Recorder:
             with open(os.path.join(self.log_path, "apples_history.txt"), "a") as f:
                 f.write(f"{self.step}: A_{apples} - D_{dirt}\n ")
 
+    def record_game_state_before_actions(self, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str]):
+        """
+        Record the game state before the agents take any action
 
-
-
+        Args:
+            initial_map (list[list[str]]): Initial map
+            current_map (list[list[str]]): Current map
+            agents_observing (list[str]): Agents that are not going to take any action
+        """
+        if self._record_game_state_before_actions:
+            self._record_game_state_before_actions(self, initial_map, current_map, agents_observing)
 
     def save_log(self):
         recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)
+        if self._save_custom_indicators:
+            self._save_custom_indicators(self)
 
     @staticmethod
     def save_image(image, path):
