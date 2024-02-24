@@ -138,20 +138,23 @@ def check_agent_out_of_game(observations:list[str]):
 
 
 
-def connected_elems_map(ascci_map, elements_to_find):
+def connected_elems_map(ascci_map: str | list[list[str]], elements_to_find):
         """
         Returns a dictionary with the connected components of the map and their elements
 
         Args:
-            ascci_map (str): Map in ascci format
+            ascci_map (str | list[list[str]]): Map in ascci format
             elements_to_find (list): List of elements to find in the map
 
         Returns:
             dict: Dictionary with the connected components of the map and their elements
         """
 
-        # Convierte la matriz en una matriz numpy
-        matrix = np.array([list(row) for row in ascci_map.split('\n') if row != ''])
+        if isinstance(ascci_map, str):
+            # Convierte la matriz en una matriz numpy
+            matrix = np.array([list(row) for row in ascci_map.split('\n') if row != ''])
+        else:
+            matrix = np.array(ascci_map)
 
         # Generate mask
         mask = (matrix == elements_to_find[0]) 
