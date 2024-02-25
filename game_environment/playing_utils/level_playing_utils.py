@@ -452,7 +452,7 @@ class Game:
             agents_observing = [agent_name for agent_name, action_map in current_actions_map.items() if action_map == default_agent_actions_map(self.substrate_name)]
 
         if self.record:
-            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, agents_observing)
+            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, agents_observing, current_actions_map)
         
         if self.first_move_done :
             # Get the next action map

@@ -109,6 +109,11 @@ def test_record_game_state_before_actions():
             self.player_names = names
             self.agents_ids = {name: str(agent_id) for agent_id, name in enumerate(names)}
     record_obj = RecorderMock(['Ma', 'Mi', 'Mo'])
+    action_map = {
+        'Ma': {'move': 0, 'turn': 0, 'fireZap': 1},
+        'Mi': {'move': 0, 'turn': 0, 'fireZap': 0},
+        'Mo': {'move': 0, 'turn': 0, 'fireZap': 0},
+    }
     # Test 1: Record the game state before the agents take any action
     current_map = [
         ['0', 'F', 'G', 'A', 'G'],
@@ -118,11 +123,15 @@ def test_record_game_state_before_actions():
         ['F', 'F', '1', 'A', 'G']
     ]
     agents_observing = ['Mi', 'Mo']
-    record_game_state_before_actions(record_obj, None, current_map, agents_observing)
+    record_game_state_before_actions(record_obj, None, current_map, agents_observing, action_map)
     # The record object should have the last_apple_object attribute
     assert hasattr(record_obj, 'last_apple_object'), "The record object should have the last_apple_object attribute"
     # The record object should have the last_apple_object attribute with the right values for each agent
     assert record_obj.last_apple_object == {'Ma': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': [0, 3], 'distance': 3, 'move_towards_last_apple': 0}, 'Mi': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}}, "The last_apple_object attribute should have the right values for each agent"
+
+    # Test 2: Record that the agent decided to attack
+    assert hasattr(record_obj, 'attack_object'), "The record object should have the attack_object attribute"
+    assert record_obj.attack_object == {'Ma': {'decide_to_attack': 1}, 'Mi': {'decide_to_attack': 0}, 'Mo': {'decide_to_attack': 0}}, "The attack_object attribute should have the right values for each agent"
 
 def test_record_elements_status(mocker):
     class RecorderMock:

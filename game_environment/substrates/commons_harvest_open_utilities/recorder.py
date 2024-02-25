@@ -74,7 +74,7 @@ def is_apple_the_last_of_tree(game_map: list[list[str]], apple_position: tuple[i
         
     return False
 
-def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str]):
+def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict):
     """
     Record the game state before the agents take any action
 
@@ -88,13 +88,18 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     if not hasattr(record_obj, 'last_apple_object'):
         record_obj.last_apple_object = {agent:{'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0} for agent in record_obj.player_names}
 
+    # Create the attack_object if it does not exist
+    if not hasattr(record_obj, 'attack_object'):
+        record_obj.attack_object = {agent:{'decide_to_attack': 0} for agent in record_obj.player_names}
+
     # Get the agents that are taking actions
     agents_taking_actions = [agent for agent in record_obj.player_names if agent not in agents_observing]
 
-    # Check if is the last apple scenario
     for agent in agents_taking_actions:
         agent_id = record_obj.agents_ids[agent]
         agent_position = get_local_position_of_element(current_map, agent_id)
+
+        # Check if is the last apple scenario
         nearest_apple, distance = get_nearest_apple(current_map, agent_position)
 
         is_last = is_apple_the_last_of_tree(current_map, nearest_apple, agents_observing)
@@ -103,6 +108,11 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
             record_obj.last_apple_object[agent]['scenario_seen'] += 1
             record_obj.last_apple_object[agent]['last_apple_pos'] = nearest_apple # If last_apple_pos is set, then after taking the action we can check if the apple is still there
             record_obj.last_apple_object[agent]['distance'] = distance
+
+        # Check if the agent decided to attack
+        did_attack = current_actions_map[agent]['fireZap'] # This is a boolean (1 or 0)
+        if did_attack:
+            record_obj.attack_object[agent]['decide_to_attack'] += 1
 
 def record_elements_status(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str]):
     """
@@ -167,11 +177,13 @@ def save_custom_indicators(record_obj):
     # Number of times the agent took the last apple
     times_took_last_apple = {agent: record_obj.last_apple_object[agent]['took_last_apple'] for agent in record_obj.last_apple_object}
 
-
+    # Number of times the agent decided to attack
+    times_decide_to_attack = {agent: record_obj.attack_object[agent]['decide_to_attack'] for agent in record_obj.attack_object}
 
     custom_indicators = {
         'portion_move_towards_last_apple': portion_move_towards_last_apple,
-        'times_took_last_apple': times_took_last_apple
+        'times_took_last_apple': times_took_last_apple,
+        'times_decide_to_attack': times_decide_to_attack
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:
