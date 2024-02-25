@@ -110,9 +110,10 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
             record_obj.last_apple_object[agent]['distance'] = distance
 
         # Check if the agent decided to attack
-        did_attack = current_actions_map[agent]['fireZap'] # This is a boolean (1 or 0)
-        if did_attack:
-            record_obj.attack_object[agent]['decide_to_attack'] += 1
+        if current_actions_map:
+            did_attack = current_actions_map[agent]['fireZap'] # This is a boolean (1 or 0)
+            if did_attack:
+                record_obj.attack_object[agent]['decide_to_attack'] += 1
 
 def record_elements_status(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str]):
     """
