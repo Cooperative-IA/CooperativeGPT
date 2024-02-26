@@ -1,24 +1,32 @@
-from llm.openai import GPT35, Ada, GPT35_16K, GPT4
 from llm.base_llm import BaseLLM
+from llm.openai import GPT35, Ada, GPT35_16K, GPT4
+from llm.human import Human
 
 class LLMModels():
     """Class to define the available LLM models"""
 
-    def __new__(self):
+    def __new__(self, *args, **kwargs):
         """Constructor for the LLMModels class"""
         # Singleton pattern
         if not hasattr(self, 'instance'):
-            self.instance = super(LLMModels, self).__new__(self)
+            self.instance = super(LLMModels, self).__new__(self, *args, **kwargs)
             self.instance.llm_models: dict[str, BaseLLM] = {
             "gpt-3.5": GPT35(),
             "gpt-3.5-16k": GPT35_16K(),
             "gpt-4": GPT4(),
-            "ada": Ada()
+            "ada": Ada(),
+            "human": Human()
             }
             self.instance.main_model = "gpt-3.5"
             self.instance.best_model = "gpt-3.5" # Avoid using gpt-4 for now
             self.instance.longer_context_fallback = "gpt-3.5-16k"
             self.instance.embedding_model = "ada"
+
+        # Set the main and best model to human if the flag is set
+        # This is applied to every instance of the class if the flag is set in any of them
+        if "human_as_llm" in kwargs and kwargs['human_as_llm']:
+            self.instance.main_model = "human"
+            self.instance.best_model = "human"
         return self.instance
 
     def get_main_model(self) -> BaseLLM:
