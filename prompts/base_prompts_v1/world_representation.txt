@@ -1,0 +1,12 @@
+These are the textual observations extracted from the map:
+<input1>
+
+What is the best way for you to represent the GLOBAL map and the information it represents? Don't give me code but the textual representation of the global map, not just the observed one.
+
+Remember that a good world representation should be factual (it must only contain the information provided in the observations). The representation should also preserve the spatial information and should preserve the maximum of the information provided in the observations.
+
+Give your answer ONLY in the following format:
+Reasoning: <Think step by step how you can organize all the information in a manner that allows you to build an accurate textual representation of the world>
+The new representation of the world organized in JSON format
+```json {
+}```

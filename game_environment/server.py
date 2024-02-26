@@ -17,16 +17,16 @@ import importlib
 import os
 
 # Import functions 
-def import_game(substrate_name:str, adversarial_event:bool = False):
+def import_game(substrate_name:str, kind_experiment:str = ""):
     """
     Import the game module from the game_environment/substrates/python folder
     Args:
         substrate_name: Name of the game to import
-        adversarial_event: Whether to include adversarial events in the game
+        kind_experiment: The kind of experiment that will bi run, valid options are: '' for no experiment, 'adversarial_event' for the adversarial event experiment, 'personalized' pre-loaded experiments
     Returns:
         The game module
     """
-    substrate_name = substrate_name if not adversarial_event else f'{substrate_name}___adversarial'
+    substrate_name = f'{substrate_name}___{kind_experiment}' if kind_experiment!="" else substrate_name
     game_module_path = f'game_environment.substrates.python.{substrate_name}'
     game_module = importlib.import_module(game_module_path)
     return game_module
@@ -92,20 +92,20 @@ _ACTION_MAP = {
 def verbose_fn(unused_timestep, unused_player_index: int) -> None:
     pass
 
-def run_episode(game_name: str, record: bool, players: list[str], init_timestamp:str, scenario: str = None):
+def run_episode(game_name: str, record: bool, players: list[str], init_timestamp:str, scenario: str = None, kind_experiment: str = ""):
     """Create the simulation environment and run an episode of the game
     Args:
         game_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
         record: Whether to record the game. 
         players: List with the player names to run the game with
         scenario: Name of the scenario to run, the must be one of the predefined scenarios for the chosen game
-        
+        kind_experiment: The kind of experiment that will bi run, valid options are: '' for no experiment, 'adversarial_event' for the adversarial event experiment, 'personalized' pre-loaded experiments
     Returns:
         A game environment
     """
-
+    substrate_name = f'{game_name}___{kind_experiment}' if kind_experiment!="" else game_name
     # Install the substrate in the meltingpot library
-    install_substrate(game_name)
+    install_substrate(substrate_name)
     observation = "WORLD.RGB"
     config_overrides = {}
     verbose = False
@@ -153,23 +153,23 @@ def run_episode(game_name: str, record: bool, players: list[str], init_timestamp
     return game_env
 
 
-def start_server(players: list[str],init_timestamp: str,  game_name: str = "commons_harvest_open", record: bool = False, scenario: str = None, adversarial_event: bool = False):
+def start_server(players: list[str],init_timestamp: str,  game_name: str = "commons_harvest_open", record: bool = False, scenario: str = None, kind_experiment: str = ""):
     """Start the game simulation server
     Args:
         players: List with the player names to run the game with
         game_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
         record: Whether to record the game
         scenario: Name of the scenario to run, the must be one of the predefined scenarios for the chosen game
-        adversarial_event: Whether to include adversarial events in the game
+        kind_experiment: The kind of experiment that will bi run, valid options are: '' for no experiment, 'adversarial_event' for the adversarial event experiment, 'personalized' pre-loaded experiments
     Returns:
         A game environment
     """
     #global ASCII_MAP
     global game
     #Imports the game module
-    game = import_game(game_name, adversarial_event)
+    game = import_game(game_name, kind_experiment)
 
-    return run_episode(game_name, record, players, init_timestamp, scenario)
+    return run_episode(game_name, record, players, init_timestamp, scenario, kind_experiment)
 
 def get_scenario_map  (game_name:str)-> str:
     """Get the scenario map from the game environment

@@ -44,16 +44,16 @@ Neural Information Processing Systems (pp. 3646-3655).
 """
 
 from typing import Any, Dict, Mapping, Sequence
+import logging
 
 from ml_collections import config_dict
 import numpy as np
 
-import logging
-logger = logging.getLogger(__name__)
-
 from meltingpot.python.utils.substrates import colors
 from meltingpot.python.utils.substrates import shapes
 from meltingpot.python.utils.substrates import specs
+
+logger = logging.getLogger(__name__)
 
 # Warning: setting `_ENABLE_DEBUG_OBSERVATIONS = True` may cause slowdown.
 _ENABLE_DEBUG_OBSERVATIONS = False
@@ -81,28 +81,6 @@ W PPPPPPPPPPPPPPPPPPPP W
 WPPPPPPPPPPPPPPPPPPPPPPW
 WWWWWWWWWWWWWWWWWWWWWWWW
 """
-
-scene_ASCII_MAP = """
-WWWWWWWWWWWWWWWWWWWWWWWW
-W                      W
-W                      W
-W                      W
-W                      W
-W                      W
-W          A           W
-W         AAA          W
-W  Q     AAAAA     Q   W
-W         AAA          W
-W          A           W
-W                      W
-W                      W
-W                      W
-W         PPP          W
-W                      W
-W                      W
-WWWWWWWWWWWWWWWWWWWWWWWW
-"""
-
 
 # `prefab` determines which prefab game object to use for each `char` in the
 # ascii map.
@@ -306,42 +284,12 @@ TARGET_SPRITE_SELF = {
 }
 
 
-def ascii_map_to_matrix(ascii_map):
-    return [list(row) for row in ascii_map.strip().split("\n")]
-
-
-def flood_fill(matrix, x, y, old_value, new_value):
-    if x < 0 or x >= len(matrix[0]) or y < 0 or y >= len(matrix):
-        return
-    if matrix[y][x] != old_value:
-        return
-    matrix[y][x] = new_value
-    flood_fill(matrix, x + 1, y, old_value, new_value)
-    flood_fill(matrix, x - 1, y, old_value, new_value)
-    flood_fill(matrix, x, y + 1, old_value, new_value)
-    flood_fill(matrix, x, y - 1, old_value, new_value)
-
-
-def detect_regions(matrix):
-    region_id = 0
-    for y in range(len(matrix)):
-        for x in range(len(matrix[0])):
-            if matrix[y][x] == "A":
-                region_id += 1
-                flood_fill(matrix, x, y, "A", str(region_id))
-    return matrix
-
-
-def generate_dictionary(matrix):
-    return {(x, y): int(matrix[y][x]) for y in range(len(matrix)) for x in range(len(matrix[0])) if
-            matrix[y][x].isdigit()}
-
-
-def dict_to_list(dictionary):
-    return [f"({x}, {y}): {region_id}" for (x, y), region_id in dictionary.items()]
-
-def create_scene(num_players, events_times, events_magnitude):
-  """Creates the scene with the provided args controlling apple regrowth."""
+def create_scene(num_players, start_variables: dict):
+  """Creates the scene with the provided args controlling apple regrowth.
+     Args:
+        num_players: Number of players in the game
+        start_variables: Dictionary with the start positions, orientations and apples to desappear
+  """
   scene = {
       "name": "scene",
       "components": [
@@ -366,13 +314,10 @@ def create_scene(num_players, events_times, events_magnitude):
               "kwargs": {}
           },
           {
-              "component": "PatchTracker",
-              "kwargs": {"patchData": get_path_data()}
-          },
-          {
-              "component": "AdversarialEvent",
-              "kwargs": {"eventTime": events_times,
-                         "magnitude": events_magnitude}
+              "component": "PersonalizedStartEvent",
+              "kwargs": {"startPositions": start_variables["startPositions"],
+                         "startOrientations": start_variables["startOrientations"],
+                         "applesToDesappear": start_variables["applesToDesappear"],}
           },
           {
               "component": "GlobalStateTracker",
@@ -686,14 +631,6 @@ def get_config(players: list[str]) -> config_dict.ConfigDict:
   return config
 
 
-def get_path_data():
-    matrix = ascii_map_to_matrix(ASCII_MAP)
-    matrix_with_regions = detect_regions(matrix)
-    dictionary = generate_dictionary(matrix_with_regions)
-    patch_data = dict_to_list(dictionary)
-
-    return patch_data
-
 def build(
     config: config_dict.ConfigDict,
 ) -> Mapping[str, Any]:
@@ -706,11 +643,14 @@ def build(
             (Mapping[str, Any]): A substrate definition
     """
     num_players = config.num_players
-    events_times = [250]
-    events_magnitude = 0.3
+    
+    # Load config variables for the experiment. Path is config/start_variables.txt
+    with open('config/start_variables.txt') as f:
+        start_variables = eval(f.readlines()[0])
+
     # Build the rest of the substrate definition.
     substrate_definition = dict(
-        levelName="commons_harvest_open___adversarial",
+        levelName="commons_harvest_open___personalized",
         levelDirectory="meltingpot/lua/levels",
         numPlayers=num_players,
         # Define upper bound of episode length since episodes end stochastically.
@@ -723,7 +663,7 @@ def build(
             "prefabs": create_prefabs(APPLE_RESPAWN_RADIUS,
                                         REGROWTH_PROBABILITIES),
             "charPrefabMap": CHAR_PREFAB_MAP,
-            "scene": create_scene(num_players, events_times, events_magnitude),
+            "scene": create_scene(num_players, start_variables),
         },
     )
     return substrate_definition

@@ -481,6 +481,7 @@ class Game:
             self.game_recorder.record(self.timestep, description)
             self.game_recorder.record_rewards(rewards)
             self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
+            self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
             self.record_counter += 1
 
         # pygame display
@@ -554,19 +555,18 @@ class Game:
         """Returns the current step number of the game."""
         return self.game_steps
 
-    def update_history_file(self, logger_timestamp: str, step_count: int, actions_count: int) -> None:
+    def update_history_file(self, logger_timestamp: str, round_count: int, steps_count: int) -> None:
         """Updates the history file with the current step number and the current actions of the players.
         Args:
             logger_timestamp: The timestamp of the logger
-            step_count: The current step number
-            actions_count: The current actions count
+            round_count: The current round number
+            steps_count: The current steps count
         """
         #Creates the history file if it doesn't exist
         
         with open(f'logs/{logger_timestamp}/steps_history.txt', 'a') as file:
             # Write round_number and actions_count in the history file
-            file.write(f'{step_count} {actions_count}\n')
-            
+            file.write(f'{round_count} {steps_count}\n')
     
     def get_current_global_map(self) -> dict:
         """Returns the current scene description."""

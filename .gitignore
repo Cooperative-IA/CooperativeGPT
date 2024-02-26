@@ -22,3 +22,6 @@ game_environment/recorder/*.png
 # Test experiments results
 tests/experiment_notebooks/experiment_actuate/experiment_results/*.txt
 tests/experiment_notebooks/experiment_architecture/results/*
+
+# Config
+config/start_variables.txt
