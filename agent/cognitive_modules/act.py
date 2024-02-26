@@ -39,7 +39,6 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
     actions_seq_queue= Queue() 
     
     previous_actions = stm.get_memory('previous_actions')
-    #previous_actions = "You should consider that your previous actions were: + '\n'.join([f'{pa[0]}: {pa[1]}.' for pa in  previous_actions]) 
     previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}" 
     # Actions have to be generated 
     while actions_seq_queue.qsize() < 1:

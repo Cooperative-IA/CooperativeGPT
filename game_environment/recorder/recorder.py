@@ -8,7 +8,7 @@ from skimage import io
 from skimage.transform import resize
 from game_environment.recorder import recreate_simulation
 from game_environment.utils import parse_string_to_matrix, matrix_to_string, connected_elems_map
-
+from utils.files import create_directory_if_not_exists
 
 class Recorder:
 
@@ -23,7 +23,7 @@ class Recorder:
         self.player_names = player_names
 
     def create_log_tree(self):
-        self.create_directory_if_not_exists(self.log_path)
+        create_directory_if_not_exists(self.log_path)
         self.create_or_replace_directory(os.path.join(self.log_path, "world"))
         for player_id in range(self.n_players):
             self.create_or_replace_directory(os.path.join(self.log_path, str(player_id)))
@@ -130,8 +130,3 @@ class Recorder:
         if os.path.exists(directory_path):
             shutil.rmtree(directory_path)
         os.makedirs(directory_path)
-
-    @staticmethod 
-    def create_directory_if_not_exists(directory_path):
-        if not os.path.exists(directory_path):
-            os.makedirs(directory_path)

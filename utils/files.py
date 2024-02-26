@@ -88,4 +88,14 @@ def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int
         file.write(str(dict_to_write))
             
     
+
+@staticmethod 
+def create_directory_if_not_exists(directory_path:str):
+    """
+    Creates a directory if it doesn't exist.
     
+    Args:
+        directory_path (str): Path to the directory.
+    """
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)

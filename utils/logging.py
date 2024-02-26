@@ -24,7 +24,7 @@ def setup_logging(timestamp):
     logging.config.fileConfig(
         config_path,
         disable_existing_loggers=False,
-        defaults={"logfilename":f'{str(timestamp)}/{str(timestamp)}', "customArg": "Hello"},
+        defaults={"logfilename":f'{str(timestamp)}/{str(timestamp)}'},
     )
 
 class CustomAdapter(logging.LoggerAdapter):

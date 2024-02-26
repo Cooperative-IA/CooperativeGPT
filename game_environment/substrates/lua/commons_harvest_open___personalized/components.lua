@@ -148,7 +148,6 @@ function PersonalizedStartEvent:executeEvent()
         local transform = avatar:getComponent("Transform")
         local invertedPos = {self.startPositions[index][2], self.startPositions[index][1]}
         transform:teleport(invertedPos, self.startOrientations[index])
-        print(index)
     end
     -- Now we need to remove some apples
     for index, apple in ipairs(sim:getGameObjectsByName('apple')) do

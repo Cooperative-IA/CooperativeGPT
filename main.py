@@ -161,7 +161,6 @@ if __name__ == "__main__":
     env.end_game()
 
     # Persisting agents memories to the logs folder
-    print(args.persist_memories)
     if args.persist_memories:
         os.system(f"cp -r data/ltm_database logs/{logger_timestamp}")
     

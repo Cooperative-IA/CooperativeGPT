@@ -160,7 +160,8 @@ class LongTermMemory:
             agent_name (str): Name of the agent.
         """
         source_db_path = os.path.join(scene_path, "ltm_database", agent_name, "long_term_memory.db")
-        # Si no encuentra el archivo, no carga nada, retorna
+
+        # If the source database does not exist, log a warning and return 
         if not os.path.exists(source_db_path):
             self.logger.warning(f"Could not find the long term memory database at {source_db_path}")
             return
