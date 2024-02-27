@@ -461,6 +461,9 @@ class Game:
         else:
             self.first_move_done = True
         ## --------- END OF OUR CODE ---------
+            
+        # Get the raw observations from the environment
+        description, curr_global_map = self.descriptor.describe_scene(self.timestep)
 
         # Check if the game is finished
         if self.timestep.step_type == dm_env.StepType.LAST:

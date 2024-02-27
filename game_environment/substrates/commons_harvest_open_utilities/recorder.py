@@ -74,6 +74,23 @@ def is_apple_the_last_of_tree(game_map: list[list[str]], apple_position: tuple[i
         
     return False
 
+def record(record_obj, timestep, description: dict):
+    """
+    Record the game state from the scene descriptor
+
+    Args:
+        record_obj (Recorder): Recorder object
+        timestep: Timestep of the game
+        description (dict): Description of the game
+    """
+    # Keep track of how many times the agent effectively attacked
+    if not hasattr(record_obj, 'effective_attack_object'):
+        record_obj.effective_attack_object = {agent:{'effective_attack': 0} for agent in record_obj.player_names}
+
+    for agent, description in description.items():
+        if description["effective_zap"]:
+            record_obj.effective_attack_object[agent]['effective_attack'] += 1
+
 def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict):
     """
     Record the game state before the agents take any action
@@ -180,10 +197,14 @@ def save_custom_indicators(record_obj):
     # Number of times the agent decided to attack
     times_decide_to_attack = {agent: record_obj.attack_object[agent]['decide_to_attack'] for agent in record_obj.attack_object}
 
+    # Number of times the agent effectively attacked
+    effective_attack = {agent: record_obj.effective_attack_object[agent]['effective_attack'] for agent in record_obj.effective_attack_object}
+
     custom_indicators = {
         'portion_move_towards_last_apple': portion_move_towards_last_apple,
         'times_took_last_apple': times_took_last_apple,
-        'times_decide_to_attack': times_decide_to_attack
+        'times_decide_to_attack': times_decide_to_attack,
+        'effective_attack': effective_attack
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:

@@ -28,6 +28,7 @@ class Recorder:
         # Try to import the custom recorder functions for the substrate
         try:
             custom_recorder_module = importlib.import_module(f"game_environment.substrates.{substrate_name}_utilities.recorder")
+            self._record = custom_recorder_module.record if hasattr(custom_recorder_module, 'record') else None
             self._record_game_state_before_actions = custom_recorder_module.record_game_state_before_actions if hasattr(custom_recorder_module, 'record_game_state_before_actions') else None
             self._record_elements_status = custom_recorder_module.record_elements_status if hasattr(custom_recorder_module, 'record_elements_status') else None
             self._save_custom_indicators = custom_recorder_module.save_custom_indicators if hasattr(custom_recorder_module, 'save_custom_indicators') else None
@@ -55,6 +56,9 @@ class Recorder:
             self.save_image(agent_observation, avatar_path)
 
         self.step += 1
+
+        if self._record:
+            self._record(self, timestep, description)
 
     def record_rewards(self, rewards: Mapping[str, float])->None:
         #Writes the rewards to a file
