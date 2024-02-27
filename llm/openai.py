@@ -2,7 +2,7 @@ import os
 
 from llm.base_llm import BaseLLM
 import openai
-from openai import OpenAI, AzureOpenAI
+from openai import OpenAI
 import tiktoken
 
 class GPT35(BaseLLM):
@@ -14,16 +14,16 @@ class GPT35(BaseLLM):
             prompt_token_cost (float): Cost of a token in the prompt
             response_token_cost (float): Cost of a token in the response
         """
-        super().__init__(0.0015/1000, 0.002/1000, 4000, 0.7)
+        super().__init__(0.0005/1000, 0.0015/1000, 16000, 0.7)
 
         self.logger.info("Loading GPT-3.5 model from OPENAI API...")
         # Load the GPT-3.5 model
         self.client = OpenAI(
             api_key=os.getenv("OPENAI_KEY_GPT35")
         )
-        self.deployment_name = os.getenv("OPENAI_GPT_35_MODEL_ID")
+        self.deployment_name = os.getenv("OPENAI_GPT_35_16k_MODEL_ID")
         # Encoding to estimate the number of tokens
-        self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo-0125")
         
         self.logger.info("GPT-3.5 model loaded")
 
@@ -79,10 +79,10 @@ class GPT35(BaseLLM):
         Returns:
             int: Number of tokens in the prompt
         """
-        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        
         num_tokens = 0
         num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
-        num_tokens += len(encoding.encode(prompt))
+        num_tokens += len(self.encoding.encode(prompt))
         num_tokens += 2  # every reply is primed with <im_start>assistant
         return num_tokens
     
@@ -160,10 +160,9 @@ class GPT35_16K(BaseLLM):
         Returns:
             int: Number of tokens in the prompt
         """
-        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
         num_tokens = 0
         num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
-        num_tokens += len(encoding.encode(prompt))
+        num_tokens += len(self.encoding.encode(prompt))
         num_tokens += 2  # every reply is primed with <im_start>assistant
         return num_tokens
     
@@ -242,10 +241,9 @@ class GPT4(BaseLLM):
         Returns:
             int: Number of tokens in the prompt
         """
-        encoding = tiktoken.encoding_for_model("gpt-4")
         num_tokens = 0
         num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
-        num_tokens += len(encoding.encode(prompt))
+        num_tokens += len(self.encoding.encode(prompt))
         num_tokens += 2  # every reply is primed with <im_start>assistant
         return num_tokens
 
@@ -262,12 +260,10 @@ class Ada(BaseLLM):
 
         self.logger.info("Loading Ada model...")
         # Load the Ada model
-        self.client = AzureOpenAI(
-            api_key = os.getenv("AZURE_OPENAI_KEY_GPT3"),  
-            api_version = os.getenv("AZURE_OPENAI_API_VERSION"),
-            azure_endpoint =os.getenv("AZURE_OPENAI_ENDPOINT_GPT3") 
+        self.client = OpenAI(
+            api_key = os.getenv("OPENAI_KEY_GPT35"),  
         )
-        self.deployment_name = os.getenv("AZURE_TEXT_EMMBEDDING_MODEL_ID")
+        self.deployment_name = os.getenv("OPENAI_TEXT_EMBEDDING_MODEL_ID")
         # Encoding to estimate the number of tokens
         self.encoding = tiktoken.encoding_for_model("text-embedding-ada-002")
         # Embedding dimensions
