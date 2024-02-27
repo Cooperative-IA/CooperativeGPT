@@ -125,7 +125,6 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
         current_map (list[list[str]]): Current map
         agents_observing (list[str]): Agents that are not going to take any action
     """
-    # Transform list map to string map
     connected_elements = connected_elems_map(initial_map, ['A'])
 
     trees = {}
