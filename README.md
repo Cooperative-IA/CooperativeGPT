@@ -73,7 +73,7 @@ Create and configure your own `.ENV` file to store API keys and local paths. Thi
 ### 3. **Install the Required Dependencies**
 
 ```bash
-pip install openai scikit-image chromadb tiktoken AzureOpenAI
+pip install -r requirements.txt
 sudo apt-get install python3-tk
 ```
 

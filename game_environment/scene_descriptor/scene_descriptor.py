@@ -35,7 +35,7 @@ class Avatar:
         self.agents_in_observation = agents
 
     def set_state(self, avatar_state):
-        if avatar_state == 1 and self.avatar_state == 0:
+        if avatar_state == 0 and self.avatar_state == 0: # If the avatar is already dead then reset the murder attribute
             self.murder = None
         self.avatar_state = avatar_state
 
@@ -101,6 +101,7 @@ class SceneDescriptor:
         self.last_map = map
 
         result = {}
+        states = timestep.observation["WORLD.AVATAR_STATES"]
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"Avatar {avatar_id} is in position {avatar.position}")
             result[avatar.name] = {"observation": avatar.partial_observation,
@@ -108,6 +109,7 @@ class SceneDescriptor:
                                  "global_position": avatar.position,
                                  "orientation": int(avatar.orientation),
                                  "last_observation": avatar.last_partial_observation,
+                                 "effective_zap": avatar.name in [a.murder for id, a in self.avatars.items() if states[id] == 0],
                                 }
         return result, map
 

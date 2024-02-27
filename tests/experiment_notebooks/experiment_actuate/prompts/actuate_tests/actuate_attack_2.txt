@@ -1,0 +1,70 @@
+Observed_map = """
+FFFFFFFFFFF
+FFFFFFFFFFF
+FFFFFFFFFFF
+FFFFFFFFFFF
+FFFFFFFFFFF
+FFFFFFFFFFF
+FFFFFFFFFFF
+FFFFFFFFFFF
+FFFFGFFFFFF
+FFFGA#1FFFF
+FFFGGGFFFFF
+"""
+agents = ["Laura", "Pedro"]
+orientation = 2
+position = (9, 2)
+
+You have this information about an agent called Laura:
+
+Laura's bio: Laura is a cooperative person. 
+
+Laura's world understanding: I am in a misterious grid world. In this world there are the following elements:
+Apple: This object can be taken by any agent. The apple is taken when I go to its position. Apples only grow on grass tiles. When an apple is taken it gives the agent who took it a reward of 1.
+Grass: Grass tiles are visible when an apple is taken. Apples will regrow only in this type of tile based on a probability that depends on the number of current apples in a L2 norm neighborhood of radius 2. When there are no apples in a radius of 2 from the grass tile, the grass will disappear. On the other hand, if an apple grows at a determined position, all grass tiles that had beeen lost will reappear if they are between a radius of two from the apple.
+Tree: A tree is composed from apples or grass tiles, and it is a tree because the patch of these tiles is connected and have a fix location on the map. These trees have an id to indentify them.
+Wall: These tiles delimits the grid world at the top, the left, the bottom, and the right of the grid world. 
+The grid world is composed of 18 rows and 24 columns. The tiles start from the [0, 0] position located at the top left, and finish on the [17, 23] position located at the bottom right.
+I am an agent and I have a limited window of observation of the world.
+
+Laura's goals: 1. Explore the global map to find all the apples and grass available.
+2. Do not take all the apples from the same tree for the apples to keep growing.
+3 Maximize my reward in the long term.
+
+Current plan: 1. Explore the surroundings to gather information about the global map.
+
+The following changes in the environment were observed:
+Observed agent Pedro took apple from tree 5 at position [10, 2].
+Observed agent Pedro took apple from tree 5 at position [9, 2].
+Observed agent Pedro took apple from tree 5 at position [9, 5].
+Observed that the grass at position [8, 1] disappeared. 
+Now it's and the reward obtained by me is 35.0. I am at the position (9, 2) looking to the South.
+
+Current observations: 
+Observed one apple at position [9, 3], this is the last apple of the tree 5.
+Observed five grass to grow apples at positions [10, 3], [9, 4], [8, 4], [8, 3] and [8, 2]. These grass belong to tree 5.
+Observed agent Pedro at position [9, 1].
+Observed tree 5 at position [8, 3]. This tree has 1 apples remaining and 5 grass for apples growing on the observed map. The tree might have more apples and grass on the global map.
+
+Define what should be the nex action for Laura get closer to achieve its goals following the current plan.
+Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
+Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
+
+Valid actions: 
+go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]
+immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.
+stay put: This action keep the agent in the same position.
+
+Remember that going to possitions near the edge of the portion of the map you are seeing will allow you to get new observations.
+
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:
+```json
+{
+    "Opportunities": string \\ What are the most relevant opportunities? those that can yield the best benefit for you in the long term
+    "Threats": string \\ What are the biggest threats?, what observations you should carefully follow to avoid potential harm in your wellfare in the long term?
+    "Options: string \\ Which actions you could take to address both the opportunities ans the threats?
+    "Consequences": string \\ What are the consequences of each of the options?
+    "Final analysis: string \\ The analysis of the consequences to reason about what is the best action to take
+    "Answer": string \\ Must be one of the valid actions with the position replaced
+}```
