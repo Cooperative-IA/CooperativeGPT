@@ -635,7 +635,7 @@ def build(
     num_players = config.num_players
     # Build the rest of the substrate definition.
     substrate_definition = dict(
-        levelName="commons_harvest_language",
+        levelName="commons_harvest_open",
         levelDirectory="meltingpot/lua/levels",
         numPlayers=num_players,
         # Define upper bound of episode length since episodes end stochastically.
