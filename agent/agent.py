@@ -53,7 +53,7 @@ class Agent:
         self.observations_poignancy = observations_poignancy
         ltm_folder = os.path.join(data_folder, 'ltm_database')
         self.ltm = LongTermMemory(agent_name=name, data_folder=ltm_folder)
-        self.stm = ShortTermMemory(data_folder=data_folder, agent_context_file=agent_context_file, world_context_file=world_context_file)
+        self.stm = ShortTermMemory( agent_context_file=agent_context_file, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.att_bandwidth = att_bandwidth
         self.understanding_umbral = understanding_umbral

@@ -2,7 +2,7 @@ import os
 
 from llm.base_llm import BaseLLM
 import openai
-from openai import OpenAI, AzureOpenAI
+from openai import AzureOpenAI
 import tiktoken
 
 class GPT35(BaseLLM):
@@ -16,12 +16,14 @@ class GPT35(BaseLLM):
         """
         super().__init__(0.0015/1000, 0.002/1000, 4000, 0.7)
 
-        self.logger.info("Loading GPT-3.5 model from OPENAI API...")
+        self.logger.info("Loading GPT-3.5 model...")
         # Load the GPT-3.5 model
-        self.client = OpenAI(
-            api_key=os.getenv("OPENAI_KEY_GPT35")
+        self.client = AzureOpenAI(
+            azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT_GPT3"), 
+            api_key=os.getenv("AZURE_OPENAI_KEY_GPT3"),  
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION")
         )
-        self.deployment_name = os.getenv("OPENAI_GPT_35_MODEL_ID")
+        self.deployment_name = os.getenv("AZURE_GPT_35_MODEL_ID")
         # Encoding to estimate the number of tokens
         self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
         
@@ -91,22 +93,24 @@ class GPT35_16K(BaseLLM):
 
     def __init__(self):
         """Constructor for the GPT35_16K class
-        Args: 
+        Args:
             prompt_token_cost (float): Cost of a token in the prompt
             response_token_cost (float): Cost of a token in the response
         """
-        super().__init__(0.0005/1000, 0.0015/1000, 16000, 0.7)
+        super().__init__(0.003/1000, 0.004/1000, 16000, 0.7)
 
-        self.logger.info("Loading GPT-3.5 model with 16K of context from OPENAI API...")
+        self.logger.info("Loading GPT-3.5 model with 16K of context...")
         # Load the GPT-3.5 model
-        self.client = OpenAI(
-            api_key=os.getenv("OPENAI_KEY_GPT35")
+        self.client = AzureOpenAI(
+            azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT_GPT3"), 
+            api_key=os.getenv("AZURE_OPENAI_KEY_GPT3"),  
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION")
         )
-        self.deployment_name = os.getenv("OPENAI_GPT_35_16k_MODEL_ID")
+        self.deployment_name = os.getenv("AZURE_GPT_35_16k_MODEL_ID")
         # Encoding to estimate the number of tokens
-        self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo-0125")
+        self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
         
-        self.logger.info("GPT-3.5 16k model loaded")
+        self.logger.info("GPT-3.5 model loaded")
 
     def _format_prompt(self, prompt: str, role: str = 'user') -> list[dict[str, str]]:
         """Format the prompt to be used by the GPT-3.5 model
@@ -176,17 +180,19 @@ class GPT4(BaseLLM):
             prompt_token_cost (float): Cost of a token in the prompt
             response_token_cost (float): Cost of a token in the response
         """
-        super().__init__(0.01/1000, 0.03/1000, 128000, 0.7)
+        super().__init__(0.03/1000, 0.04/1000, 8000, 0.7)
 
-        self.logger.info("Loading GPT-4 model from the OPENAI API...")
+        self.logger.info("Loading GPT-4 model...")
         # Load the model
-        self.client = OpenAI(
-            api_key=os.getenv("OPENAI_KEY_GPT4")
+        self.client = AzureOpenAI(
+            azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT_GPT4"), 
+            api_key=os.getenv("AZURE_OPENAI_KEY_GPT4"),  
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION")
         )
-        self.deployment_name = os.getenv("OPENAI_GPT_4_MODEL_ID")
+        self.deployment_name = os.getenv("AZURE_GPT_4_MODEL_ID")
         self.logger.info("Deployment name: " + self.deployment_name)
         # Encoding to estimate the number of tokens
-        self.encoding = tiktoken.encoding_for_model("gpt-4-turbo-preview")
+        self.encoding = tiktoken.encoding_for_model("gpt-4")
         
         self.logger.info("GPT-4 model loaded")
 
