@@ -122,8 +122,11 @@ class SceneDescriptor:
 
     def compute_partial_observations(self, map, last_map):
         for avatar_id, avatar in self.avatars.items():
-            if avatar.avatar_state == 0:
-                obs_text = f"There are no observations: You were attacked by agent {avatar.murder}"
+            if avatar.avatar_state == 0 or (avatar.avatar_state == 1 and avatar.murder): # If avatar was just attacked
+                if avatar.murder:
+                    obs_text = f"There are no observations: You were attacked by agent {avatar.murder}."
+                else:
+                    obs_text = "There are no observations: You were attacked and currently you're out of the game."
                 avatar.set_partial_observation(obs_text)
                 avatar.set_agents_in_observation({})
             else:
