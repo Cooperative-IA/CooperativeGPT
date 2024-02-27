@@ -150,7 +150,10 @@ class ObservationsGenerator (object):
             agent_orientation = agent_dict['orientation']
 
             # Get observed changes in the environment. If the agent is observing, the changes are stored in the observed_changes dictionary
-            observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, agent_orientation, game_time)
+            try:
+                observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, agent_orientation, game_time)
+            except:
+                observed_changes = [] # If the agent is out of the game, there is an error. Pass no observed changes
             self.observed_changes[agent_name].extend(observed_changes)
     
     def get_observed_changes_per_agent(self, agent_name: str) -> list[tuple[str, str]]:

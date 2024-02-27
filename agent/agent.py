@@ -88,6 +88,10 @@ class Agent:
         Returns:
             Queue: Steps sequence for the current action.
         """
+        if agent_is_out:
+            self.logger.info(f'{self.name} is out of the game, skipping its turn.')
+            return Queue()
+
         if self.mode == 'cooperative':
             return self.move_cooperative(observations, agent_current_scene, changes_in_state, game_time, agent_reward, agent_is_out)
 
@@ -101,10 +105,7 @@ class Agent:
         
         self.reflect(filtered_observations)
 
-        if not agent_is_out:
-            step_actions = self.get_actions_to_execute(filtered_observations)
-        else :
-            step_actions = Queue()
+        step_actions = self.get_actions_to_execute(filtered_observations)
             
         return step_actions
     
