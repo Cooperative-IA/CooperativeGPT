@@ -8,11 +8,10 @@ class ShortTermMemory:
     """Class for yhe short term memory. Memories are stored in a dictionary.
     """
 
-    def __init__(self,data_folder: str = None, agent_context_file: str = None, world_context_file: str = None) ->  None:
+    def __init__(self, agent_context_file: str = None, world_context_file: str = None) ->  None:
         """Initializes the short term memory.
 
         Args:
-            data_folder (str, optional): Path to the data folder. The data folder should have an agents_context folder with the agent context files.
             agent_context_file (str, optional): Path to the json agent context file. Initial info about the agent. All the keys in the json file will be added to the short term memory.
             world_context_file (str, optional): Path to the text world context file. Info about the world that the agent have access to. The world context will be added to the short term memory with the key 'world_context'.
         """

@@ -11,7 +11,7 @@ from game_environment.server import start_server, get_scenario_map,  default_age
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
-from utils.files import extract_players, persist_short_term_memories
+from utils.files import extract_players, persist_short_term_memories, create_directory_if_not_exists
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -135,9 +135,10 @@ if __name__ == "__main__":
     valid_actions = get_defined_valid_actions(game_name= args.substrate)
     scenario_obstacles  = ['W', '$'] # TODO : Change this. This should be also loaded from the scenario file
     scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
-    
+    data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
+    create_directory_if_not_exists (data_folder)
     # Create agents
-    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context,
+    agents = [Agent(name=player, data_folder=data_folder, agent_context_file=player_context,
                     world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
                     prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path) 
               for player, player_context in zip(players, players_context)]
@@ -162,7 +163,7 @@ if __name__ == "__main__":
 
     # Persisting agents memories to the logs folder
     if args.persist_memories:
-        os.system(f"cp -r data/ltm_database logs/{logger_timestamp}")
+        os.system(f"cp -r {data_folder}/ltm_database logs/{logger_timestamp}")
     
 
     # LLm total cost
@@ -174,3 +175,8 @@ if __name__ == "__main__":
     logger.info("Execution time: %.2f minutes", (end_time - start_time)/60)
 
     logger.info("Program finished")
+    
+    # If there's a simulation_id, we will change the logs/{logger_timestamp} name to logs/{logger_timestamp}__{simulation_id}
+    if args.simulation_id:
+        os.system(f"mv logs/{logger_timestamp} logs/{logger_timestamp}__{args.simulation_id}")
+        

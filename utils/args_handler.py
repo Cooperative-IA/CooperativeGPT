@@ -85,6 +85,13 @@ def get_args():
         help="The scene to start from, scenes are on data/scene"
     )
     
+    parser.add_argument(
+        "--simulation_id",
+        type=str,
+        default=None,
+        help="The id of the simulation when running multiple simulations"
+    )
+    
     args = parser.parse_args()
     return args
 
