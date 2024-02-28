@@ -190,6 +190,12 @@ def save_custom_indicators(record_obj):
             portion_move_towards_last_apple[agent] = 0
         else:
             portion_move_towards_last_apple[agent] = record_obj.last_apple_object[agent]['move_towards_last_apple'] / record_obj.last_apple_object[agent]['scenario_seen']
+
+    # Number of times the agent move towards the last apple
+    times_move_towards_last_apple = {agent: record_obj.last_apple_object[agent]['move_towards_last_apple'] for agent in record_obj.last_apple_object}
+
+    # Number of times the agent saw the last apple scenario
+    times_saw_last_apple_scenario = {agent: record_obj.last_apple_object[agent]['scenario_seen'] for agent in record_obj.last_apple_object}
         
     # Number of times the agent took the last apple
     times_took_last_apple = {agent: record_obj.last_apple_object[agent]['took_last_apple'] for agent in record_obj.last_apple_object}
@@ -201,6 +207,8 @@ def save_custom_indicators(record_obj):
     effective_attack = {agent: record_obj.effective_attack_object[agent]['effective_attack'] for agent in record_obj.effective_attack_object}
 
     custom_indicators = {
+        'times_move_towards_last_apple': times_move_towards_last_apple,
+        'times_saw_last_apple_scenario': times_saw_last_apple_scenario,
         'portion_move_towards_last_apple': portion_move_towards_last_apple,
         'times_took_last_apple': times_took_last_apple,
         'times_decide_to_attack': times_decide_to_attack,
