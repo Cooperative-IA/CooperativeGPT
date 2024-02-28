@@ -56,7 +56,7 @@ def is_apple_the_last_of_tree(game_map: list[list[str]], apple_position: tuple[i
     Returns:
         bool: True if the apple is the last of the tree, False otherwise
     """
-    groups = connected_elems_map(game_map, ['A', '#', 'G'] + agent_ids)
+    groups = connected_elems_map(game_map, ['A', 'G'] + agent_ids)
     for group in groups.values():
         apples = []
 
@@ -119,7 +119,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         # Check if is the last apple scenario
         nearest_apple, distance = get_nearest_apple(current_map, agent_position)
 
-        is_last = is_apple_the_last_of_tree(current_map, nearest_apple, agents_observing)
+        is_last = is_apple_the_last_of_tree(current_map, nearest_apple, record_obj.agents_ids.values())
         if is_last:
             # Update the last_apple_object
             record_obj.last_apple_object[agent]['scenario_seen'] += 1
