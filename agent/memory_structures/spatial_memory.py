@@ -94,6 +94,10 @@ class SpatialMemory:
             return queue_from_list(['stay put'])
         route = get_shortest_valid_route(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
 
+
+        if not include_last_pos and len(route) > 0:
+            route = route[:-2] + route[-1:]
+        
         # Adds a change on orientation on the last step of the route
         if len(route) > 0:
             new_orientation = 'turn '+ route[-1].split(' ')[1]
@@ -104,10 +108,6 @@ class SpatialMemory:
             else: 
                 route.append(new_orientation)
 
-
-        if not include_last_pos and len(route) > 0:
-            route = route[:-2] + route[-1:]
-        
 
         if return_list:
             return route
