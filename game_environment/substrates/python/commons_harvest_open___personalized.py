@@ -310,10 +310,6 @@ def create_scene(num_players, start_variables: dict):
               "kwargs": {}
           },
           {
-              "component": "AvatarsStateObserver",
-              "kwargs": {}
-          },
-          {
               "component": "PersonalizedStartEvent",
               "kwargs": {"startPositions": start_variables["startPositions"],
                          "startOrientations": start_variables["startOrientations"],
@@ -536,6 +532,12 @@ def create_avatar_object(player_idx: int,
                       "centered": False
                   },
                   "spriteMap": custom_sprite_map,
+              }
+          },
+          {
+              "component": "AvatarCustomConnector",
+              "kwargs": {
+                    "playerIndex": lua_index,
               }
           },
           {

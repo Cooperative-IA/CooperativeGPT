@@ -132,7 +132,7 @@ def check_agent_out_of_game(observations:list[str]):
     Returns:
         bool: True if the agent is out of the game, False otherwise
    """
-   return len(observations) >0 and observations[0].startswith('There are no observations: You were attacked')
+   return len(observations) >0 and observations[0].startswith(('There are no observations: You were attacked', 'There are no observations: you\'re out of the game'))
 
 
 
@@ -175,3 +175,20 @@ def connected_elems_map(ascci_map: str | list[list[str]], elements_to_find):
             component_data[i] = {'center': center_coords, 'elements': component_elements.tolist()}
 
         return dict(component_data)
+
+def get_local_position_of_element(current_map: list[list[str]], element: str) -> tuple[int, int] | None:
+    """
+    Get the local position of an element in the map
+
+    Args:
+        current_map (list[list[str]]): Current map
+        element (str): Element to find
+
+    Returns:
+        tuple[int, int] | None: Local position of the element. If the element is not found, return None
+    """
+    for i, row in enumerate(current_map):
+        for j, cell in enumerate(row):
+            if cell == element:
+                return (i, j)
+    return None

@@ -85,7 +85,7 @@ def update_known_objects(observations: list[str], stm: ShortTermMemory, substrat
         stm.set_known_objects_by_key(known_trees, 'known_trees')
 
 
-def create_memory(agent_name: str, curr_time: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str], position: list[int], orientation: str) -> str:
+def create_memory(agent_name: str, curr_time: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str], position: list[int], orientation: str, is_agent_out: bool = False) -> str:
     """Creates a memory from the action, state changes, reward and observations.
 
     Args:
@@ -108,10 +108,16 @@ def create_memory(agent_name: str, curr_time: str, action: str|None, state_chang
     if state_changes:
         state_changes = '\n'.join(state_changes)
         memory += f'Since then, the following changes in the environment have been observed:\n{state_changes}\n'
-    memory += f'Now it\'s {curr_time} and the reward obtained by me is {reward}. I am at the position {position} looking to the {orientation}.'
+    if is_agent_out:
+        memory += f'Now it\'s {curr_time} and the reward obtained by me is {reward}.'
+    else:
+        memory += f'Now it\'s {curr_time} and the reward obtained by me is {reward}. I am at the position {position} looking to the {orientation}.'
     if curr_observations:
         curr_observations = '\n'.join(curr_observations)
-        memory += f'\nI can currently observe the following:\n{curr_observations}'
+        if is_agent_out:
+            memory += f' The things I know are the following:\n{curr_observations}'
+        else:
+            memory += f'\nI can currently observe the following:\n{curr_observations}'
     else:
         memory += f'\nI can\'t currently observe anything.'
     

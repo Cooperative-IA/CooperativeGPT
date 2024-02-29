@@ -484,14 +484,6 @@ class Game:
             if events:
                 logger.info('Env events: %s', events)
 
-        # Record the game
-        if self.record:
-            self.game_recorder.record(self.timestep, description)
-            self.game_recorder.record_rewards(rewards)
-            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map, agents_observing)
-            self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
-            self.record_counter += 1
-
         # pygame display
         if self.interactive == RenderType.PYGAME:
             # show visual observation
@@ -527,6 +519,14 @@ class Game:
 
         # Get the raw observations from the environment after the actions are executed
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
+
+        # Record the game
+        if self.record:
+            self.game_recorder.record(self.timestep, description)
+            self.game_recorder.record_rewards(rewards)
+            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map, agents_observing)
+            self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
+            self.record_counter += 1
         
         # Update the observations generator
         game_time = self.get_time()

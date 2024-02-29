@@ -30,7 +30,7 @@ class SpatialMemory:
         self.scenario_obstacles = scenario_obstacles 
         self.explored_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
         
-    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
+    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str, is_agent_out: bool = False) -> None:
         """
         Updates the spatial information of the agent.
 
@@ -38,8 +38,12 @@ class SpatialMemory:
             new_position (tuple): New position of the agent.
             orientation (int): New orientation of the agent.
             current_observed_map (str): Current observed map.
+            is_agent_out (bool, optional): If True, the agent is out of the game. Defaults to False.
 
         """
+        if is_agent_out:
+            return
+        
         self.position = new_position
         self.orientation = orientation
         self.current_observed_map = current_observed_map
