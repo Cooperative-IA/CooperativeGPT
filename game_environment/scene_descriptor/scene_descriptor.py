@@ -147,10 +147,6 @@ class SceneDescriptor:
     def crop_observation(self, map, avatar_id, avatar_view):
         # get avatar position in matrix
         avatar_pos = np.where(map == str(avatar_id))
-        # If there is no avatar in the map, return an empty observation
-        if len(avatar_pos[0]) == 0:
-            logger.warning(f"Avatar {avatar_id} is not in the map, returning empty observation...")
-            return "", {}
         avatar_pos = list(zip(avatar_pos[1], avatar_pos[0]))[0]
         upper_bound = avatar_pos[1] - avatar_view.get("forward")
         left_bound = avatar_pos[0] - avatar_view.get("left")
