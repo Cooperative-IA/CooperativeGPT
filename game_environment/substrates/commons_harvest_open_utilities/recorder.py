@@ -1,25 +1,8 @@
 import os
 import json
 
-from game_environment.utils import connected_elems_map
+from game_environment.utils import connected_elems_map, get_local_position_of_element
 from utils.math import manhattan_distance
-
-def get_local_position_of_element(current_map: list[list[str]], element: str) -> tuple[int, int] | None:
-    """
-    Get the local position of an element in the map
-
-    Args:
-        current_map (list[list[str]]): Current map
-        element (str): Element to find
-
-    Returns:
-        tuple[int, int] | None: Local position of the element. If the element is not found, return None
-    """
-    for i, row in enumerate(current_map):
-        for j, cell in enumerate(row):
-            if cell == element:
-                return (i, j)
-    return None
 
 def get_nearest_apple(game_map: list[list[str]], position: tuple[int, int]) -> tuple[int, int]:
     """
@@ -119,7 +102,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         # Check if is the last apple scenario
         nearest_apple, distance = get_nearest_apple(current_map, agent_position)
 
-        is_last = is_apple_the_last_of_tree(current_map, nearest_apple, record_obj.agents_ids.values())
+        is_last = is_apple_the_last_of_tree(current_map, nearest_apple, list(record_obj.agents_ids.values()))
         if is_last:
             # Update the last_apple_object
             record_obj.last_apple_object[agent]['scenario_seen'] += 1

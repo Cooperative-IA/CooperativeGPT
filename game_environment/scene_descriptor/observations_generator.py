@@ -10,7 +10,7 @@ import ast
 from scipy.ndimage import label, center_of_mass
 from collections import defaultdict
 import re
-from game_environment.utils import connected_elems_map
+from game_environment.utils import connected_elems_map, check_agent_out_of_game
 import inflect 
 
 
@@ -109,7 +109,9 @@ class ObservationsGenerator (object):
         """
         list_of_observations = []
         if agent_dict['observation'].startswith('There are no observations: You were attacked'):
-            list_of_observations.append(str(agent_dict['observation'] + ' at position {}'.format(agent_dict['global_position'])))
+            list_of_observations.append(str(agent_dict['observation'] + ' At position {}'.format(agent_dict['global_position'])))
+            return list_of_observations
+        elif agent_dict['observation'].startswith('There are no observations: you\'re out of the game'):
             return list_of_observations
         else:
             local_observation_map = agent_dict['observation']
@@ -289,6 +291,9 @@ class ObservationsGenerator (object):
         Returns:
             list[tuple[str, str]]: List of tuples with the changes in the environment, and the game time
         """
+        if check_agent_out_of_game([observed_map]):
+            return [(observed_map, game_time)]
+        
         observations = []
         if last_observed_map == None:
             return observations
@@ -299,8 +304,17 @@ class ObservationsGenerator (object):
             curr_el = curr_m[index]
             last_el = last_m[index]
             if curr_el != last_el:
+                # If someone attacked nearby
+                if last_el.isnumeric() and curr_el == 'B':
+                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                    observations.append((f"Someone was attacked at position {el_pos}.", game_time))
+                elif curr_el == 'B':
+                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                    observations.append((f"Observed a ray beam from an attack at position {el_pos}.", game_time))
+                elif last_el == 'B':
+                    pass
                 # If an apple was taken
-                if last_el == 'A':
+                elif last_el == 'A':
                     agent_id = int(curr_el)
                     agent_name = self.players_names[agent_id]
                     el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)

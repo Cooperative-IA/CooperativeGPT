@@ -88,24 +88,27 @@ class Agent:
         Returns:
             Queue: Steps sequence for the current action.
         """
-        if agent_is_out:
-            self.logger.info(f'{self.name} is out of the game, skipping its turn.')
-            return Queue()
-
         if self.mode == 'cooperative':
             return self.move_cooperative(observations, agent_current_scene, changes_in_state, game_time, agent_reward, agent_is_out)
 
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
-                                                    agent_current_scene['observation'])
-        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward)
+                                                    agent_current_scene['observation'], agent_is_out)
+        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward, agent_is_out)
+
+        
         if react:
             self.plan()
             self.generate_new_actions()
         
         self.reflect(filtered_observations)
 
-        step_actions = self.get_actions_to_execute(filtered_observations)
+        # If the agent is out of the game, it does not take any action
+        if agent_is_out:
+            self.logger.info(f'{self.name} is out of the game, skipping its turn.')
+            step_actions = Queue()
+        else:
+            step_actions = self.get_actions_to_execute(filtered_observations)
             
         return step_actions
     
@@ -129,10 +132,8 @@ class Agent:
 
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
-                                                    agent_current_scene['observation'])
-        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward)
-
-        self.reflect(filtered_observations)
+                                                    agent_current_scene['observation'], agent_is_out)
+        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward, agent_is_out)
 
         self.understand(filtered_observations, state_changes)
 
@@ -140,15 +141,18 @@ class Agent:
             self.plan()
             self.generate_new_actions()
         
+        self.reflect(filtered_observations)
 
-        if not agent_is_out:
-            step_actions = self.get_actions_to_execute(filtered_observations)
-        else :
+        # If the agent is out of the game, it does not take any action
+        if agent_is_out:
+            self.logger.info(f'{self.name} is out of the game, skipping its turn.')
             step_actions = Queue()
+        else:
+            step_actions = self.get_actions_to_execute(filtered_observations)
             
         return step_actions
 
-    def perceive(self, observations: list[str], changes_in_state: list[tuple[str, str]], game_time: str, reward: float) -> tuple[bool, list[str], list[str]]:
+    def perceive(self, observations: list[str], changes_in_state: list[tuple[str, str]], game_time: str, reward: float, is_agent_out: bool = False) -> tuple[bool, list[str], list[str]]:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
         It also filters the observations to only store the closest ones, and asign a poignancy to the observations.
         Game time is also stored in the short term memory.
@@ -156,11 +160,18 @@ class Agent:
             observations (list[str]): List of observations of the environment.
             game_time (str): Current game time.
             reward (float): Current reward of the agent.
+            is_agent_out (bool, optional): True if the agent is out of the scenario (was taken), False otherwise. Defaults to False.
         
         Returns:
             tuple[bool, list[str], list[str]]: Tuple with True if the agent should react to the observation, False otherwise, the filtered observations and the changes in the state of the environment.
         """
-
+        if is_agent_out:
+            memory = create_memory(self.name, game_time, None, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name(), True)
+            self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+            current_observation = '\n'.join(observations)
+            self.stm.add_memory(current_observation, 'current_observation')
+            return False, observations, changes_in_state
+        
         # Add the game time to the short term memory
         self.stm.add_memory(game_time, 'game_time')
         # Observations are filtered to only store the closest ones. The att_bandwidth defines the number of observations that the agent can attend to at the same time
@@ -349,7 +360,7 @@ class Agent:
         # We check if after the previous step the gameloop is still empty, if it is, we generate a new one,
         # all the process above is repeated until we get a gameloop that is not empty
         # If actions sequence were all invalid, we send an explore sequence
-        while self.stm.get_memory('current_steps_sequence').empty() :
+        while self.stm.get_memory('current_steps_sequence').empty() and self.stm.get_memory('current_action') != 'stay put':
             if self.stm.get_memory('actions_sequence').empty():
                 self.logger.warn(f'{self.name} current gameloop is empty and there are no more actions to execute, agent will explore')
                 steps_sequence = self.spatial_memory.generate_explore_sequence()

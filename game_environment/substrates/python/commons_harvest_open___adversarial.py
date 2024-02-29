@@ -362,10 +362,6 @@ def create_scene(num_players, events_times, events_magnitude):
               "kwargs": {}
           },
           {
-              "component": "AvatarsStateObserver",
-              "kwargs": {}
-          },
-          {
               "component": "PatchTracker",
               "kwargs": {"patchData": get_path_data()}
           },
@@ -591,6 +587,12 @@ def create_avatar_object(player_idx: int,
                       "centered": False
                   },
                   "spriteMap": custom_sprite_map,
+              }
+          },
+          {
+              "component": "AvatarCustomConnector",
+              "kwargs": {
+                    "playerIndex": lua_index,
               }
           },
           {
