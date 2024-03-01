@@ -14,6 +14,13 @@ from game_environment.utils import connected_elems_map, check_agent_out_of_game
 import inflect 
 
 
+import logging
+from utils.logging import CustomAdapter
+
+logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
+
+
 class ObservationsGenerator (object):
     """
     Description: Implements required functions for the observations descriptor. 
@@ -91,7 +98,9 @@ class ObservationsGenerator (object):
         observations_description_per_agent = {}
         for agent_name, agent_dict in agents_observations.items():
             observations_description_per_agent[agent_name] = self.get_observations_per_agent(agent_dict, agent_name, True)
-            
+
+
+        logger.info(f' Observations descriptions for all agents: {observations_description_per_agent} \n')        
         return observations_description_per_agent
     
 
@@ -112,6 +121,7 @@ class ObservationsGenerator (object):
             list_of_observations.append(str(agent_dict['observation'] + ' At position {}'.format(agent_dict['global_position'])))
             return list_of_observations
         elif agent_dict['observation'].startswith('There are no observations: you\'re out of the game'):
+            list_of_observations.append(str(agent_dict['observation']))
             return list_of_observations
         else:
             local_observation_map = agent_dict['observation']

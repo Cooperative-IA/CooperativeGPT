@@ -153,8 +153,8 @@ class SpatialMemory:
 
         if current_action.startswith(('grab ')) or current_action.startswith(('consume ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(end_position, self.orientation)
-        
+            sequence_steps = self.find_route_to_position(end_position, self.orientation)       
+
         elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)
             sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False)
@@ -170,6 +170,7 @@ class SpatialMemory:
             if not self.is_position_valid(explore_pos):
                 explore_pos = None
             sequence_steps = self.generate_explore_sequence(explore_pos)
+            
         elif current_action.startswith('avoid consuming'):
             sequence_steps.put('stay put')
     
@@ -282,7 +283,6 @@ class SpatialMemory:
             # Finds the bounds of the current observed map
             # TODO change that function to utils module
             min_row, min_col, max_row, max_col = self.get_bounds_current_map(current_map_matrix)
-
             random_row = random.randint(min_row, max_row)
             random_col = random.randint(min_col, max_col)
             # Is the destination a valid position? '-' means that the position does not exist on the map
@@ -295,10 +295,11 @@ class SpatialMemory:
             destination = self.get_global_position((random_row, random_col), agent_local_pos)
 
         # Finds the shortest route to that position
+        self.logger.info(f"Finding route to {destination} from {self.position} with orientation {self.orientation} using the map {self.scenario_map}")
         sequence_steps = self.find_route_to_position(destination, self.orientation)
         if sequence_steps.qsize() < 1:
-            self.logger.error(f'Could not find a route to the destination {destination}')
-            raise Exception(f'Could not find a route to the destination {destination}')
+            self.logger.error(f'Could not find a route from {position} to the destination {destination}')
+            return new_empty_queue()
 
                 
         self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')

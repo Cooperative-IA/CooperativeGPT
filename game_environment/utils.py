@@ -132,7 +132,7 @@ def check_agent_out_of_game(observations:list[str]):
     Returns:
         bool: True if the agent is out of the game, False otherwise
    """
-   return len(observations) >0 and observations[0].startswith(('There are no observations: You were attacked', 'There are no observations: you\'re out of the game'))
+   return (len(observations) >0 and observations[0].startswith(('There are no observations: You were attacked', 'There are no observations: you\'re out of the game')))
 
 
 
