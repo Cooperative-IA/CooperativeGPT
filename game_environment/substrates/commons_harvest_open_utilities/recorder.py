@@ -98,7 +98,8 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     for agent in agents_taking_actions:
         agent_id = record_obj.agents_ids[agent]
         agent_position = get_local_position_of_element(current_map, agent_id)
-
+        if agent_position is None:
+            continue
         # Check if is the last apple scenario
         nearest_apple, distance = get_nearest_apple(current_map, agent_position)
 

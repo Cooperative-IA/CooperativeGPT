@@ -62,7 +62,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             logger.info('%s Observations: %s, Scene descriptions: %s', agent.name, observations, scene_description)
             # Get the steps for the agent to execute a high level action
             agent_reward = env.score[agent.name]
-            if check_agent_out_of_game(observations):
+            if check_agent_out_of_game(observations, scene_description):
                 logger.info('Agent %s was taken out of the game', agent.name)
                 agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
                 step_actions = new_empty_queue()
