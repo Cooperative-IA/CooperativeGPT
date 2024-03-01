@@ -24,13 +24,13 @@ def get_args():
         "--scenario",
         type=str,
         default="",
-        help="Name of the scenario to run, the must be one of the predefined scenarios for the chosen game"
+        help="Name of the scenario to run. The scenarios available for the substrate are defined in meltingpot/configs/scenarios/__init__.py"
     )
 
     parser.add_argument(
         "--adversarial_event",
-        type=bool,
         default=False,
+        action='store_true', # If the flag is present, the value is True.
         help="Whether to include adversarial events in the game. True/False"
     )
     
@@ -49,10 +49,10 @@ def get_args():
     )
 
     parser.add_argument(
-        "--record",
-        type=bool,
-        default=True,
-        help="Whether to record the game. True/False"
+        "--not_record",
+        default=False,
+        action='store_true', # If the flag is present, the value is True.
+        help="Whether to record the game. Pass this flag to not record the game"
     )
 
     parser.add_argument(

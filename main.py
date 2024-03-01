@@ -7,11 +7,13 @@ import traceback
 from utils.logging import setup_logging, CustomAdapter
 from game_environment.utils import generate_agent_actions_map, check_agent_out_of_game, get_defined_valid_actions
 from agent.agent import Agent
+from agent.human_agent import HumanAgent
 from game_environment.server import start_server, get_scenario_map,  default_agent_actions_map, condition_to_end_game
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
 from utils.files import extract_players
+from utils.agent_creator import agentCreator
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -21,7 +23,7 @@ load_dotenv(override=True)
 logger = logging.getLogger(__name__)
 rounds_count = 0
 
-def game_loop(agents: list[Agent], substrate_name:str) -> None:
+def game_loop(agents: list[Agent | HumanAgent], substrate_name:str) -> None:
     """Main game loop. The game loop is executed until the game ends or the maximum number of steps is reached.
 
     Args:
@@ -116,16 +118,17 @@ if __name__ == "__main__":
     players_context = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
 
     players = extract_players(players_context)
+    players_names = [player['name'] for player in players]
     
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
     valid_actions = get_defined_valid_actions(game_name= args.substrate)
     scenario_obstacles  = ['W', '$'] # TODO : Change this. This should be also loaded from the scenario file
     scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
     # Create agents
-    agents = [Agent(name=player, data_folder="data", agent_context_file=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode, prompts_folder=args.prompts_source) for player, player_context in zip(players, players_context)]
+    agents = [agentCreator(is_human_player=player.get('isHuman', False), name=player['name'], data_folder="data", agent_context_file=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode, prompts_folder=args.prompts_source) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name= args.substrate, scenario=args.scenario, adversarial_event = args.adversarial_event)
+    env = start_server(players_names, init_timestamp=logger_timestamp, record=(not args.not_record), game_name= args.substrate, scenario=args.scenario, adversarial_event = args.adversarial_event)
     logger = CustomAdapter(logger, game_env=env)
     # We are setting args.prompts_source as a global variable to be used in the LLMModels class
     llm = LLMModels()

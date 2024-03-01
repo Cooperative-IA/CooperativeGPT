@@ -300,7 +300,7 @@ class Agent:
 
 
 
-    def get_actions_to_execute(self, filtered_observations: list[str]) -> Queue:
+    def get_actions_to_execute(self) -> Queue:
         """
         Executes the current actions of the agent. 
         If the current gameloop is empty, it generates a new one.

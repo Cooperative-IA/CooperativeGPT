@@ -4,6 +4,9 @@
 # Virtual environment
 venv/
 
+# vscode
+.vscode/
+
 # Logs
 logs/
 
