@@ -122,19 +122,17 @@ def get_element_global_pos( element_local_pos, local_position, global_position, 
 
 
 
-def check_agent_out_of_game(observations:list[str], scene_description:dict):
+def check_agent_out_of_game(observations:list[str]):
    """
     Description: Checks if the agent is out of the game
     
     Args:
         observations (list[str]): Observations of the agents
-        scene_description (dict): Scene description of the agents
     
     Returns:
         bool: True if the agent is out of the game, False otherwise
    """
-   return (len(observations) >0 and observations[0].startswith(('There are no observations: You were attacked', 'There are no observations: you\'re out of the game')))\
-            or (scene_description['observation'].startswith(('There are no observations: You were attacked', 'There are no observations: you\'re out of the game')))
+   return (len(observations) >0 and observations[0].startswith(('There are no observations: You were attacked', 'There are no observations: you\'re out of the game')))
 
 
 

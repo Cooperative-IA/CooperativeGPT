@@ -121,6 +121,7 @@ class ObservationsGenerator (object):
             list_of_observations.append(str(agent_dict['observation'] + ' At position {}'.format(agent_dict['global_position'])))
             return list_of_observations
         elif agent_dict['observation'].startswith('There are no observations: you\'re out of the game'):
+            list_of_observations.append(str(agent_dict['observation']))
             return list_of_observations
         else:
             local_observation_map = agent_dict['observation']
