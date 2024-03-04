@@ -24,7 +24,7 @@ def get_args():
         "--scenario",
         type=str,
         default="",
-        help="Name of the scenario to run, the must be one of the predefined scenarios for the chosen game"
+        help="Name of the scenario to run, it must be one of the predefined scenarios for the chosen game"
     )
 
     parser.add_argument(

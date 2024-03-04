@@ -106,7 +106,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         is_last = is_apple_the_last_of_tree(current_map, nearest_apple, list(record_obj.agents_ids.values()))
         if is_last:
             # Update the last_apple_object
-            record_obj.last_apple_object[agent]['scenario_seen'] += 1
+            record_obj.last_apple_object[agent]['scenario_seen'] += 1 if not current_actions_map[agent]['turn'] else 0   # If the agent turned, we dont want to count the scenario
             record_obj.last_apple_object[agent]['last_apple_pos'] = nearest_apple # If last_apple_pos is set, then after taking the action we can check if the apple is still there
             record_obj.last_apple_object[agent]['distance'] = distance
 
@@ -142,6 +142,7 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
     # Check if the last apple was taken or if the agent moved towards the last apple
     if hasattr(record_obj, 'last_apple_object'):
         for agent in record_obj.last_apple_object:
+            
             if agent in agents_observing:
                 continue
 
