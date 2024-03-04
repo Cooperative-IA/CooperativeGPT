@@ -80,24 +80,24 @@ def load_prompt(prompt: str) -> str:
     return prompt
 
 def replace_inputs_in_prompt(prompt: str, inputs: list[str] = []) -> str:
-        """Replace the inputs in the prompt. The inputs are replaced in the order they are passed in the list.
-        Args:
-            prompt (str): Prompt. For example: "This is a <input1> prompt with <input2> two inputs"
-            inputs (list[str]): List of inputs
-        Returns:
-            str: Prompt with the inputs
-        """
-        for i, input in enumerate(inputs):
-            if input is None:
-                input = 'None'
-            # Delete the line if the input is empty
-            if str(input).strip() == "":
-                regex = rf"^\s*{re.escape(f'<input{i+1}>')}[ \t\r\f\v]*\n"
-                prompt = re.sub(regex, "", prompt, flags=re.MULTILINE)
-   
-            prompt = prompt.replace(f"<input{i+1}>", str(input))
+    """Replace the inputs in the prompt. The inputs are replaced in the order they are passed in the list.
+    Args:
+        prompt (str): Prompt. For example: "This is a <input1> prompt with <input2> two inputs"
+        inputs (list[str]): List of inputs
+    Returns:
+        str: Prompt with the inputs
+    """
+    for i, input in enumerate(inputs):
+        if input is None:
+            input = 'None'
+        # Delete the line if the input is empty
+        if str(input).strip() == "":
+            regex = rf"^\s*{re.escape(f'<input{i+1}>')}[ \t\r\f\v]*\n"
+            prompt = re.sub(regex, "", prompt, flags=re.MULTILINE)
 
-        # Check if there are any <input> left
-        if "<input" in prompt:
-            raise ValueError("Not enough inputs passed to the prompt")
-        return prompt
+        prompt = prompt.replace(f"<input{i+1}>", str(input))
+
+    # Check if there are any <input> left
+    if "<input" in prompt:
+        raise ValueError("Not enough inputs passed to the prompt")
+    return prompt

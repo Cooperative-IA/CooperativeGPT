@@ -2,12 +2,13 @@ import os
 from queue import Queue
 from agent.agent import Agent
 from utils.llm import load_prompt, replace_inputs_in_prompt
+from agent.cognitive_modules.perceive import update_known_objects
 
 class HumanAgent(Agent):
     """HumanAgent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, observations_poignancy = 10, prompts_folder = "base_prompts_v0") -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None) -> None:
         """Initializes the agent.
 
         Args:
@@ -21,12 +22,13 @@ class HumanAgent(Agent):
             mode (Mode, optional): Defines the type of architecture to use. Defaults to 'normal'.
             understanding_umbral (int, optional): Understanding umbral. The understanding umbral is the number of poignancy that the agent needs to accumulate to update its understanding (only the poignancy of reflections are taken in account). Defaults to 6.
             observations_poignancy (int, optional): Poignancy of the observations. Defaults to 10.
+            substrate_name (str, optional): Name of the substrate. Defaults to "commons_harvest_open".
         """
         prompts_folder = prompts_folder + '_human'
         att_bandwidth = 100
         reflection_umbral = float('inf')
         mode = 'normal'
-        super().__init__(name, data_folder, agent_context_file, world_context_file, scenario_info, att_bandwidth, reflection_umbral, mode, observations_poignancy, prompts_folder=prompts_folder)
+        super().__init__(name, data_folder, agent_context_file, world_context_file, scenario_info, att_bandwidth, reflection_umbral, mode, observations_poignancy, prompts_folder=prompts_folder, substrate_name=substrate_name, start_from_scene=start_from_scene)
         
         self.ltm = None
         self.logger.info(f'Initializing {self.name} HumanAgent')
@@ -92,6 +94,9 @@ class HumanAgent(Agent):
         self.stm.add_memory(self.spatial_memory.position, 'current_position')
         self.stm.add_memory(last_position, 'last_position')
         self.stm.add_memory(orientation, 'current_orientation')
+
+        # Update the agent known objects
+        update_known_objects(observations, self.stm, self.substrate_name)
   
     def generate_new_actions(self, state_changes: list[str]) -> None:
         """
@@ -105,14 +110,19 @@ class HumanAgent(Agent):
         observations = self.stm.get_memory('current_observation') or 'None'
         current_goals = self.stm.get_memory('current_goals')
         
-        state_changes = '\n'.join(state_changes)
         # Generate new actions sequence and add it to the short term memory
         if isinstance(observations, list):
             observations = "\n".join(observations)
         state_changes = '\n'.join(state_changes) if state_changes else 'None'
+        previous_actions = self.stm.get_memory('previous_actions')
+        previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}"
+        known_trees = self.stm.get_memory('known_trees')
+        known_trees = "These are the known trees: "+' '.join([f"tree {tree[0]} with center at {tree[1]}" for tree in known_trees]) if known_trees else "There are no known trees yet"
+        percentage_explored = self.spatial_memory.get_percentage_explored()
         prompt_path = os.path.join(self.prompts_folder, 'act.txt')
         prompt = load_prompt(prompt_path)
-        prompt = replace_inputs_in_prompt(prompt, [self.name, world_context, current_plan, state_changes, observations, self.spatial_memory.position, valid_actions, current_goals, agent_bio_str])
+        prompt = replace_inputs_in_prompt(prompt, [self.name, world_context, current_plan, state_changes, observations, self.spatial_memory.position, 1, valid_actions, current_goals, agent_bio_str,
+                                                   known_trees, percentage_explored, previous_actions])
         self.logger.info(f'Prompt: {prompt}')
         user_action = input("What action would you like to perform? ")
         self.logger.info(f'What action would you like to perform? {user_action}')

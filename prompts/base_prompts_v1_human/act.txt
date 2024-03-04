@@ -1,0 +1,29 @@
+You have this information about an agent called <input1>:
+
+<input10>
+
+<input1>'s world understanding: <input2>
+
+<input1>'s goals: <input9>
+
+Current plan: <input3>
+
+Observed changes in the game since <input1>'s last turn: 
+<input4> 
+
+<input11>
+
+Portion of the map explored by <input1>: <input12>
+
+You are currently viewing a portion of the map, and from your position at <input6> you observe the following: 
+<input5>
+
+Define what should be the nex action for Laura get closer to achieve its goals following the current plan.
+Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
+Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
+
+Valid actions: 
+<input8>
+
+Remember that going to possitions near the edge of the portion of the map you are seeing will allow you to get new observations.
+<input13>

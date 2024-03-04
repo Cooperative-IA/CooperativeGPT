@@ -7,7 +7,6 @@ import re
 
 from utils.llm_cost import CostManager
 from utils.logging import CustomAdapter
-from utils.llm import load_prompt, replace_inputs_in_prompt
 
 class BaseLLM(ABC):
     """Base class for all LLM classes. It defines the api to use the LLMs"""
@@ -128,7 +127,17 @@ class BaseLLM(ABC):
         Returns:
             str: Prompt
         """
-        return load_prompt(prompt)
+        prompt_file = os.path.join("prompts", prompt)
+
+        # Check if the prompt is a string or a file
+        if not os.path.isfile(prompt_file):
+            if prompt_file.endswith(".txt"):
+                raise ValueError("Prompt file not found", message="Prompt file: {prompt_file} not found, using the prompt as a string")
+            return prompt
+        
+        with open(prompt_file, "r") as f:
+            prompt = f.read()
+        return prompt
     
     def _replace_inputs_in_prompt(self, prompt: str, inputs: list[str] = []) -> str:
         """Replace the inputs in the prompt. The inputs are replaced in the order they are passed in the list.
@@ -138,7 +147,20 @@ class BaseLLM(ABC):
         Returns:
             str: Prompt with the inputs
         """
-        return replace_inputs_in_prompt(prompt, inputs)
+        for i, input in enumerate(inputs):
+            if input is None:
+                input = 'None'
+            # Delete the line if the input is empty
+            if str(input).strip() == "":
+                regex = rf"^\s*{re.escape(f'<input{i+1}>')}[ \t\r\f\v]*\n"
+                prompt = re.sub(regex, "", prompt, flags=re.MULTILINE)
+
+            prompt = prompt.replace(f"<input{i+1}>", str(input))
+
+        # Check if there are any <input> left
+        if "<input" in prompt:
+            raise ValueError("Not enough inputs passed to the prompt")
+        return prompt
 
     def completion(self, prompt: str, **kwargs) -> str:
         """Method for the completion api. It updates the cost of the prompt and response and log the tokens and prompts
