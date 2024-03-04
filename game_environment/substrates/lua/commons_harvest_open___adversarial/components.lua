@@ -24,6 +24,11 @@ local meltingpot = 'meltingpot.lua.modules.'
 local component = require(meltingpot .. 'component')
 local component_registry = require(meltingpot .. 'component_registry')
 
+local function toStringPos(tablePosition)
+    local tensorPos = tensor.Tensor(tablePosition)
+    local stringPos = "("..tostring(tensorPos:val()[1]) .. ", " .. tostring(tensorPos:val()[2])..")"
+    return stringPos
+end
 
 local function concat(table1, table2)
   local resultTable = {}
@@ -128,6 +133,96 @@ end
 function GlobalStateTracker:reset()
   self.states = tensor.Int32Tensor(self._config.numPlayers):fill(0)
 end
+
+
+
+local AdversarialEvent = class.Class(component.Component)
+
+function AdversarialEvent:__init__(kwargs)
+    kwargs = args.parse(kwargs, {
+      {'name', args.default('AdversarialEvent')},
+      {'eventTime', args.tableType},
+      {'magnitude', args.ge(0.0), args.le(1.0)},
+    })
+    AdversarialEvent.Base.__init__(self, kwargs)
+    self.eventTime = kwargs.eventTime
+    self.magnitude = kwargs.magnitude
+    self.currentTime = 0
+end
+
+function AdversarialEvent:update()
+    self.currentTime = self.currentTime + 1
+    for _, time in ipairs(self.eventTime) do
+      if self.currentTime == time then
+          self:executeEvent()
+          break 
+      end
+    end
+end
+
+function AdversarialEvent:executeEvent()
+    local patchTracker = self.gameObject:getComponent('PatchTracker')
+    local sim = self.gameObject.simulation
+
+    patchTracker:getApplesState()
+    for index, apple in ipairs(sim:getGameObjectsByName('apple')) do
+        local stateManager = apple:getComponent("StateManager")
+        local appleState = stateManager:getState()
+        local applePath = patchTracker:getApplePatch(apple)
+        if appleState == "apple" then
+            if patchTracker.patchCount[applePath] > 1 then
+                if random:uniformReal(0.0, 1.0) < self.magnitude then
+                    apple:setState("appleWait")
+                    patchTracker.patchCount[applePath] = patchTracker.patchCount[applePath] - 1
+                end
+            end
+        end
+    end
+end
+
+local PatchTracker = class.Class(component.Component)
+
+function PatchTracker:__init__(kwargs)
+    kwargs = args.parse(kwargs, {
+      {'name', args.default('PatchTracker')},
+      {'patchData', args.tableType},
+  })
+  PatchTracker.Base.__init__(self, kwargs)
+  local transformedPatchMap = {}
+  for _, v in pairs(kwargs.patchData) do
+      local coord, value = v:match("(%(.-%)):%s*(%d+)")
+      transformedPatchMap[coord] = tonumber(value)
+  end
+  self.patchMap = transformedPatchMap
+  self.patchCount = {}
+
+end
+
+function PatchTracker:getApplesState()
+    print("Getting apples states")
+    self.patchCount = {}
+    local sim = self.gameObject.simulation
+    for index, apple in ipairs(sim:getGameObjectsByName('apple')) do
+        local patchId = self:getApplePatch(apple)
+        local stateManager = apple:getComponent("StateManager")
+        local appleState = stateManager:getState()
+        if appleState == "apple" then
+            if self.patchCount[patchId] then
+                self.patchCount[patchId] = self.patchCount[patchId] + 1
+            else
+                self.patchCount[patchId] = 1
+            end
+        end
+    end
+end
+
+function PatchTracker:getApplePatch(apple)
+    local applePosition = toStringPos(apple:getPosition())
+    local patchId = self.patchMap[applePosition]
+    return patchId
+end
+
+
 
 
 local DensityRegrow = class.Class(component.Component)
@@ -301,11 +396,15 @@ function DensityRegrow:_endLive()
   end
 end
 
+
+
 local allComponents = {
     Neighborhoods = Neighborhoods,
     DensityRegrow = DensityRegrow,
     AvatarCustomConnector = AvatarCustomConnector,
-    GlobalStateTracker = GlobalStateTracker
+    GlobalStateTracker = GlobalStateTracker,
+    PatchTracker = PatchTracker,
+    AdversarialEvent = AdversarialEvent,
 }
 
 component_registry.registerAllComponents(allComponents)

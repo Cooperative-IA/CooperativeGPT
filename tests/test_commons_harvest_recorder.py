@@ -4,7 +4,7 @@ from game_environment.substrates.commons_harvest_open_utilities.recorder import 
 def test_get_nearest_apple():
     # Test 1: Find the only apple in the map
     game_map = [
-        ['#', 'F', 'F', 'F', 'F'],
+        ['0', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'A', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
@@ -16,7 +16,7 @@ def test_get_nearest_apple():
 
     # Test 2: Find the nearest apple
     game_map = [
-        ['#', 'A', 'F', 'F', 'F'],
+        ['0', 'A', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'A', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
@@ -28,7 +28,7 @@ def test_get_nearest_apple():
 
     # Test 3: There are no apples
     game_map = [
-        ['#', 'F', 'F', 'F', 'F'],
+        ['0', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'G', 'G', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
@@ -42,7 +42,7 @@ def test_get_nearest_apple():
     game_map = [
         ['A', 'F', 'F', 'F', 'F'],
         ['G', 'G', 'G', 'F', 'F'],
-        ['F', 'A', 'G', 'F', '#'],
+        ['F', 'A', 'G', 'F', '0'],
         ['F', 'F', 'G', 'F', 'G'],
         ['F', 'F', 'F', 'G', 'A']
     ]
@@ -53,40 +53,40 @@ def test_get_nearest_apple():
 def test_is_apple_the_last_of_tree():
     # Test 1: The apple is the last of the tree
     game_map = [
-        ['#', 'F', 'F', 'F', 'F'],
+        ['0', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'A', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F']
     ]
     apple_position = (2, 2)
-    agent_ids = ['1', '2']
+    agent_ids = ['0', '1', '2']
     is_last = is_apple_the_last_of_tree(game_map, apple_position, agent_ids)
     assert is_last == True, "The apple should be the last of the tree"
 
     # Test 2: The apple is not the last of the tree
     game_map = [
-        ['#', 'F', 'F', 'F', 'F'],
+        ['0', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'A', 'A', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F']
     ]
     apple_position = (2, 2)
-    agent_ids = ['1', '2']
+    agent_ids = ['0', '1', '2']
     is_last = is_apple_the_last_of_tree(game_map, apple_position, agent_ids)
     assert is_last == False, "The apple should not be the last of the tree"
 
     # Test 3: There are no apples
     game_map = [
-        ['#', 'F', 'F', 'F', 'F'],
+        ['0', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'G', 'G', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', 'F', 'F', 'F']
     ]
     apple_position = (0, 0)
-    agent_ids = ['1', '2']
+    agent_ids = ['0', '1', '2']
     is_last = is_apple_the_last_of_tree(game_map, apple_position, agent_ids)
     assert is_last == False, "The apple should not be the last of the tree"
 
@@ -94,12 +94,12 @@ def test_is_apple_the_last_of_tree():
     game_map = [
         ['A', 'G', 'F', 'F', 'F'],
         ['G', '1', 'F', 'F', 'F'],
-        ['#', 'A', 'F', 'F', 'F'],
-        ['F', 'F', 'F', 'F', 'G'],
+        ['0', 'G', 'F', 'F', 'F'],
+        ['A', 'F', 'F', 'F', 'G'],
         ['F', 'F', 'F', 'G', 'A']
     ]
     apple_position = (0, 0)
-    agent_ids = ['1', '2']
+    agent_ids = ['0', '1', '2']
     is_last = is_apple_the_last_of_tree(game_map, apple_position, agent_ids)
     assert is_last == False, "The apple should not be the last of the tree"
 

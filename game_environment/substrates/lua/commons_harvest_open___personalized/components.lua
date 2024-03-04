@@ -24,11 +24,6 @@ local meltingpot = 'meltingpot.lua.modules.'
 local component = require(meltingpot .. 'component')
 local component_registry = require(meltingpot .. 'component_registry')
 
-local function toStringPos(tablePosition)
-    local tensorPos = tensor.Tensor(tablePosition)
-    local stringPos = "("..tostring(tensorPos:val()[1]) .. ", " .. tostring(tensorPos:val()[2])..")"
-    return stringPos
-end
 
 local function concat(table1, table2)
   local resultTable = {}
@@ -71,37 +66,51 @@ function Neighborhoods:getUpperBoundPossibleNeighbors()
   return self._config.upperBoundPossibleNeighbors
 end
 
-local AvatarsStateObserver = class.Class(component.Component)
+local AvatarCustomConnector = class.Class(component.Component)
 
-function AvatarsStateObserver:__init__(kwargs)
+function AvatarCustomConnector:__init__(kwargs)
   kwargs = args.parse(kwargs, {
-      {'name', args.default('AvatarsStateObserver')},
+    {'name', args.default('AvatarCustomConnector')},
+    -- `playerIndex` (int): player index for the avatar to connect to.
+    {'playerIndex', args.numberType},
   })
-  AvatarsStateObserver.Base.__init__(self, kwargs)
-
-  self._playerIndex = 1
+  AvatarCustomConnector.Base.__init__(self, kwargs)
+  self._kwargs = kwargs
 end
 
-function AvatarsStateObserver:registerUpdaters(updaterRegistry)
-  local function observe()
-    local avatars = self.gameObject.simulation:getGameObjectsByName("avatar")
-    local sceneObject = self.gameObject.simulation:getSceneObject()
-    local globalStateTracker = sceneObject:getComponent('GlobalStateTracker')
-    for index, avatar in ipairs(avatars) do
-        local avatarStateManager = avatar:getComponent("StateManager")
-        local state = avatarStateManager:getState()
-        local numeric_state = 1
-        if state == "playerWait" then
-            numeric_state = 0
-        end
-        globalStateTracker.states(index):fill(numeric_state)
-    end
+function AvatarCustomConnector:reset()
+  local kwargs = self._kwargs
+  self._playerIndex = kwargs.playerIndex
+end
+
+function AvatarCustomConnector:postStart()
+  local sim = self.gameObject.simulation
+  local sceneObject = sim:getSceneObject()
+  self._avatarObject = sim:getAvatarFromIndex(self._playerIndex)
+
+  -- Initialize the state of the avatar in the GlobalStateTracker component.
+  local globalStateTracker = sceneObject:getComponent('GlobalStateTracker')
+  globalStateTracker.states(self._playerIndex):fill(1)
+
+  -- Get the avatar component on the avatar game object and connect to it.
+  local avatarComponent = self._avatarObject:getComponent('Avatar')
+  avatarComponent:connect(self.gameObject)
+end
+
+-- The avatarStateChange function is called when the avatar's state changes from the Avatar component of meltingpot
+-- The avatar component calls avatarStateChange for all the components that are connected to it.
+-- The behavior argument is a string with 'respawn' or 'die' values.
+function AvatarCustomConnector:avatarStateChange(behavior)
+  local avatarComponent = self._avatarObject:getComponent('Avatar')
+  -- If the avatar's state has changed, then also update the state of
+  -- the avatar in the GlobalStateTracker component.
+  local sceneObject = self.gameObject.simulation:getSceneObject()
+  local globalStateTracker = sceneObject:getComponent('GlobalStateTracker')
+  if behavior == 'respawn' then
+    globalStateTracker.states(self._playerIndex):fill(1)
+  elseif behavior == 'die' then
+    globalStateTracker.states(self._playerIndex):fill(0)
   end
- updaterRegistry:registerUpdater{
-      updateFn = observe,
-      priority = 200,
-      probability = 1,
-  }
 end
 
 local GlobalStateTracker = class.Class(component.Component)
@@ -120,92 +129,49 @@ function GlobalStateTracker:reset()
   self.states = tensor.Int32Tensor(self._config.numPlayers):fill(0)
 end
 
-local AdversarialEvent = class.Class(component.Component)
 
-function AdversarialEvent:__init__(kwargs)
+
+
+local PersonalizedStartEvent = class.Class(component.Component)
+
+function PersonalizedStartEvent:__init__(kwargs)
     kwargs = args.parse(kwargs, {
-      {'name', args.default('AdversarialEvent')},
-      {'eventTime', args.tableType},
-      {'magnitude', args.ge(0.0), args.le(1.0)},
+      {'name', args.default('PersonalizedStartEvent')},
+      {'startPositions', args.tableType},
+      {'startOrientations', args.tableType},
+      {'applesToDesappear', args.tableType},
     })
-    AdversarialEvent.Base.__init__(self, kwargs)
-    self.eventTime = kwargs.eventTime
-    self.magnitude = kwargs.magnitude
+    PersonalizedStartEvent.Base.__init__(self, kwargs)
+    self.startPositions = kwargs.startPositions
+    self.startOrientations = kwargs.startOrientations
+    self.applesToDesappear = kwargs.applesToDesappear
     self.currentTime = 0
 end
 
-function AdversarialEvent:update()
+function PersonalizedStartEvent:update()
     self.currentTime = self.currentTime + 1
-    for _, time in ipairs(self.eventTime) do
-      if self.currentTime == time then
-          self:executeEvent()
-          break 
-      end
+    if self.currentTime == 1 then
+        self:executeEvent()
     end
 end
 
-function AdversarialEvent:executeEvent()
-    local patchTracker = self.gameObject:getComponent('PatchTracker')
+function PersonalizedStartEvent:executeEvent()
     local sim = self.gameObject.simulation
-
-    patchTracker:getApplesState()
+    local avatars = sim:getGameObjectsByName("avatar")
+    for index, avatar in ipairs(avatars) do
+        local transform = avatar:getComponent("Transform")
+        local invertedPos = {self.startPositions[index][2], self.startPositions[index][1]}
+        transform:teleport(invertedPos, self.startOrientations[index])
+    end
+    -- Now we need to remove some apples
     for index, apple in ipairs(sim:getGameObjectsByName('apple')) do
-        local stateManager = apple:getComponent("StateManager")
-        local appleState = stateManager:getState()
-        local applePath = patchTracker:getApplePatch(apple)
-        if appleState == "apple" then
-            if patchTracker.patchCount[applePath] > 1 then
-                if random:uniformReal(0.0, 1.0) < self.magnitude then
-                    apple:setState("appleWait")
-                    patchTracker.patchCount[applePath] = patchTracker.patchCount[applePath] - 1
-                end
+        for j, applePos in ipairs(self.applesToDesappear) do
+            if apple:getPosition()[2]  == applePos[1] and apple:getPosition()[1] == applePos[2] then
+                apple:setState("appleWait")
             end
         end
     end
 end
-
-local PatchTracker = class.Class(component.Component)
-
-function PatchTracker:__init__(kwargs)
-    kwargs = args.parse(kwargs, {
-      {'name', args.default('PatchTracker')},
-      {'patchData', args.tableType},
-  })
-  PatchTracker.Base.__init__(self, kwargs)
-  local transformedPatchMap = {}
-  for _, v in pairs(kwargs.patchData) do
-      local coord, value = v:match("(%(.-%)):%s*(%d+)")
-      transformedPatchMap[coord] = tonumber(value)
-  end
-  self.patchMap = transformedPatchMap
-  self.patchCount = {}
-
-end
-
-function PatchTracker:getApplesState()
-    print("Getting apples states")
-    self.patchCount = {}
-    local sim = self.gameObject.simulation
-    for index, apple in ipairs(sim:getGameObjectsByName('apple')) do
-        local patchId = self:getApplePatch(apple)
-        local stateManager = apple:getComponent("StateManager")
-        local appleState = stateManager:getState()
-        if appleState == "apple" then
-            if self.patchCount[patchId] then
-                self.patchCount[patchId] = self.patchCount[patchId] + 1
-            else
-                self.patchCount[patchId] = 1
-            end
-        end
-    end
-end
-
-function PatchTracker:getApplePatch(apple)
-    local applePosition = toStringPos(apple:getPosition())
-    local patchId = self.patchMap[applePosition]
-    return patchId
-end
-
 
 
 local DensityRegrow = class.Class(component.Component)
@@ -379,15 +345,12 @@ function DensityRegrow:_endLive()
   end
 end
 
-
-
 local allComponents = {
     Neighborhoods = Neighborhoods,
     DensityRegrow = DensityRegrow,
-    AvatarsStateObserver = AvatarsStateObserver,
+    AvatarCustomConnector = AvatarCustomConnector,
     GlobalStateTracker = GlobalStateTracker,
-    PatchTracker = PatchTracker,
-    AdversarialEvent = AdversarialEvent
+    PersonalizedStartEvent = PersonalizedStartEvent,
 }
 
 component_registry.registerAllComponents(allComponents)

@@ -1,25 +1,8 @@
 import os
 import json
 
-from game_environment.utils import connected_elems_map
+from game_environment.utils import connected_elems_map, get_local_position_of_element
 from utils.math import manhattan_distance
-
-def get_local_position_of_element(current_map: list[list[str]], element: str) -> tuple[int, int] | None:
-    """
-    Get the local position of an element in the map
-
-    Args:
-        current_map (list[list[str]]): Current map
-        element (str): Element to find
-
-    Returns:
-        tuple[int, int] | None: Local position of the element. If the element is not found, return None
-    """
-    for i, row in enumerate(current_map):
-        for j, cell in enumerate(row):
-            if cell == element:
-                return (i, j)
-    return None
 
 def get_nearest_apple(game_map: list[list[str]], position: tuple[int, int]) -> tuple[int, int]:
     """
@@ -56,7 +39,7 @@ def is_apple_the_last_of_tree(game_map: list[list[str]], apple_position: tuple[i
     Returns:
         bool: True if the apple is the last of the tree, False otherwise
     """
-    groups = connected_elems_map(game_map, ['A', '#', 'G'] + agent_ids)
+    groups = connected_elems_map(game_map, ['A', 'G'] + agent_ids)
     for group in groups.values():
         apples = []
 
@@ -73,6 +56,23 @@ def is_apple_the_last_of_tree(game_map: list[list[str]], apple_position: tuple[i
             return True
         
     return False
+
+def record(record_obj, timestep, description: dict):
+    """
+    Record the game state from the scene descriptor
+
+    Args:
+        record_obj (Recorder): Recorder object
+        timestep: Timestep of the game
+        description (dict): Description of the game
+    """
+    # Keep track of how many times the agent effectively attacked
+    if not hasattr(record_obj, 'effective_attack_object'):
+        record_obj.effective_attack_object = {agent:{'effective_attack': 0} for agent in record_obj.player_names}
+
+    for agent, description in description.items():
+        if description["effective_zap"]:
+            record_obj.effective_attack_object[agent]['effective_attack'] += 1
 
 def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict):
     """
@@ -98,11 +98,12 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     for agent in agents_taking_actions:
         agent_id = record_obj.agents_ids[agent]
         agent_position = get_local_position_of_element(current_map, agent_id)
-
+        if agent_position is None:
+            continue
         # Check if is the last apple scenario
         nearest_apple, distance = get_nearest_apple(current_map, agent_position)
 
-        is_last = is_apple_the_last_of_tree(current_map, nearest_apple, agents_observing)
+        is_last = is_apple_the_last_of_tree(current_map, nearest_apple, list(record_obj.agents_ids.values()))
         if is_last:
             # Update the last_apple_object
             record_obj.last_apple_object[agent]['scenario_seen'] += 1
@@ -125,7 +126,6 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
         current_map (list[list[str]]): Current map
         agents_observing (list[str]): Agents that are not going to take any action
     """
-    # Transform list map to string map
     connected_elements = connected_elems_map(initial_map, ['A'])
 
     trees = {}
@@ -174,6 +174,12 @@ def save_custom_indicators(record_obj):
             portion_move_towards_last_apple[agent] = 0
         else:
             portion_move_towards_last_apple[agent] = record_obj.last_apple_object[agent]['move_towards_last_apple'] / record_obj.last_apple_object[agent]['scenario_seen']
+
+    # Number of times the agent move towards the last apple
+    times_move_towards_last_apple = {agent: record_obj.last_apple_object[agent]['move_towards_last_apple'] for agent in record_obj.last_apple_object}
+
+    # Number of times the agent saw the last apple scenario
+    times_saw_last_apple_scenario = {agent: record_obj.last_apple_object[agent]['scenario_seen'] for agent in record_obj.last_apple_object}
         
     # Number of times the agent took the last apple
     times_took_last_apple = {agent: record_obj.last_apple_object[agent]['took_last_apple'] for agent in record_obj.last_apple_object}
@@ -181,10 +187,16 @@ def save_custom_indicators(record_obj):
     # Number of times the agent decided to attack
     times_decide_to_attack = {agent: record_obj.attack_object[agent]['decide_to_attack'] for agent in record_obj.attack_object}
 
+    # Number of times the agent effectively attacked
+    effective_attack = {agent: record_obj.effective_attack_object[agent]['effective_attack'] for agent in record_obj.effective_attack_object}
+
     custom_indicators = {
+        'times_move_towards_last_apple': times_move_towards_last_apple,
+        'times_saw_last_apple_scenario': times_saw_last_apple_scenario,
         'portion_move_towards_last_apple': portion_move_towards_last_apple,
         'times_took_last_apple': times_took_last_apple,
-        'times_decide_to_attack': times_decide_to_attack
+        'times_decide_to_attack': times_decide_to_attack,
+        'effective_attack': effective_attack
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:

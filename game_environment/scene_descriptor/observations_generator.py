@@ -10,8 +10,15 @@ import ast
 from scipy.ndimage import label, center_of_mass
 from collections import defaultdict
 import re
-from game_environment.utils import connected_elems_map
+from game_environment.utils import connected_elems_map, check_agent_out_of_game
 import inflect 
+
+
+import logging
+from utils.logging import CustomAdapter
+
+logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 
 class ObservationsGenerator (object):
@@ -91,7 +98,9 @@ class ObservationsGenerator (object):
         observations_description_per_agent = {}
         for agent_name, agent_dict in agents_observations.items():
             observations_description_per_agent[agent_name] = self.get_observations_per_agent(agent_dict, agent_name, True)
-            
+
+
+        logger.info(f' Observations descriptions for all agents: {observations_description_per_agent} \n')        
         return observations_description_per_agent
     
 
@@ -109,7 +118,10 @@ class ObservationsGenerator (object):
         """
         list_of_observations = []
         if agent_dict['observation'].startswith('There are no observations: You were attacked'):
-            list_of_observations.append(str(agent_dict['observation'] + ' at position {}'.format(agent_dict['global_position'])))
+            list_of_observations.append(str(agent_dict['observation'] + ' At position {}'.format(agent_dict['global_position'])))
+            return list_of_observations
+        elif agent_dict['observation'].startswith('There are no observations: you\'re out of the game'):
+            list_of_observations.append(str(agent_dict['observation']))
             return list_of_observations
         else:
             local_observation_map = agent_dict['observation']
@@ -150,7 +162,10 @@ class ObservationsGenerator (object):
             agent_orientation = agent_dict['orientation']
 
             # Get observed changes in the environment. If the agent is observing, the changes are stored in the observed_changes dictionary
-            observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, agent_orientation, game_time)
+            try:
+                observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, agent_orientation, game_time)
+            except:
+                observed_changes = [] # If the agent is out of the game, there is an error. Pass no observed changes
             self.observed_changes[agent_name].extend(observed_changes)
     
     def get_observed_changes_per_agent(self, agent_name: str) -> list[tuple[str, str]]:
@@ -286,6 +301,9 @@ class ObservationsGenerator (object):
         Returns:
             list[tuple[str, str]]: List of tuples with the changes in the environment, and the game time
         """
+        if check_agent_out_of_game([observed_map]):
+            return [(observed_map, game_time)]
+        
         observations = []
         if last_observed_map == None:
             return observations
@@ -296,8 +314,17 @@ class ObservationsGenerator (object):
             curr_el = curr_m[index]
             last_el = last_m[index]
             if curr_el != last_el:
+                # If someone attacked nearby
+                if last_el.isnumeric() and curr_el == 'B':
+                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                    observations.append((f"Someone was attacked at position {el_pos}.", game_time))
+                elif curr_el == 'B':
+                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                    observations.append((f"Observed a ray beam from an attack at position {el_pos}.", game_time))
+                elif last_el == 'B':
+                    pass
                 # If an apple was taken
-                if last_el == 'A':
+                elif last_el == 'A':
                     agent_id = int(curr_el)
                     agent_name = self.players_names[agent_id]
                     el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)

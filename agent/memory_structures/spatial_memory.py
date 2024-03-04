@@ -23,38 +23,61 @@ class SpatialMemory:
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
         self.scenario_map = scenario_map.split('\n')[1:-1]
-        #self.exploredMap = ["$"*mapSize[1] for _ in range(mapSize[0])]
-        self.explored_map = self.scenario_map # CHANGE THIS TO LINE ABOVE
         self.position = (-1,-1) # Inits the position of the agent
         self.orientation = 0
         self.current_observed_map = None
         self.mapSize = (len(self.scenario_map), len(self.scenario_map[0]))
         self.scenario_obstacles = scenario_obstacles 
-
-    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
+        self.explored_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
+        
+    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str, is_agent_out: bool = False) -> None:
         """
-        Updates the current position of the agent.
+        Updates the spatial information of the agent.
 
         Args:
             new_position (tuple): New position of the agent.
             orientation (int): New orientation of the agent.
             current_observed_map (str): Current observed map.
+            is_agent_out (bool, optional): If True, the agent is out of the game. Defaults to False.
 
         """
+        if is_agent_out:
+            return
+        
         self.position = new_position
         self.orientation = orientation
         self.current_observed_map = current_observed_map
+        
+        # By using the current observed map, we can update the explored map
+        self.update_explored_map()
 
 
-    def update_explored_map(self, pos: tuple) -> None:
+    def update_explored_map(self) -> None:
         """
-        Updates the map with a new object.
-
-        Args:
-            pos (tuple): Position of the new object.
+        Updates the map with a new current map.
         """
-        self.explored_map[pos[0]][pos[1]] = self.scenario_map[pos[0]][pos[1]]
+        for i, row in enumerate(self.current_observed_map.split('\n')):
+            for j, element in enumerate(row):
+                if element != '-':
+                    try:
+                        global_position = self.get_global_position((i,j), self.get_local_self_position())
+                        if self.explored_map[global_position[0]][global_position[1]] == '?':
+                            # Replaces the char of the string global_position[0] at that is in the list of strings
+                            self.explored_map[global_position[0]] = self.explored_map[global_position[0]][:global_position[1]] + element + self.explored_map[global_position[0]][global_position[1]+1:]
 
+                    except:
+                        self.logger.error(f'Error updating the explored map with the element {element} {(i,j)} at position {global_position}')
+                        continue
+    def get_percentage_explored(self) -> float:
+        """
+        Returns the percentage of the map that has been explored.
+
+        Returns:
+            float: Percentage of the map that has been explored.
+        """
+        n_explored = sum([row.count('?') for row in self.explored_map])
+        percentage = (1 - n_explored / (self.mapSize[0] * self.mapSize[1])) * 100
+        return float("{:.2f}".format(percentage))
 
     def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True ) -> Queue[str] | list[str]:
         """
@@ -69,12 +92,16 @@ class SpatialMemory:
         Returns:
             Queue(str): Steps sequence for the route.
         """
-        self.logger.info(f'Finding route from {self.position} to {position_end}')
+        self.logger.info(f'Finding route from {self.scenario_map} to {position_end}')
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
-        route = get_shortest_valid_route(self.explored_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
+        route = get_shortest_valid_route(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
 
+
+        if not include_last_pos and len(route) > 0:
+            route = route[:-2] + route[-1:]
+        
         # Adds a change on orientation on the last step of the route
         if len(route) > 0:
             new_orientation = 'turn '+ route[-1].split(' ')[1]
@@ -85,10 +112,6 @@ class SpatialMemory:
             else: 
                 route.append(new_orientation)
 
-
-        if not include_last_pos and len(route) > 0:
-            route = route[:-2] + route[-1:]
-        
 
         if return_list:
             return route
@@ -130,13 +153,12 @@ class SpatialMemory:
 
         if current_action.startswith(('grab ')) or current_action.startswith(('consume ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(end_position, self.orientation)
-        
-        elif current_action.startswith('attack '):
+            sequence_steps = self.find_route_to_position(end_position, self.orientation)       
+
+        elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)
             sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False)
             sequence_steps.put('attack')
-            sequence_steps.put('attack') # Put it twice to ensure enemy agent will be dead on its turn
 
         elif current_action.startswith('clean '):
             dirt_pos = self.get_position_from_action(current_action)
@@ -148,6 +170,7 @@ class SpatialMemory:
             if not self.is_position_valid(explore_pos):
                 explore_pos = None
             sequence_steps = self.generate_explore_sequence(explore_pos)
+            
         elif current_action.startswith('avoid consuming'):
             sequence_steps.put('stay put')
     
@@ -260,7 +283,6 @@ class SpatialMemory:
             # Finds the bounds of the current observed map
             # TODO change that function to utils module
             min_row, min_col, max_row, max_col = self.get_bounds_current_map(current_map_matrix)
-
             random_row = random.randint(min_row, max_row)
             random_col = random.randint(min_col, max_col)
             # Is the destination a valid position? '-' means that the position does not exist on the map
@@ -273,10 +295,11 @@ class SpatialMemory:
             destination = self.get_global_position((random_row, random_col), agent_local_pos)
 
         # Finds the shortest route to that position
+        self.logger.info(f"Finding route to {destination} from {self.position} with orientation {self.orientation} using the map {self.scenario_map}")
         sequence_steps = self.find_route_to_position(destination, self.orientation)
         if sequence_steps.qsize() < 1:
-            self.logger.error(f'Could not find a route to the destination {destination}')
-            raise Exception(f'Could not find a route to the destination {destination}')
+            self.logger.error(f'Could not find a route from {position} to the destination {destination}')
+            return new_empty_queue()
 
                 
         self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')

@@ -53,7 +53,7 @@ class BaseLLM(ABC):
         logger: logging.Logger,
         errors: tuple,
         initial_delay: float = 1,
-        exponential_base: float = 2,
+        exponential_base: float = 1,
         jitter: bool = True,
         max_retries: int = 5,
     ):

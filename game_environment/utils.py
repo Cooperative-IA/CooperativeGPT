@@ -20,11 +20,10 @@ def matrix_to_string(matrix):
 
 def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
     if game_name == 'commons_harvest_open':
-        return  ['consume one apple at (x,y)',
-                 'avoid consuming for this round', 
-                 'attack player (player_name) at (x,y)',
-                 'explore',
-                 'go to (x,y)',
+        return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
+                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
+                 'stay put: This action keep the agent in the same position.',
+                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
                  ]
         
     elif game_name == 'clean_up':
@@ -133,7 +132,7 @@ def check_agent_out_of_game(observations:list[str]):
     Returns:
         bool: True if the agent is out of the game, False otherwise
    """
-   return len(observations) >0 and observations[0].startswith('There are no observations: You were attacked')
+   return (len(observations) >0 and observations[0].startswith(('There are no observations: You were attacked', 'There are no observations: you\'re out of the game')))
 
 
 
@@ -176,3 +175,20 @@ def connected_elems_map(ascci_map: str | list[list[str]], elements_to_find):
             component_data[i] = {'center': center_coords, 'elements': component_elements.tolist()}
 
         return dict(component_data)
+
+def get_local_position_of_element(current_map: list[list[str]], element: str) -> tuple[int, int] | None:
+    """
+    Get the local position of an element in the map
+
+    Args:
+        current_map (list[list[str]]): Current map
+        element (str): Element to find
+
+    Returns:
+        tuple[int, int] | None: Local position of the element. If the element is not found, return None
+    """
+    for i, row in enumerate(current_map):
+        for j, cell in enumerate(row):
+            if cell == element:
+                return (i, j)
+    return None

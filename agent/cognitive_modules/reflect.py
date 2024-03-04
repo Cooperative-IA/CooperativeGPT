@@ -22,7 +22,7 @@ def reflect_questions(name: str , world_context:str, statements: list[str]|str, 
     if isinstance(statements, list):
         statements = "\n".join(statements)
 
-    llm = LLMModels().get_longer_context_fallback()
+    llm = LLMModels().get_main_model()
     prompt_path = os.path.join(prompts_folder, 'reflect_questions.txt')
     try:
         response = llm.completion(prompt=prompt_path, inputs=[name, world_context, statements, agent_bio])
@@ -30,7 +30,7 @@ def reflect_questions(name: str , world_context:str, statements: list[str]|str, 
         relevant_questions = [q['Question'] for q in relevant_questions_dict.values()]
     except ValueError as e:
         if str(e) == 'Prompt is too long':
-            llm = LLMModels().get_longer_context_fallback() # TODO: Change this llm for a fallback model
+            llm = LLMModels().get_longer_context_fallback() 
             response = llm.completion(prompt=prompt_path, inputs=[name, world_context, statements, agent_bio])
             relevant_questions_dict = extract_answers(response)
             relevant_questions = [q['Question'] for q in relevant_questions_dict.values()]
