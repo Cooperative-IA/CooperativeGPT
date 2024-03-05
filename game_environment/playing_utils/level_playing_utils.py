@@ -40,7 +40,7 @@ from game_environment.scene_descriptor.observations_generator import Observation
 from utils.files import load_config
 from utils.logging import CustomAdapter
 from game_environment.bots import Bot
-from game_environment.utils import default_agent_actions_map
+from game_environment.utils import default_agent_actions_map, check_agent_out_of_game
 
 import sys
 import ast
@@ -546,7 +546,11 @@ class Game:
         """
         curr_state = self.observationsGenerator.get_all_observations_descriptions(str(self.curr_scene_description).strip())[player_prefix]
         scene_description = self.curr_scene_description[player_prefix]
-        state_changes = self.observationsGenerator.get_observed_changes_per_agent(player_prefix)
+        if (check_agent_out_of_game(curr_state)):
+            state_changes = []
+        else:
+            # When the agent is out, do not get the state changes to accumulate them until the agent is revived
+            state_changes = self.observationsGenerator.get_observed_changes_per_agent(player_prefix)
         return {
             'curr_state': curr_state,
             'scene_description': scene_description,

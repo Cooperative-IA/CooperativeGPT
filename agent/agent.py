@@ -90,11 +90,17 @@ class Agent:
         """
         if self.mode == 'cooperative':
             return self.move_cooperative(observations, agent_current_scene, changes_in_state, game_time, agent_reward, agent_is_out)
+        
+        # If the agent is out of the game, it does not take any action
+        if agent_is_out:
+            self.logger.info(f'{self.name} is out of the game, skipping its turn.')
+            step_actions = Queue()
+            return step_actions
 
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
-                                                    agent_current_scene['observation'], agent_is_out)
-        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward, agent_is_out)
+                                                    agent_current_scene['observation'])
+        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward)
 
         
         if react:
@@ -102,13 +108,8 @@ class Agent:
             self.generate_new_actions()
         
         self.reflect(filtered_observations)
-
-        # If the agent is out of the game, it does not take any action
-        if agent_is_out:
-            self.logger.info(f'{self.name} is out of the game, skipping its turn.')
-            step_actions = Queue()
-        else:
-            step_actions = self.get_actions_to_execute(filtered_observations)
+        
+        step_actions = self.get_actions_to_execute()
             
         return step_actions
     
@@ -130,10 +131,16 @@ class Agent:
             Queue: Steps sequence for the current action.
         """
 
+        # If the agent is out of the game, it does not take any action
+        if agent_is_out:
+            self.logger.info(f'{self.name} is out of the game, skipping its turn.')
+            step_actions = Queue()
+            return step_actions
+
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
-                                                    agent_current_scene['observation'], agent_is_out)
-        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward, agent_is_out)
+                                                    agent_current_scene['observation'])
+        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward)
 
         self.understand(filtered_observations, state_changes)
 
@@ -143,12 +150,7 @@ class Agent:
         
         self.reflect(filtered_observations)
 
-        # If the agent is out of the game, it does not take any action
-        if agent_is_out:
-            self.logger.info(f'{self.name} is out of the game, skipping its turn.')
-            step_actions = Queue()
-        else:
-            step_actions = self.get_actions_to_execute(filtered_observations)
+        step_actions = self.get_actions_to_execute()
             
         return step_actions
 
@@ -165,8 +167,9 @@ class Agent:
         Returns:
             tuple[bool, list[str], list[str]]: Tuple with True if the agent should react to the observation, False otherwise, the filtered observations and the changes in the state of the environment.
         """
+        action_executed = self.stm.get_memory('current_action')
         if is_agent_out:
-            memory = create_memory(self.name, game_time, None, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name(), True)
+            memory = create_memory(self.name, game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name(), True)
             self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
             current_observation = '\n'.join(observations)
             self.stm.add_memory(current_observation, 'current_observation')
@@ -183,8 +186,6 @@ class Agent:
         # Update the agent known objects
         update_known_objects(observations, self.stm, self.substrate_name)
         
-
-        action_executed = self.stm.get_memory('current_action')
         # Parse the changes in the state of the environment observed by the agent
         changes = []
         for change, obs_time in changes_in_state:
@@ -198,6 +199,7 @@ class Agent:
 
         current_observation = '\n'.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
+        self.stm.add_memory(changes, 'changes_in_state')
 
         last_reward = self.stm.get_memory('current_reward') or 0.0
         self.stm.add_memory(reward, 'current_reward')
@@ -227,10 +229,12 @@ class Agent:
         agent_bio_str = self.stm.get_memory('bio_str')
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
+        changes_in_state = self.stm.get_memory('changes_in_state')
+        changes_in_state = '\n'.join(changes_in_state) if changes_in_state else None
         reason_to_react = self.stm.get_memory('reason_to_react')
         assert reason_to_react is not None, 'Reason to react is None. This should not happen because the agent only plans if it should react to the observation'
 
-        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str, self.prompts_folder)
+        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str, self.prompts_folder, changes_in_state=changes_in_state)
         self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
         if new_plan is None or new_goals is None:
             self.logger.warn(f'{self.name} could not generate a new plan or new goals')
@@ -328,13 +332,10 @@ class Agent:
 
 
 
-    def get_actions_to_execute(self, filtered_observations: list[str]) -> Queue:
+    def get_actions_to_execute(self) -> Queue:
         """
         Executes the current actions of the agent. 
         If the current gameloop is empty, it generates a new one.
-
-        Args:
-            filtered_observations (list[str]): List of filtered observations.
             
         Returns:
             Queue: Steps sequence for the current action.

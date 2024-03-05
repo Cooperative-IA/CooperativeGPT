@@ -30,7 +30,7 @@ class SpatialMemory:
         self.scenario_obstacles = scenario_obstacles 
         self.explored_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
         
-    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str, is_agent_out: bool = False) -> None:
+    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
         """
         Updates the spatial information of the agent.
 
@@ -38,11 +38,8 @@ class SpatialMemory:
             new_position (tuple): New position of the agent.
             orientation (int): New orientation of the agent.
             current_observed_map (str): Current observed map.
-            is_agent_out (bool, optional): If True, the agent is out of the game. Defaults to False.
 
         """
-        if is_agent_out:
-            return
         
         self.position = new_position
         self.orientation = orientation
@@ -153,7 +150,7 @@ class SpatialMemory:
 
         if current_action.startswith(('grab ')) or current_action.startswith(('consume ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(end_position, self.orientation)       
+            sequence_steps = self.find_route_to_position(end_position, self.orientation) 
 
         elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)

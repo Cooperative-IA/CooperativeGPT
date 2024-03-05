@@ -7,6 +7,9 @@ You have this information about an agent called <input1>:
 Recent analysis of past observations:
 <input5>
 
+Observed changes in the game state:
+<input8>
+
 Current observations: 
 <input3>
 

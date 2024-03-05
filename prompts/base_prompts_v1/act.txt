@@ -15,6 +15,9 @@ Analysis of past experiences:
 
 Portion of the map explored by <input1>: <input12>
 
+Observed changes in the game state:
+<input14>
+
 You are currently viewing a portion of the map, and from your position at <input6> you observe the following: 
 <input5>
 
@@ -25,7 +28,7 @@ Each action you determinate can only be one of the following, make sure you assi
 Valid actions: 
 <input8>
 
-Remember that going to possitions near the edge of the portion of the map you are seeing will allow you to get new observations.
+Remember that going to positions near the edge of the portion of the map you are seeing will allow you to get new observations.
 <input13>
 
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:

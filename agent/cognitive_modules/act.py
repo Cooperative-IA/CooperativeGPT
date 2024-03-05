@@ -40,11 +40,13 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
     
     previous_actions = stm.get_memory('previous_actions')
     previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}" 
+    changes_in_state = stm.get_memory('changes_in_state')
+    changes_in_state = '\n'.join(changes_in_state) if changes_in_state else None
     # Actions have to be generated 
     while actions_seq_queue.qsize() < 1:
         response = llm.completion(prompt=prompt_path, inputs=[name, world_context, str(current_plan), reflections, current_observations,
                                                               str(current_position), str(actions_seq_len), str(valid_actions), current_goals, agent_bio,
-                                                              known_trees, explored_map, previous_actions])
+                                                              known_trees, explored_map, previous_actions, changes_in_state])
         response_dict = extract_answers(response.lower())
 
         try:

@@ -37,7 +37,7 @@ class Avatar:
         self.agents_in_observation = agents
 
     def set_state(self, avatar_state):
-        # If the avatar has reappear reset the murder attribute
+        # If the avatar has reappear, set the just_revived flag and reset the murderer name
         if avatar_state == 1 and self.avatar_state == 0:
             self.murder = None
             self.just_revived = True

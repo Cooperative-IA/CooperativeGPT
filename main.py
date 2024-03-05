@@ -79,6 +79,11 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                 # Execute a move for the bots
                 if env.bots:
                     for bot in env.bots:
+                        bot_observations =  env.get_observations_by_player(bot.name)
+                        bot_observations = bot_observations['curr_state']
+                        if check_agent_out_of_game(bot_observations):
+                            logger.info(f'Bot {bot.name} was taken out of the game. Skipping bot move.')
+                            actions[bot.name] = default_agent_actions_map()
                         if env.get_current_step_number() % bots_steps_per_agent_move == 0:
                             bot_action = bot.move(env.timestep)
                             actions[bot.name] = bot_action
