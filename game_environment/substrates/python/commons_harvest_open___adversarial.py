@@ -590,7 +590,7 @@ def create_avatar_object(player_idx: int,
               }
           },
           {
-              "component": "AvatarCustomConnector",
+              "component": "AvatarCustomTracker",
               "kwargs": {
                     "playerIndex": lua_index,
               }

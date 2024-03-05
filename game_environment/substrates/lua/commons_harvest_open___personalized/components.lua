@@ -66,24 +66,24 @@ function Neighborhoods:getUpperBoundPossibleNeighbors()
   return self._config.upperBoundPossibleNeighbors
 end
 
-local AvatarCustomConnector = class.Class(component.Component)
+local AvatarCustomTracker = class.Class(component.Component)
 
-function AvatarCustomConnector:__init__(kwargs)
+function AvatarCustomTracker:__init__(kwargs)
   kwargs = args.parse(kwargs, {
-    {'name', args.default('AvatarCustomConnector')},
+    {'name', args.default('AvatarCustomTracker')},
     -- `playerIndex` (int): player index for the avatar to connect to.
     {'playerIndex', args.numberType},
   })
-  AvatarCustomConnector.Base.__init__(self, kwargs)
+  AvatarCustomTracker.Base.__init__(self, kwargs)
   self._kwargs = kwargs
 end
 
-function AvatarCustomConnector:reset()
+function AvatarCustomTracker:reset()
   local kwargs = self._kwargs
   self._playerIndex = kwargs.playerIndex
 end
 
-function AvatarCustomConnector:postStart()
+function AvatarCustomTracker:postStart()
   local sim = self.gameObject.simulation
   local sceneObject = sim:getSceneObject()
   self._avatarObject = sim:getAvatarFromIndex(self._playerIndex)
@@ -91,26 +91,29 @@ function AvatarCustomConnector:postStart()
   -- Initialize the state of the avatar in the GlobalStateTracker component.
   local globalStateTracker = sceneObject:getComponent('GlobalStateTracker')
   globalStateTracker.states(self._playerIndex):fill(1)
-
-  -- Get the avatar component on the avatar game object and connect to it.
-  local avatarComponent = self._avatarObject:getComponent('Avatar')
-  avatarComponent:connect(self.gameObject)
 end
 
--- The avatarStateChange function is called when the avatar's state changes from the Avatar component of meltingpot
--- The avatar component calls avatarStateChange for all the components that are connected to it.
--- The behavior argument is a string with 'respawn' or 'die' values.
-function AvatarCustomConnector:avatarStateChange(behavior)
+-- Update the tracker of the avatar's state in the GlobalStateTracker component.
+function AvatarCustomTracker:onStateChange()
+  if self._avatarObject == nil then
+    return
+  end
   local avatarComponent = self._avatarObject:getComponent('Avatar')
   -- If the avatar's state has changed, then also update the state of
   -- the avatar in the GlobalStateTracker component.
   local sceneObject = self.gameObject.simulation:getSceneObject()
   local globalStateTracker = sceneObject:getComponent('GlobalStateTracker')
-  if behavior == 'respawn' then
-    globalStateTracker.states(self._playerIndex):fill(1)
-  elseif behavior == 'die' then
-    globalStateTracker.states(self._playerIndex):fill(0)
+  local avatarStateManager = self._avatarObject:getComponent("StateManager")
+  local state = avatarStateManager:getState()
+
+  local numeric_state = 1
+  -- If the avatar is in the "wait" state, then the avatar is not alive.
+  if state == "playerWait" then
+      numeric_state = 0
   end
+
+  -- Make the update
+  globalStateTracker.states(self._playerIndex):fill(numeric_state)
 end
 
 local GlobalStateTracker = class.Class(component.Component)
@@ -348,7 +351,7 @@ end
 local allComponents = {
     Neighborhoods = Neighborhoods,
     DensityRegrow = DensityRegrow,
-    AvatarCustomConnector = AvatarCustomConnector,
+    AvatarCustomTracker = AvatarCustomTracker,
     GlobalStateTracker = GlobalStateTracker,
     PersonalizedStartEvent = PersonalizedStartEvent,
 }
