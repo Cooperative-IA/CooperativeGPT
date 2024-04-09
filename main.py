@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+from agent.management.agent_registry import AgentRegistry
 from dotenv import load_dotenv
 import time
 import traceback
@@ -142,10 +143,14 @@ if __name__ == "__main__":
     scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
+
+    # Create the agent registry
+    agent_registry = AgentRegistry(players)
+
     # Create agents
     agents = [Agent(name=player, data_folder=data_folder, agent_context_file=player_context,
                     world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path) 
+                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, agent_registry=agent_registry) 
               for player, player_context in zip(players, players_context)]
 
     # Start the game server

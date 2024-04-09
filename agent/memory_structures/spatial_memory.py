@@ -1,11 +1,13 @@
-import logging
-from queue import Queue
-import random
-from utils.route_plan import get_shortest_valid_route
 import re
-from utils.queue_utils import queue_from_list, new_empty_queue
-from utils.math import manhattan_distance
+import random
+import logging
+import datetime
+
+from queue import Queue
 from utils.logging import CustomAdapter
+from utils.math import manhattan_distance
+from utils.route_plan import get_shortest_valid_route
+from utils.queue_utils import queue_from_list, new_empty_queue
 
 class SpatialMemory:
     """
@@ -28,7 +30,10 @@ class SpatialMemory:
         self.current_observed_map = None
         self.mapSize = (len(self.scenario_map), len(self.scenario_map[0]))
         self.scenario_obstacles = scenario_obstacles 
-        self.explored_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
+        self.known_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
+        #TODO: Change the timestamp to step_number
+        self.timestamp_map = [[datetime.datetime.now() for _ in range(self.mapSize[1])] for _ in range(self.mapSize[0])]
+        self.near_agents = list()
         
     def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
         """
@@ -45,35 +50,37 @@ class SpatialMemory:
         self.orientation = orientation
         self.current_observed_map = current_observed_map
         
-        # By using the current observed map, we can update the explored map
-        self.update_explored_map()
+        # By using the current observed map, we can update the known map
+        self.update_known_map()
 
 
-    def update_explored_map(self) -> None:
+    def update_known_map(self) -> None:
         """
         Updates the map with a new current map.
         """
+        self.near_agents = list()
         for i, row in enumerate(self.current_observed_map.split('\n')):
             for j, element in enumerate(row):
                 if element != '-':
+                    if re.match(r'^[0-9]$', element):
+                        self.near_agents.append(element)
                     try:
                         global_position = self.get_global_position((i,j), self.get_local_self_position())
-                        if self.explored_map[global_position[0]][global_position[1]] == '?':
-                            # Replaces the char of the string global_position[0] at that is in the list of strings
-                            self.explored_map[global_position[0]] = self.explored_map[global_position[0]][:global_position[1]] + element + self.explored_map[global_position[0]][global_position[1]+1:]
+                        self.update_pixel_if_newer(global_position[0], global_position[1], element, datetime.datetime.now())
 
                     except:
                         self.logger.error(f'Error updating the explored map with the element {element} {(i,j)} at position {global_position}')
                         continue
-    def get_percentage_explored(self) -> float:
+
+    def get_percentage_known(self) -> float:
         """
-        Returns the percentage of the map that has been explored.
+        Returns the percentage of the map that has been known.
 
         Returns:
-            float: Percentage of the map that has been explored.
+            float: Percentage of the map that has been known.
         """
-        n_explored = sum([row.count('?') for row in self.explored_map])
-        percentage = (1 - n_explored / (self.mapSize[0] * self.mapSize[1])) * 100
+        n_known = sum([row.count('?') for row in self.known_map])
+        percentage = (1 - n_known / (self.mapSize[0] * self.mapSize[1])) * 100
         return float("{:.2f}".format(percentage))
 
     def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True ) -> Queue[str] | list[str]:
@@ -217,6 +224,7 @@ class SpatialMemory:
 
         return sorted(observations, key=lambda x: observations_distances[observations.index(x)])
     
+
     def get_global_position(self, local_dest_pos: tuple[int, int], local_self_pos: tuple[int, int]) -> tuple[int, int]:
         """Get the global position of an element given its local position on the observed map.
 
@@ -360,3 +368,17 @@ class SpatialMemory:
             return 'West'
         else:
             raise Exception(f'Orientation {orientation} is not valid')
+
+    def update_pixel_if_newer(self, x, y, new_value, new_timestamp):
+        """
+        Update the pixel at position (x, y) with the new value and timestamp only if the new timestamp is more recent than the current one.
+
+        :param x: X-coordinate of the pixel to update.
+        :param y: Y-coordinate of the pixel to update.
+        :param new_value: The new value for the pixel.
+        :param new_timestamp: The new timestamp for the pixel.
+        """
+        current_timestamp = self.timestamp_map[x][y]
+        if  new_timestamp > current_timestamp:
+            self.known_map[x] = self.known_map[x][:y] + new_value + self.known_map[x][y+1:]
+            self.timestamp_map[x][y] = new_timestamp

@@ -5,6 +5,7 @@ from queue import Queue
 import copy
 from typing import Union, Literal
 
+from agent.cognitive_modules.communicate import CommunicationMode, communicate_observations, whom_to_communicate
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
@@ -26,7 +27,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None ) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None, agent_registry=None) -> None:
         """Initializes the agent.
 
         Args:
@@ -50,12 +51,12 @@ class Agent:
         self.mode = mode
         self.att_bandwidth = att_bandwidth
         self.reflection_umbral = reflection_umbral
+        self.agent_registry = agent_registry
         self.observations_poignancy = observations_poignancy
         ltm_folder = os.path.join(data_folder, 'ltm_database')
         self.ltm = LongTermMemory(agent_name=name, data_folder=ltm_folder)
         self.stm = ShortTermMemory( agent_context_file=agent_context_file, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
-        self.att_bandwidth = att_bandwidth
         self.understanding_umbral = understanding_umbral
         self.prompts_folder = prompts_folder
         self.stm.add_memory(memory = self.name, key = 'name')
@@ -70,6 +71,9 @@ class Agent:
         if start_from_scene:
             self.ltm.load_memories_from_scene(scene_path = start_from_scene, agent_name=name)
             self.stm.load_memories_from_scene(scene_path = start_from_scene, agent_name=name)
+        
+        if self.agent_registry is not None:
+            self.agent_registry.register_agent(self)
 
     def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
@@ -108,6 +112,7 @@ class Agent:
             self.generate_new_actions()
         
         self.reflect(filtered_observations)
+        self.communicate()
         
         step_actions = self.get_actions_to_execute()
             
@@ -300,7 +305,10 @@ class Agent:
         # Add the last reflection to the short term memory
         self.stm.add_memory(game_time, 'last_reflection')
   
-
+    def communicate(self) -> None:
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.NEAR):
+            self.logger.info(f'{self.name} is communicating with {agent_name}')
+            communicate_observations(self.name, agent_name, self.agent_registry, CommunicationMode.What.ALL )
 
     def generate_new_actions(self) -> None:
         """
@@ -318,7 +326,7 @@ class Agent:
         current_position = self.spatial_memory.position
         known_trees = self.stm.get_memory('known_trees')
         known_trees = "These are the known trees: "+' '.join([f"tree {tree[0]} with center at {tree[1]}" for tree in known_trees]) if known_trees else "There are no known trees yet"
-        percentage_explored = self.spatial_memory.get_percentage_explored()
+        percentage_explored = self.spatial_memory.get_percentage_known()
         
         # Generate new actions sequence and add it to the short term memory
         actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
