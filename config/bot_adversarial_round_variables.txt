@@ -1,0 +1,1 @@
+{'bots_num': 2, 'event_duration': 14, 'event_times': [10], 'folder_path': 'game_environment/substrates/lua/commons_harvest_open___bot_adversarial_round/', 'event_times_file': 'game_environment/substrates/lua/commons_harvest_open___bot_adversarial_round//RBE1_sim_3_event_times.txt'}

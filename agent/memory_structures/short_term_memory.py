@@ -99,6 +99,10 @@ class ShortTermMemory:
             agent_name (str): Name of the agent.
         """
         source_stm_path = os.path.join(scene_path, "short_term_memories.txt")
+        # If the source file does not exist, log a warning and return 
+        if not os.path.exists(source_stm_path):
+            self.logger.warning(f"Short term memory file not found for agent {agent_name} in scene {scene_path}.")
+            return
         
         #Read the file and load the memories
         scene_memories = eval(open(source_stm_path).read())

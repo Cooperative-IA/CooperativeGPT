@@ -1,0 +1,1 @@
+{'event_magnitude': 0.3, 'event_times': [25], 'folder_path': 'game_environment/substrates/lua/commons_harvest_open___adversarial_round/', 'event_times_file': 'game_environment/substrates/lua/commons_harvest_open___adversarial_round//RE1_sim_5_event_times.txt'}

@@ -340,7 +340,7 @@ def generate_dictionary(matrix):
 def dict_to_list(dictionary):
     return [f"({x}, {y}): {region_id}" for (x, y), region_id in dictionary.items()]
 
-def create_scene(num_players, events_times, events_magnitude):
+def create_scene(num_players, adversarial_variables):
   """Creates the scene with the provided args controlling apple regrowth."""
   scene = {
       "name": "scene",
@@ -367,8 +367,8 @@ def create_scene(num_players, events_times, events_magnitude):
           },
           {
               "component": "AdversarialEvent",
-              "kwargs": {"eventTime": events_times,
-                         "magnitude": events_magnitude}
+              "kwargs": {"eventTimeFile": adversarial_variables['event_times_file'],
+                         "botsNum": adversarial_variables['bots_num']}
           },
           {
               "component": "GlobalStateTracker",
@@ -708,11 +708,11 @@ def build(
             (Mapping[str, Any]): A substrate definition
     """
     num_players = config.num_players
-    events_times = [30]
-    events_magnitude = 0.9
+    with open('config/bot_adversarial_round_variables.txt') as f:
+        adversarial_variables = eval(f.readlines()[0])
     # Build the rest of the substrate definition.
     substrate_definition = dict(
-        levelName="commons_harvest_open___adversarial",
+        levelName="commons_harvest_open___bot_adversarial_round",
         levelDirectory="meltingpot/lua/levels",
         numPlayers=num_players,
         # Define upper bound of episode length since episodes end stochastically.
@@ -725,7 +725,7 @@ def build(
             "prefabs": create_prefabs(APPLE_RESPAWN_RADIUS,
                                         REGROWTH_PROBABILITIES),
             "charPrefabMap": CHAR_PREFAB_MAP,
-            "scene": create_scene(num_players, events_times, events_magnitude),
+            "scene": create_scene(num_players, adversarial_variables),
         },
     )
     return substrate_definition

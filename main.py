@@ -21,7 +21,7 @@ load_dotenv(override=True)
 logger = logging.getLogger(__name__)
 rounds_count = 0
 
-def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) -> None:
+def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool, kind_experiment:str, events_times_file:str) -> None:
     """Main game loop. The game loop is executed until the game ends or the maximum number of steps is reached.
 
     Args:
@@ -108,6 +108,23 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                 persist_short_term_memories(memories, rounds_count, steps_count, logger_timestamp)
 
         rounds_count += 1
+        
+        if kind_experiment == "adversarial_round":
+            adversarial_variables = eval(open(f'config/{kind_experiment}_variables.txt').read())
+            # Write on adversarial_event_file_path 1 if round is 50, 0 otherwise
+            with open(events_times_file, 'w') as f:
+                f.write('1' if rounds_count in adversarial_variables['event_times'] else '0')
+        elif kind_experiment == "bot_adversarial_round":
+            adversarial_variables = eval(open(f'config/{kind_experiment}_variables.txt').read())
+            
+            for round_init in adversarial_variables['event_times']:
+                with open(events_times_file, 'w') as f:
+                    f.write('1' if rounds_count == round_init 
+                                else '2' if round_init < rounds_count < round_init + adversarial_variables['event_duration']
+                                else '3' if rounds_count == round_init + adversarial_variables['event_duration'] 
+                                else '0' )
+                        
+
         logger.info('Round %s completed. Executed all the high level actions for each agent.', rounds_count)
         env.update_history_file(logger_timestamp, rounds_count, steps_count)
         time.sleep(0.01)
@@ -127,7 +144,25 @@ if __name__ == "__main__":
     if args.start_from_scene :
         scene_path = f"data/scenes/{args.start_from_scene}" 
         os.system(f"cp {scene_path}/variables.txt config/start_variables.txt")
+    
+    # If experiment is adversarial, prepare the adversarial_variables.txt file, first we evaluate the file to get the event_times_file
+    if "adversarial_round" in args.kind_experiment :
+        adversarial_variables = eval(open(f'config/{args.kind_experiment}_variables.txt').read())
         
+        sim_id = args.simulation_id if args.simulation_id else ""
+        
+        adversarial_variables['event_times_file']  =  f"{adversarial_variables['folder_path']}/{sim_id}_event_times.txt"
+        
+        # Create the new file, and write 0
+        with open(adversarial_variables['event_times_file'], 'w') as f:
+            f.write('0')
+            
+        # Write the new file path on the adversarial_variables.txt
+        with open(f'config/{args.kind_experiment}_variables.txt', 'w') as f:
+            f.write(str(adversarial_variables))
+    events_times_file = adversarial_variables['event_times_file'] if "adversarial_round" in args.kind_experiment else None
+    
+    
     # Define players
     experiment_path = os.path.join("data", "defined_experiments", args.substrate)
     agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
@@ -158,7 +193,7 @@ if __name__ == "__main__":
     embedding_model = llm.get_embedding_model()
     gpt_best_model = llm.get_best_model()
     try:
-        game_loop(agents, args.substrate, args.persist_memories)
+        game_loop(agents, args.substrate, args.persist_memories, args.kind_experiment, events_times_file )
     except KeyboardInterrupt:
         logger.info("Program interrupted. %s rounds executed.", rounds_count)
     except Exception as e:

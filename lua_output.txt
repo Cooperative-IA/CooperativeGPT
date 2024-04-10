@@ -1,0 +1,7 @@
+Current time: 31
+1:player1
+2:player2
+3:player3
+4:playerWait
+Bot number 4 is now in playerWait state
+5:player5

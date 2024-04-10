@@ -322,10 +322,14 @@ class ObservationsGenerator (object):
                     pass
                 # If an apple was taken
                 elif last_el == 'A':
-                    agent_id = int(curr_el)
-                    agent_name = self.players_names[agent_id]
-                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                    observations.append((f"Observed that agent {agent_name} took an apple from position {el_pos}.", game_time))
+                    try:
+                        agent_id = int(curr_el)
+                        agent_name = self.players_names[agent_id]
+                        el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                        observations.append((f"Observed that agent {agent_name} took an apple from position {el_pos}.", game_time))
+                    except:
+                        el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                        #observations.append((f"Observed that an apple desappeared from position {el_pos}.", game_time))  #TODO: delete this, for now we are not using this observation
                 # If grass desappeared
                 elif last_el == 'G' and curr_el == 'F':
                     el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)

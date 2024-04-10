@@ -32,7 +32,7 @@ def get_args():
         type=str,
         default="",
         help="What kind of experiment to run, valid options are: '' for no experiment,"\
-              +  " 'adversarial_event' for the adversarial event experiment,"\
+              +  " 'adversarial' for the adversarial event experiment,"\
                +   "'personalized' pre-loaded experiments" 
     )
     

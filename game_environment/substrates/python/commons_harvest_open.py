@@ -82,6 +82,21 @@ WPPPPPPPPPPPPPPPPPPPPPPW
 WWWWWWWWWWWWWWWWWWWWWWWW
 """
 
+_ASCII_MAP = """
+WWWWWWWWWWWWWWWWWWWWWWW
+W                     W
+W                     W
+W          A          W
+W         AAA         W
+W  Q     AAAAA     Q  W
+W         AAA         W
+W          A          W
+W                     W
+W                     W
+W     PPPP   PPPP     W
+WWWWWWWWWWWWWWWWWWWWWWW
+"""
+
 # `prefab` determines which prefab game object to use for each `char` in the
 # ascii map.
 CHAR_PREFAB_MAP = {
