@@ -5,7 +5,7 @@ from queue import Queue
 import copy
 from typing import Union, Literal
 
-from agent.cognitive_modules.communicate import CommunicationMode, communicate_observations, whom_to_communicate
+from agent.cognitive_modules.communicate import CommunicationMode, communicate_agent_interactions, communicate_observations, whom_to_communicate
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
@@ -97,6 +97,7 @@ class Agent:
         
         # If the agent is out of the game, it does not take any action
         if agent_is_out:
+            self.communicate(observations, changes_in_state, self.logger)
             self.logger.info(f'{self.name} is out of the game, skipping its turn.')
             step_actions = Queue()
             return step_actions
@@ -112,7 +113,7 @@ class Agent:
             self.generate_new_actions()
         
         self.reflect(filtered_observations)
-        self.communicate()
+        self.communicate(observations, state_changes, self.logger)
         
         step_actions = self.get_actions_to_execute()
             
@@ -305,10 +306,16 @@ class Agent:
         # Add the last reflection to the short term memory
         self.stm.add_memory(game_time, 'last_reflection')
   
-    def communicate(self) -> None:
-        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.NEAR):
+    def communicate(self, observations:list[str], state_changes: list[str], logger) -> None:
+        communicate_agent_interactions(self.name, self.name, self.agent_registry, observations, state_changes, logger)
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
             self.logger.info(f'{self.name} is communicating with {agent_name}')
-            communicate_observations(self.name, agent_name, self.agent_registry, CommunicationMode.What.ALL )
+            communicate_observations(self.name, agent_name, self.agent_registry, CommunicationMode.What.ALL)
+            self.logger.info(f'{self.name} communicated agent interactions to {agent_name}')
+            communicate_agent_interactions(self.name, agent_name, self.agent_registry, observations, state_changes, logger)
+            self.logger.info(self.name + " Known agent Interactions: " + str(self.stm.get_known_agent_interactions(agent_name)))
+        self.logger.info(f'{self.name} state changes: {state_changes}')
+
 
     def generate_new_actions(self) -> None:
         """

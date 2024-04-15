@@ -70,6 +70,23 @@ class ShortTermMemory:
         """
         self.add_memory(known_agents, 'known_agents')
 
+    def add_known_agent_interaction(self, agent, interaction) -> None:
+        agent_interactions = self.memory.setdefault("known_agent_interactions", {}).setdefault(agent, {})
+        if interaction == "ate_apple":
+            agent_interactions["apples_eaten"] = agent_interactions.get("apples_eaten", 0) + 1
+        elif interaction == "attacks_made":
+            agent_interactions["attacks_made"] = agent_interactions.get("attacks_made", 0) + 1
+        elif interaction == "attacks_received":
+            agent_interactions["attacks_received"] = agent_interactions.get("attacks_received", 0) + 1
+
+    def get_known_agent_interactions(self, agent) -> dict:
+        """Gets the known agent interactions from the short term memory.
+
+        Returns:
+            dict: Dictionary of known agent interactions.
+        """
+        return self.memory.get("known_agent_interactions", {}).get(agent, {})
+
 
     def get_known_objects_by_key(self, object_key:str) -> set[str]:
         """Gets the known objects from the short term memory.

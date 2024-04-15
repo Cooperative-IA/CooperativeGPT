@@ -1,3 +1,4 @@
+import re
 class CommunicationMode:
 
     class Who:
@@ -58,19 +59,39 @@ def communicate_observations(sender_agent_name:str, receiver_agent_name:str, age
         what_mode (str): Communication mode (what?)
     """
     sender_agent = agent_registry.get_agents([sender_agent_name])[sender_agent_name]
-    agent_receiver = agent_registry.get_agents([receiver_agent_name])[receiver_agent_name]
+    receiver_agent = agent_registry.get_agents([receiver_agent_name])[receiver_agent_name]
 
     sender_agent_known_map = sender_agent.spatial_memory.known_map
-    agent_receiver_known_map = agent_receiver.spatial_memory.known_map
+    receiver_agent_known_map = receiver_agent.spatial_memory.known_map
 
     rows, cols = len(sender_agent.spatial_memory.known_map), len(sender_agent.spatial_memory.known_map[0])
 
     for x in range(rows):
         for y in range(cols):
 
-            if agent_receiver_known_map[x][y] in what_to_communicate(sender_agent, what_mode):
-                sender_agent.spatial_memory.update_pixel_if_newer(x, y, agent_receiver_known_map[x][y], agent_receiver.spatial_memory.timestamp_map[x][y])
+            if receiver_agent_known_map[x][y] in what_to_communicate(sender_agent, what_mode):
+                sender_agent.spatial_memory.update_pixel_if_newer(x, y, receiver_agent_known_map[x][y], receiver_agent.spatial_memory.timestamp_map[x][y])
 
-            if sender_agent_known_map[x][y] in what_to_communicate(agent_receiver, what_mode):
-                agent_receiver.spatial_memory.update_pixel_if_newer(x, y, sender_agent_known_map[x][y], sender_agent.spatial_memory.timestamp_map[x][y])
+            if sender_agent_known_map[x][y] in what_to_communicate(receiver_agent, what_mode):
+                receiver_agent.spatial_memory.update_pixel_if_newer(x, y, sender_agent_known_map[x][y], sender_agent.spatial_memory.timestamp_map[x][y])
 
+def communicate_agent_interactions(sender_agent_name:str, receiver_agent_name:str, agent_registry, observations:list[str], state_changes:list[str], logger) -> None:
+    receiver_agent = agent_registry.get_agents([receiver_agent_name])[receiver_agent_name]
+
+    for observation in observations:
+        if "You were attacked" in observation:
+            agent_name_match = re.search(r"attacked by agent (.*?) and currently", observation).group(1)
+            logger.info("\n\n\n\n\n")
+            logger.info("FUCK")
+            logger.info(agent_name_match)
+            logger.info("\n\n\n\n\n")
+            if receiver_agent_name != agent_name_match:
+                receiver_agent.stm.add_known_agent_interaction(agent_name_match, "attacks_made")
+            if receiver_agent_name != sender_agent_name:
+                receiver_agent.stm.add_known_agent_interaction(sender_agent_name, "attacks_received")
+
+    for state_change in state_changes:
+        if "took an apple from position" in state_change:
+            agent_name_match = re.search(r"agent (\S+)", state_change).group(1)
+            if receiver_agent_name != agent_name_match:
+                receiver_agent.stm.add_known_agent_interaction(agent_name_match, "ate_apple")

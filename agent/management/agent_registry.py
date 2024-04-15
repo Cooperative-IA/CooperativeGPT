@@ -10,6 +10,7 @@ class AgentRegistry:
         """
         self.agents = {}
         self.agent_id_to_name = {str(agent_id):agent_name for agent_id, agent_name in enumerate(players)}
+        self.agent_name_to_id = {agent_name:str(agent_id) for agent_id, agent_name in enumerate(players)}
         print(self.agent_id_to_name)
 
     def register_agent(self, agent:Agent):

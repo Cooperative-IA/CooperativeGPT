@@ -36,7 +36,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 100
+    rounds_count, steps_count, max_rounds = 0, 0, 5
     bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
@@ -70,7 +70,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             else:
                 step_actions = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
 
-
+            map_previous_to_actions = env.get_current_global_map()
             while not step_actions.empty():
                 step_action = step_actions.get()
                 # Update the actions map for the agent
@@ -99,6 +99,18 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                 except:
                     logger.exception("Error executing action %s", step_action)
                     step_actions = new_empty_queue()
+            map_after_actions = env.get_current_global_map()
+            for row in range(len(map_previous_to_actions)):
+                for col in range(len(map_previous_to_actions[0])):
+                    if map_previous_to_actions[row][col] != map_after_actions[row][col]:
+                        if map_previous_to_actions[row][col] == 'A' and map_after_actions[row][col] != 'B':
+                            logger.info(f"Hello, I am {agent.name} and I ate an Apple at position {row},{col}")
+                        if map_previous_to_actions[row][col].isnumeric() and map_previous_to_actions[row][col]!=agent.agent_registry.agent_name_to_id[agent.name]:
+                            logger.info(f"Hello, I am {agent.name} and I Attacked to the agent {agent.agent_registry.agent_id_to_name[map_previous_to_actions[row][col]]} at position {row},{col}")
+                        if map_after_actions[row][col].isnumeric() and map_after_actions[row][col]==agent.agent_registry.agent_name_to_id[agent.name]:
+                            logger.info(f"Hello, I am {agent.name} and I moved to position {row},{col}")
+
+
 
             # Reset actions for the agent until its next turn
             actions[agent.name] = default_agent_actions_map()

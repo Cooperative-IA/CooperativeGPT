@@ -83,7 +83,7 @@ class SpatialMemory:
         percentage = (1 - n_known / (self.mapSize[0] * self.mapSize[1])) * 100
         return float("{:.2f}".format(percentage))
 
-    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True ) -> Queue[str] | list[str]:
+    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True, additional_obstacles=[]) -> Queue[str] | list[str]:
         """
         Finds the shortest route to a position.
 
@@ -100,7 +100,7 @@ class SpatialMemory:
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
-        route = get_shortest_valid_route(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
+        route = get_shortest_valid_route(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles+additional_obstacles, orientation=orientation)
 
 
         if not include_last_pos and len(route) > 0:
@@ -161,7 +161,7 @@ class SpatialMemory:
 
         elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False)
+            sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False, additional_obstacles=['A'])
             sequence_steps.put('attack')
 
         elif current_action.startswith('clean '):
