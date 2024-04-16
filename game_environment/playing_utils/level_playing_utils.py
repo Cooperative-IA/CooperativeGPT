@@ -557,6 +557,23 @@ class Game:
         """Returns the current time of the game. The time will be formatted as specified in the config file."""
         return self.time.strftime(self.dateFormat)
     
+    def get_agents_view_imgs(self) -> dict:
+        """Returns the images of the agents' views."""
+        agents_view_imgs = {}
+        
+        for player_id, player_name in enumerate(self.player_prefixes):
+            agent_observation = self.timestep.observation[f"{player_id + 1}.RGB"]
+            agents_view_imgs[player_name] = agent_observation
+            
+        return agents_view_imgs
+    def get_agents_orientations (self) -> dict:
+        """Returns the orientations of the agents."""
+        orientations = {}
+        
+        for player_id, player_name in enumerate(self.player_prefixes):
+            orientation = self.curr_scene_description[player_name]['orientation']
+            orientations[player_name] = orientation
+        return orientations
     def get_current_step_number(self) -> int:
         """Returns the current step number of the game."""
         return self.game_steps

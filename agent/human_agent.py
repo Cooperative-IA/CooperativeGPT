@@ -1,7 +1,10 @@
 import os
 from queue import Queue
+import queue
+import time
 from agent.agent import Agent
 from utils.llm import load_prompt, replace_inputs_in_prompt
+from utils.player_gui import PlayerGUI
 from agent.cognitive_modules.perceive import update_known_objects
 
 class HumanAgent(Agent):
@@ -33,7 +36,7 @@ class HumanAgent(Agent):
         self.ltm = None
         self.logger.info(f'Initializing {self.name} HumanAgent')
 
-    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
+    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, gui: PlayerGUI, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
@@ -57,7 +60,7 @@ class HumanAgent(Agent):
         
 
         if not agent_is_out:
-            self.generate_new_actions(changes_in_state)
+            self.generate_new_actions(changes_in_state, gui)
             step_actions = self.get_actions_to_execute()
         else :
             step_actions = Queue()
@@ -98,7 +101,7 @@ class HumanAgent(Agent):
         # Update the agent known objects
         update_known_objects(observations, self.stm, self.substrate_name)
   
-    def generate_new_actions(self, state_changes: list[str]) -> None:
+    def generate_new_actions(self, state_changes: list[str], gui: PlayerGUI) -> None:
         """
         Acts in the environment given the observations, the current plan and the current goals.
         Stores the actions sequence in the short term memory.
@@ -113,7 +116,7 @@ class HumanAgent(Agent):
         # Generate new actions sequence and add it to the short term memory
         if isinstance(observations, list):
             observations = "\n".join(observations)
-        state_changes = '\n'.join(state_changes) if state_changes else 'None'
+        #state_changes = '\n'.join(state_changes) if state_changes else 'None'
         previous_actions = self.stm.get_memory('previous_actions')
         previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}"
         known_trees = self.stm.get_memory('known_trees')
@@ -124,7 +127,22 @@ class HumanAgent(Agent):
         prompt = replace_inputs_in_prompt(prompt, [self.name, world_context, current_plan, state_changes, observations, self.spatial_memory.position, 1, valid_actions, current_goals, agent_bio_str,
                                                    known_trees, percentage_explored, previous_actions])
         self.logger.info(f'Prompt: {prompt}')
-        user_action = input("What action would you like to perform? ")
+        gui.update_text(prompt)
+        #user_action = input("What action would you like to perform? ")
+
+        while True:
+            try:
+                #user_action = gui.queue.get(block=True)
+                input()
+                user_action = gui.queue.get(block=True)
+                gui.update_action_text("")
+                print(f"Received action: {user_action}")
+                break
+            except queue.Empty:
+                continue
+
+            
+        
         self.logger.info(f'What action would you like to perform? {user_action}')
         actions_sequence_queue = Queue()
         actions_sequence_queue.put(user_action)
