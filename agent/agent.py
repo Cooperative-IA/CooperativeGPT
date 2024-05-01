@@ -5,11 +5,11 @@ from queue import Queue
 import copy
 from typing import Union, Literal
 
-from agent.cognitive_modules.communicate import CommunicationMode, communicate_agent_interactions, communicate_observations, whom_to_communicate
+from agent.cognitive_modules.communicate import CommunicationMode, communicate_observed_actions_to_agent, communicate_environment_observations_to_agent, communicate_own_actions_to_agent, communicate_reflection_to_agent, whom_to_communicate
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
-from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory, update_known_objects
+from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory, update_known_objects, update_observed_agents_actions, update_own_actions
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
@@ -55,7 +55,7 @@ class Agent:
         self.observations_poignancy = observations_poignancy
         ltm_folder = os.path.join(data_folder, 'ltm_database')
         self.ltm = LongTermMemory(agent_name=name, data_folder=ltm_folder)
-        self.stm = ShortTermMemory( agent_context_file=agent_context_file, world_context_file=world_context_file)
+        self.stm = ShortTermMemory(agent_name=name, agent_context_file=agent_context_file, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.understanding_umbral = understanding_umbral
         self.prompts_folder = prompts_folder
@@ -75,7 +75,7 @@ class Agent:
         if self.agent_registry is not None:
             self.agent_registry.register_agent(self)
 
-    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
+    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, rounds_count, agent_reward: float = 0,  agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
@@ -97,7 +97,7 @@ class Agent:
         
         # If the agent is out of the game, it does not take any action
         if agent_is_out:
-            self.communicate(observations, changes_in_state, self.logger)
+            self.communicate(observations, changes_in_state, rounds_count)
             self.logger.info(f'{self.name} is out of the game, skipping its turn.')
             step_actions = Queue()
             return step_actions
@@ -105,7 +105,7 @@ class Agent:
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
                                                     agent_current_scene['observation'])
-        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward)
+        react, filtered_observations, state_changes = self.perceive(self.spatial_memory.get_observations_from_known_map(self.agent_registry), changes_in_state, game_time, agent_reward)
 
         
         if react:
@@ -113,7 +113,7 @@ class Agent:
             self.generate_new_actions()
         
         self.reflect(filtered_observations)
-        self.communicate(observations, state_changes, self.logger)
+        self.communicate(observations, state_changes, rounds_count)
         
         step_actions = self.get_actions_to_execute()
             
@@ -185,8 +185,7 @@ class Agent:
         self.stm.add_memory(game_time, 'game_time')
         # Observations are filtered to only store the closest ones. The att_bandwidth defines the number of observations that the agent can attend to at the same time
         sorted_observations = self.spatial_memory.sort_observations_by_distance(observations)
-        observations = sorted_observations[:self.att_bandwidth]
-
+        observations = sorted_observations[:30]
         # Update the agent known agents
         update_known_agents(observations, self.stm)
         # Update the agent known objects
@@ -280,10 +279,11 @@ class Agent:
         observations_str = '\n'.join(filtered_observations['documents'])
 
         world_context = self.stm.get_memory('world_context')
-        agent_bio_str = self.stm.get_memory('bio_str')
-
+        agent_bio_str = self.stm.get_memory('bio_str')        
+        result = self.stm.describe_known_agents_interactions()
+        known_agent_interactions = '\n'.join(result) if result else None
         # Get the relevant questions
-        relevant_questions = reflect_questions(self.name, world_context, observations_str, agent_bio_str, self.prompts_folder)
+        relevant_questions = reflect_questions(self.name, world_context, observations_str, agent_bio_str, self.prompts_folder, known_agent_interactions)
         self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
         # Get the relevant memories for each question, relevant memories is a list of lists
         relevant_memories_list = [] 
@@ -305,17 +305,20 @@ class Agent:
         
         # Add the last reflection to the short term memory
         self.stm.add_memory(game_time, 'last_reflection')
-  
-    def communicate(self, observations:list[str], state_changes: list[str], logger) -> None:
-        communicate_agent_interactions(self.name, self.name, self.agent_registry, observations, state_changes, logger)
-        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
-            self.logger.info(f'{self.name} is communicating with {agent_name}')
-            communicate_observations(self.name, agent_name, self.agent_registry, CommunicationMode.What.ALL)
-            self.logger.info(f'{self.name} communicated agent interactions to {agent_name}')
-            communicate_agent_interactions(self.name, agent_name, self.agent_registry, observations, state_changes, logger)
-            self.logger.info(self.name + " Known agent Interactions: " + str(self.stm.get_known_agent_interactions(agent_name)))
-        self.logger.info(f'{self.name} state changes: {state_changes}')
 
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+            communicate_reflection_to_agent(self.name, agent_name, self.agent_registry, reflection, game_time, self.observations_poignancy)
+  
+    def communicate(self, observations:list[str], state_changes: list[str], rounds_count) -> None:
+        update_observed_agents_actions(self.name, self.stm, observations, state_changes, rounds_count)
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+            communicate_environment_observations_to_agent(self.name, agent_name, self.agent_registry, CommunicationMode.What.ALL)
+            communicate_observed_actions_to_agent(self.name, agent_name, self.agent_registry, observations, state_changes, rounds_count, self.stm.get_memory('game_time'), self.observations_poignancy)
+
+    def communicate_own_actions(self, actions: list[str], rounds_count) -> None:
+        update_own_actions(self.name, self.stm, actions, rounds_count)
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+            communicate_own_actions_to_agent(self.name, agent_name, self.agent_registry, actions, rounds_count, self.stm.get_memory('game_time'), self.observations_poignancy)
 
     def generate_new_actions(self) -> None:
         """
@@ -334,7 +337,7 @@ class Agent:
         known_trees = self.stm.get_memory('known_trees')
         known_trees = "These are the known trees: "+' '.join([f"tree {tree[0]} with center at {tree[1]}" for tree in known_trees]) if known_trees else "There are no known trees yet"
         percentage_explored = self.spatial_memory.get_percentage_known()
-        
+
         # Generate new actions sequence and add it to the short term memory
         actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
                                                   current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,

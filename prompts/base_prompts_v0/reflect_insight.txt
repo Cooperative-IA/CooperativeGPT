@@ -7,6 +7,9 @@ You have this information about an agent called <input1>:
 Here you have a list of memory statements separated in groups of memories:
 <input3>
 
+Agents Activity Records:
+<input5>
+
 Given <input1>'s memories, for each one of the group of memories, what is the best insight you can provide based on the information you have? 
 Express your answer in the JSON format provided, and remember to explain the reasoning behind each insight.
 

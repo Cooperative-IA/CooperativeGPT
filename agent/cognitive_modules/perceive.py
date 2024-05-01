@@ -1,4 +1,5 @@
 import os
+import re
 from llm import LLMModels
 from utils.llm import extract_answers
 from agent.memory_structures.short_term_memory import ShortTermMemory
@@ -116,3 +117,28 @@ def create_memory(agent_name: str, curr_time: str, action: str|None, state_chang
         memory += f'\nI can\'t currently observe anything.'
     
     return memory
+
+def update_observed_agents_actions(agent_name:str, stm:ShortTermMemory, observations:list[str], state_changes:list[str], rounds_count:int):
+    for observation in observations:
+        if "You were attacked" in observation:
+            agent_name_match = re.search(r"attacked by agent (.*?) and currently", observation).group(1)
+            stm.add_known_agent_interaction(rounds_count, agent_name_match, "attacks_made", agent_name)
+            stm.add_known_agent_interaction(rounds_count, agent_name, "attacks_received", agent_name_match)
+    for state_change in state_changes:
+        _rounds_count = rounds_count
+        if "took an apple from position" in state_change:
+            agent_name_match = re.search(r"agent (\S+)", state_change).group(1)
+            apple_position = "".join(re.search(r'\[(\d+),\s*(\d+)\]', state_change).groups())
+            if agent_name == "Pedro" or (agent_name == "Juan" and agent_name_match == "Laura"):
+                _rounds_count -= 1
+            stm.add_known_agent_interaction(_rounds_count, agent_name_match, "ate_apple", apple_position)
+
+def update_own_actions(agent_name:str, stm:ShortTermMemory, actions:list[str], rounds_count:int):
+    for action in actions:
+        if "attacked" in action.lower():
+            agent_name_match = re.search(r"agent (\S+)", action).group(1)
+            stm.add_known_agent_interaction(rounds_count, agent_name, "attacks_made", agent_name_match)
+            stm.add_known_agent_interaction(rounds_count, agent_name_match, "attacks_received", agent_name)
+        elif "ate" in action.lower():
+            apple_position = "".join(re.search(r'\[(\d+),\s*(\d+)\]', action).groups())
+            stm.add_known_agent_interaction(rounds_count, agent_name, "ate_apple", apple_position)

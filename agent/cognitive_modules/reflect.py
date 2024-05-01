@@ -4,7 +4,7 @@ from utils.llm import extract_answers
 
 
 
-def reflect_questions(name: str , world_context:str, statements: list[str]|str, agent_bio: str = "",  prompts_folder = "base_prompts_v0" ) -> list[str]:
+def reflect_questions(name: str , world_context:str, statements: list[str]|str, agent_bio: str = "",  prompts_folder = "base_prompts_v0", known_agent_interactions=None ) -> list[str]:
     """
     Description: Returns the relevant questions for the agent given its name, the world context and the statements
 
@@ -25,13 +25,13 @@ def reflect_questions(name: str , world_context:str, statements: list[str]|str, 
     llm = LLMModels().get_main_model()
     prompt_path = os.path.join(prompts_folder, 'reflect_questions.txt')
     try:
-        response = llm.completion(prompt=prompt_path, inputs=[name, world_context, statements, agent_bio])
+        response = llm.completion(prompt=prompt_path, inputs=[name, world_context, statements, agent_bio, known_agent_interactions])
         relevant_questions_dict = extract_answers(response)
         relevant_questions = [q['Question'] for q in relevant_questions_dict.values()]
     except ValueError as e:
         if str(e) == 'Prompt is too long':
             llm = LLMModels().get_longer_context_fallback() 
-            response = llm.completion(prompt=prompt_path, inputs=[name, world_context, statements, agent_bio])
+            response = llm.completion(prompt=prompt_path, inputs=[name, world_context, statements, agent_bio, known_agent_interactions])
             relevant_questions_dict = extract_answers(response)
             relevant_questions = [q['Question'] for q in relevant_questions_dict.values()]
         else:
@@ -41,7 +41,7 @@ def reflect_questions(name: str , world_context:str, statements: list[str]|str, 
 
 
 
-def reflect_insights(name, world_context, memory_statements, questions: list[str], agent_bio: str = "", prompts_folder = "base_prompts_v0" ) -> list[str]:
+def reflect_insights(name, world_context, memory_statements, questions: list[str], agent_bio: str = "", prompts_folder = "base_prompts_v0") -> list[str]:
     """
     Description: Returns the insights for the agent given its name, the world context and the memory statements
     

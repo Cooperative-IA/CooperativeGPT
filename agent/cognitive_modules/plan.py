@@ -18,6 +18,8 @@ def plan(name: str, world_context: str, observation: str, current_plan: str, ref
     Returns:
         tuple[str, str]: New plan and new goals for the agent.
     """
+    
+
     llm = LLMModels().get_main_model()
     
     prompt_path = os.path.join(prompts_folder, 'plan.txt')

@@ -28,6 +28,7 @@ class LongTermMemory:
         self.logger = CustomAdapter(self.logger)
 
         self.date_format = load_config()['date_format']
+        self.name = agent_name  
 
         # Delete collection if it already exists
         if agent_name in [c.name for c in self.chroma_client.list_collections()]:
@@ -47,7 +48,7 @@ class LongTermMemory:
             poignancy (str | list[str]): Poignancy of the memory.
             additional_metadata (dict | list[dict], optional): Addictional metadata for the memory or memories. Defaults to None.
         """
-
+        self.logger.info(f"{self.name} is adding a memory to the long term memory: {memory}")
         # Create metadata
         if isinstance(memory, list):
             # Check if created_at and poignancy are lists. If they are, they must have the same length as memory

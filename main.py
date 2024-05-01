@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+from agent.cognitive_modules.communicate import CommunicationMode
 from agent.management.agent_registry import AgentRegistry
 from dotenv import load_dotenv
 import time
@@ -36,7 +37,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 5
+    rounds_count, steps_count, max_rounds = 0, 0, 50
     bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
@@ -65,10 +66,10 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             agent_reward = env.score[agent.name]
             if check_agent_out_of_game(observations):
                 logger.info('Agent %s was taken out of the game', agent.name)
-                agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
+                agent.move(observations, scene_description, state_changes, game_time, rounds_count, agent_reward, agent_is_out=True)
                 step_actions = new_empty_queue()
             else:
-                step_actions = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
+                step_actions = agent.move(observations, scene_description, state_changes, game_time, rounds_count, agent_reward)
 
             map_previous_to_actions = env.get_current_global_map()
             while not step_actions.empty():
@@ -100,15 +101,15 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                     logger.exception("Error executing action %s", step_action)
                     step_actions = new_empty_queue()
             map_after_actions = env.get_current_global_map()
+            own_actions = list()
             for row in range(len(map_previous_to_actions)):
                 for col in range(len(map_previous_to_actions[0])):
                     if map_previous_to_actions[row][col] != map_after_actions[row][col]:
                         if map_previous_to_actions[row][col] == 'A' and map_after_actions[row][col] != 'B':
-                            logger.info(f"Hello, I am {agent.name} and I ate an Apple at position {row},{col}")
+                            own_actions.append(f"Hello, I am {agent.name} and I ate an Apple at position [{row},{col}]")
                         if map_previous_to_actions[row][col].isnumeric() and map_previous_to_actions[row][col]!=agent.agent_registry.agent_name_to_id[agent.name]:
-                            logger.info(f"Hello, I am {agent.name} and I Attacked to the agent {agent.agent_registry.agent_id_to_name[map_previous_to_actions[row][col]]} at position {row},{col}")
-                        if map_after_actions[row][col].isnumeric() and map_after_actions[row][col]==agent.agent_registry.agent_name_to_id[agent.name]:
-                            logger.info(f"Hello, I am {agent.name} and I moved to position {row},{col}")
+                            own_actions.append(f"Hello, I am {agent.name} and I Attacked to the agent {agent.agent_registry.agent_id_to_name[map_previous_to_actions[row][col]]} at position {row},{col}")
+            agent.communicate_own_actions(own_actions, rounds_count)
 
 
 
@@ -119,12 +120,13 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             if persist_memories:
                 memories = {agent.name: agent.stm.get_memories().copy() for agent in agents}
                 persist_short_term_memories(memories, rounds_count, steps_count, logger_timestamp)
-
+            if "known_agent_interactions" in agent.stm.memory:
+                logger.info(f"Known agent interactions: {agent.stm.memory['known_agent_interactions']}")
         rounds_count += 1
         logger.info('Round %s completed. Executed all the high level actions for each agent.', rounds_count)
         env.update_history_file(logger_timestamp, rounds_count, steps_count)
         time.sleep(0.01)
-
+    logger.info('Game ended after %s rounds', rounds_count)
 if __name__ == "__main__":
     args = get_args()
     setup_logging(logger_timestamp)

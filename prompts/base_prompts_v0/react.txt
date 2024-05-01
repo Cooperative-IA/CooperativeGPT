@@ -11,6 +11,9 @@ Current observations at <input7>:
 
 <input8>
 
+Agents Activity Records:
+<input15>
+
 Current plan: <input4>
 
 Actions to execute: <input5>

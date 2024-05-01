@@ -8,7 +8,7 @@ class ShortTermMemory:
     """Class for yhe short term memory. Memories are stored in a dictionary.
     """
 
-    def __init__(self, agent_context_file: str = None, world_context_file: str = None) ->  None:
+    def __init__(self, agent_name, agent_context_file: str = None, world_context_file: str = None) ->  None:
         """Initializes the short term memory.
 
         Args:
@@ -18,6 +18,9 @@ class ShortTermMemory:
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
         self.memory = {}
+        self.last_observations = []
+        self.name = agent_name
+
 
         if agent_context_file is not None:
             self.memory = load_agent_context(agent_context_file)
@@ -70,14 +73,30 @@ class ShortTermMemory:
         """
         self.add_memory(known_agents, 'known_agents')
 
-    def add_known_agent_interaction(self, agent, interaction) -> None:
-        agent_interactions = self.memory.setdefault("known_agent_interactions", {}).setdefault(agent, {})
-        if interaction == "ate_apple":
-            agent_interactions["apples_eaten"] = agent_interactions.get("apples_eaten", 0) + 1
-        elif interaction == "attacks_made":
-            agent_interactions["attacks_made"] = agent_interactions.get("attacks_made", 0) + 1
-        elif interaction == "attacks_received":
-            agent_interactions["attacks_received"] = agent_interactions.get("attacks_received", 0) + 1
+    def check_known_observation(self, observation: str) -> bool:
+        if observation not in self.last_observations:
+            self.last_observations.append(observation)
+            self.logger.info(f"New observation: {observation}, {self.last_observations}")
+            return True
+        self.logger.info(f"Reppeated observation: {observation}, {self.last_observations}")
+        return False
+        
+    def clear_last_observations(self) -> None:
+        self.last_observations = []
+
+    def add_known_agent_interaction(self, rounds_count, agent, interaction, info) -> None:
+        if self.check_known_observation(str(rounds_count)+agent + interaction + info):
+            self.logger.info(f"{self.name} learned that {agent} {interaction} {info} at round {rounds_count}")
+            agent_interactions = self.memory.setdefault("known_agent_interactions", {}).setdefault(agent, {})
+            if interaction == "ate_apple":
+                agent_interactions["apples_eaten"] = agent_interactions.get("apples_eaten", 0) + 1
+            elif interaction == "attacks_made":
+                agent_interactions["attacks_made"] = agent_interactions.get("attacks_made", 0) + 1
+            elif interaction == "attacks_received":
+                agent_interactions["attacks_received"] = agent_interactions.get("attacks_received", 0) + 1
+            return True
+        self.logger.info(f"{self.name} already knew that {agent} {interaction} {info} at round {rounds_count}")
+        return False
 
     def get_known_agent_interactions(self, agent) -> dict:
         """Gets the known agent interactions from the short term memory.
@@ -86,6 +105,33 @@ class ShortTermMemory:
             dict: Dictionary of known agent interactions.
         """
         return self.memory.get("known_agent_interactions", {}).get(agent, {})
+    
+
+    def describe_known_agents_interactions(self):
+        data = self.memory.get("known_agent_interactions", None)
+        if data is None:
+            return []
+        descriptions = []
+        for name, actions in data.items():
+            if name == self.name:
+                parts = []
+                if 'apples_eaten' in actions:
+                    parts.append(f"you have eaten {actions['apples_eaten']} apples")
+                if 'attacks_made' in actions:
+                    parts.append(f"you have made {actions['attacks_made']} attacks")
+                if 'attacks_received' in actions:
+                    parts.append(f"you have received {actions['attacks_received']} attacks")
+                descriptions.append(f"So far, {', and '.join(parts)}")
+            else:
+                parts = []
+                if 'apples_eaten' in actions:
+                    parts.append(f"has eaten {actions['apples_eaten']} apples")
+                if 'attacks_made' in actions:
+                    parts.append(f"has made {actions['attacks_made']} attacks")
+                if 'attacks_received' in actions:
+                    parts.append(f"has received {actions['attacks_received']} attacks")
+                descriptions.append(f"So far, {name} {', and '.join(parts)}")
+        return descriptions
 
 
     def get_known_objects_by_key(self, object_key:str) -> set[str]:

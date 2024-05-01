@@ -4,8 +4,6 @@ from copy import deepcopy
 from scipy.ndimage import label, center_of_mass
 from collections import defaultdict
 
-from agent.agent import Agent
-
 
 def parse_string_to_matrix(input_string):
     rows = input_string.strip().split('\n')

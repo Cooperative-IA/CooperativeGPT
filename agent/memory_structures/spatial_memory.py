@@ -4,9 +4,10 @@ import logging
 import datetime
 
 from queue import Queue
+from game_environment.utils import connected_elems_map
 from utils.logging import CustomAdapter
 from utils.math import manhattan_distance
-from utils.route_plan import get_shortest_valid_route
+from utils.route_plan import get_shortest_valid_route_snowartz
 from utils.queue_utils import queue_from_list, new_empty_queue
 
 class SpatialMemory:
@@ -24,6 +25,13 @@ class SpatialMemory:
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
+        self.global_trees = connected_elems_map(scenario_map, ['A', 'G'])
+        self.global_trees_fixed = {}
+        for key, value in self.global_trees.items():
+            center = value['center']
+            for element in value['elements']:
+                tuple_key = tuple(element)
+                self.global_trees_fixed[tuple_key] = [key, list(center)]
         self.scenario_map = scenario_map.split('\n')[1:-1]
         self.position = (-1,-1) # Inits the position of the agent
         self.orientation = 0
@@ -34,6 +42,30 @@ class SpatialMemory:
         #TODO: Change the timestamp to step_number
         self.timestamp_map = [[datetime.datetime.now() for _ in range(self.mapSize[1])] for _ in range(self.mapSize[0])]
         self.near_agents = list()
+    
+    def get_observations_from_known_map(self, agent_registry):
+        observations = list()
+        trees = {}
+        for i, row in enumerate(self.known_map):
+            for j, element in enumerate(row):
+                if element =='G':
+                    observations.append(f'Observed grass to grow apples at position {[i, j]}. This grass belongs to tree {self.global_trees_fixed[(i, j)][0]}.')
+                    if self.global_trees_fixed[(i, j)][0] not in trees:
+                        trees[self.global_trees_fixed[(i, j)][0]] = [0, 1, self.global_trees_fixed[(i, j)][1]]
+                    else:
+                        trees[self.global_trees_fixed[(i, j)][0]][1] += 1
+                elif element == 'A':
+                    observations.append(f'Observed an apple at position {[i, j]}. This apple belongs to tree {self.global_trees_fixed[(i, j)][0]}.')
+                    if self.global_trees_fixed[(i, j)][0] not in trees:
+                        trees[self.global_trees_fixed[(i, j)][0]] = [1, 0, self.global_trees_fixed[(i, j)][1]]
+                    else:
+                        trees[self.global_trees_fixed[(i, j)][0]][0] += 1
+                elif re.match(r'^[0-9]$', element):
+                    agent_name = agent_registry.agent_id_to_name[element]
+                    observations.append(f"Observed agent {agent_name} at position {[i, j]}.")
+        for tree, values in trees.items():
+            observations.append(f'Observed tree {tree} at position {values[2]}. This tree has {values[0]} apples remaining and {values[1]} grass for apples regrowing')
+        return observations
         
     def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
         """
@@ -83,7 +115,7 @@ class SpatialMemory:
         percentage = (1 - n_known / (self.mapSize[0] * self.mapSize[1])) * 100
         return float("{:.2f}".format(percentage))
 
-    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True, additional_obstacles=[]) -> Queue[str] | list[str]:
+    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True, optional_obstacles=['A'], reach_end=True) -> Queue[str] | list[str]:
         """
         Finds the shortest route to a position.
 
@@ -100,7 +132,7 @@ class SpatialMemory:
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
-        route = get_shortest_valid_route(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles+additional_obstacles, orientation=orientation)
+        route = get_shortest_valid_route_snowartz(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, optional_obstacles= optional_obstacles,orientation=orientation, reach_end=reach_end)
 
 
         if not include_last_pos and len(route) > 0:
@@ -161,7 +193,7 @@ class SpatialMemory:
 
         elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False, additional_obstacles=['A'])
+            sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False, reach_end=False)
             sequence_steps.put('attack')
 
         elif current_action.startswith('clean '):
