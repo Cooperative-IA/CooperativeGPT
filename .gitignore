@@ -13,15 +13,15 @@ logs/
 # Data
 data/*/*.db/
 data/*/*/*.db/
-data/databases/*
-
+data/scenes
+data/databases
 # Cache
 *.pyc
 __pycache__/
 .pytest_cache/
 
 # Recorder imgs
-game_environment/recorder/*.png 
+game_environment/recorder/*.png
 
 # Test experiments results
 tests/experiment_notebooks/experiment_actuate/experiment_results/*.txt

@@ -205,14 +205,14 @@ class ActionReader(object):
             new_action_map: A dictionary with the actions of each player. Keys are player prefixes
             player_prefixes: A list with the player prefixes
         Returns:
-            A dictionary with the actions of each player. Keys are combination of player indices starting from 1 and action names        
+            A dictionary with the actions of each player. Keys are combination of player indices starting from 1 and action names
         """
         actions = {action_key: 0 for action_key in self._action_spec.keys()}
         for i, player_prefix in enumerate(player_prefixes):
             for action_name in self._action_names:
                 actions[f'{i+1}.{action_name}'] = new_action_map[player_prefix][ action_name]
         return actions
-    
+
 logger = logging.getLogger(__name__)
 logger = CustomAdapter(logger)
 
@@ -316,7 +316,7 @@ class Game:
         else:
             player_count = len(player_prefixes)
         logger.info(f'Running an episode with {player_count} players: {player_prefixes}.')
-        
+
         # Create the game environment
         env = env_builder(**full_config)
 
@@ -325,7 +325,7 @@ class Game:
             logger.error('Player prefixes, when specified, must be of the same length as the number of players.')
             raise ValueError('Player prefixes, when specified, must be of the same '
                                 'length as the number of players.')
-        
+
         # Reset the game environment
         timestep = env.reset()
 
@@ -424,7 +424,7 @@ class Game:
 
     def step(self, current_actions_map:dict) -> dict[int, list[str]] | None:
         """Run one step of the game.
-        
+
         Args:
             actions: A dictionary of actions for each player.
         Returns:
@@ -439,7 +439,7 @@ class Game:
 
         if stop:
             return None, None
-        
+
         self.game_steps += 1
 
         action_reader = ActionReader(self.env, self.action_map)
@@ -453,7 +453,7 @@ class Game:
 
         if self.record:
             self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, agents_observing, current_actions_map)
-        
+
         if self.first_move_done :
             # Get the next action map
             game_actions = action_reader.various_agents_step(current_actions_map, self.player_prefixes)
@@ -527,7 +527,7 @@ class Game:
             self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map, agents_observing)
             self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
             self.record_counter += 1
-        
+
         # Update the observations generator
         game_time = self.get_time()
         self.observationsGenerator.update_state_changes(description, agents_observing, game_time)
@@ -536,7 +536,7 @@ class Game:
         self.curr_global_map = curr_global_map
         # Return the observations of each player and the descriptions
         # return self.observationsGenerator.get_all_observations_descriptions(str(description).strip(), agents_observing), description
-    
+
     def get_observations_by_player(self, player_prefix: str) -> dict:
         """Returns the observations of the given player.
         Args:
@@ -556,11 +556,11 @@ class Game:
             'scene_description': scene_description,
             'state_changes': state_changes
         }
-    
+
     def get_time(self) -> str:
         """Returns the current time of the game. The time will be formatted as specified in the config file."""
         return self.time.strftime(self.dateFormat)
-    
+
     def get_current_step_number(self) -> int:
         """Returns the current step number of the game."""
         return self.game_steps
@@ -573,11 +573,11 @@ class Game:
             steps_count: The current steps count
         """
         #Creates the history file if it doesn't exist
-        
+
         with open(f'logs/{logger_timestamp}/steps_history.txt', 'a') as file:
             # Write round_number and actions_count in the history file
             file.write(f'{round_count} {steps_count}\n')
-    
+
     def get_current_global_map(self) -> dict:
         """Returns the current scene description."""
         return self.curr_global_map

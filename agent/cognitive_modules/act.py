@@ -30,19 +30,20 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
     Returns:
         list[str]: Actions that the agent should perform
     """
-    
-    llm = LLMModels().get_best_model()
+
+    #llm = LLMModels().get_best_model()
+    llm = LLMModels().get_main_model() 
     prompt_path = os.path.join(prompts_folder, 'act.txt')
     if isinstance(current_observations, list):
         current_observations = "\n".join(current_observations)
     actions_seq_len = 1
-    actions_seq_queue= Queue() 
-    
+    actions_seq_queue= Queue()
+
     previous_actions = stm.get_memory('previous_actions')
-    previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}" 
+    previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}"
     changes_in_state = stm.get_memory('changes_in_state')
     changes_in_state = '\n'.join(changes_in_state) if changes_in_state else None
-    # Actions have to be generated 
+    # Actions have to be generated
     while actions_seq_queue.qsize() < 1:
         response = llm.completion(prompt=prompt_path, inputs=[name, world_context, str(current_plan), reflections, current_observations,
                                                               str(current_position), str(actions_seq_len), str(valid_actions), current_goals, agent_bio,
@@ -54,12 +55,12 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
             # Update previous actions
             try:    action_analysis = response_dict['final analysis']
             except: action_analysis = ""
-            stm.add_memory((action, action_analysis), 'previous_actions')   
-            
+            stm.add_memory((action, action_analysis), 'previous_actions')
+
             actions_seq_queue.put(action)
         except:
             logger.warning(f'Could not find action in the response_dict: {response_dict}')
-            
+
 
 
     return actions_seq_queue

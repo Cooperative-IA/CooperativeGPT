@@ -243,5 +243,9 @@ def condition_to_end_game(substrate_name:str, current_map:list[str]):
             if "A" in row:
                 return False
     
+    if substrate_name == "clean_up":
+        # Checks if there's any trash "T" in the current map
+        return False
     
+    logger.info(f"The game has ended due to the condition of the substrate {substrate_name}")
     return True
