@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import time
 import traceback
 from utils.logging import setup_logging, CustomAdapter
-from game_environment.utils import generate_agent_actions_map, check_agent_out_of_game, get_defined_valid_actions
+from game_environment.utils import generate_agent_actions_map, check_agent_out_of_game, get_defined_valid_actions, get_number_of_apples_by_tree
 from agent.agent import Agent
 from game_environment.server import start_server, get_scenario_map,  default_agent_actions_map, condition_to_end_game
 from llm import LLMModels
@@ -37,7 +37,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 50
+    rounds_count, steps_count, max_rounds = 0, 0, 10
     bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
@@ -66,10 +66,10 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             agent_reward = env.score[agent.name]
             if check_agent_out_of_game(observations):
                 logger.info('Agent %s was taken out of the game', agent.name)
-                agent.move(observations, scene_description, state_changes, game_time, rounds_count, agent_reward, agent_is_out=True)
+                agent.move(observations, scene_description, state_changes, game_time, rounds_count, env.get_current_global_map(), agent_reward, agent_is_out=True)
                 step_actions = new_empty_queue()
             else:
-                step_actions = agent.move(observations, scene_description, state_changes, game_time, rounds_count, agent_reward)
+                step_actions = agent.move(observations, scene_description, state_changes, game_time, rounds_count, env.get_current_global_map(), agent_reward)
 
             map_previous_to_actions = env.get_current_global_map()
             while not step_actions.empty():
@@ -102,13 +102,39 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                     step_actions = new_empty_queue()
             map_after_actions = env.get_current_global_map()
             own_actions = list()
+
+            # Precompute the number of apples by tree
+            apples_by_tree = get_number_of_apples_by_tree(map_previous_to_actions, agent.spatial_memory.global_trees_fixed)
+            set_of_remaining_apples_by_tree = {apples_by_tree[tree] for tree in apples_by_tree}
+
+            # Iterate over the matrix positions
             for row in range(len(map_previous_to_actions)):
-                for col in range(len(map_previous_to_actions[0])):
-                    if map_previous_to_actions[row][col] != map_after_actions[row][col]:
-                        if map_previous_to_actions[row][col] == 'A' and map_after_actions[row][col] != 'B':
-                            own_actions.append(f"Hello, I am {agent.name} and I ate an Apple at position [{row},{col}]")
-                        if map_previous_to_actions[row][col].isnumeric() and map_previous_to_actions[row][col]!=agent.agent_registry.agent_name_to_id[agent.name]:
-                            own_actions.append(f"Hello, I am {agent.name} and I Attacked to the agent {agent.agent_registry.agent_id_to_name[map_previous_to_actions[row][col]]} at position {row},{col}")
+                for col in range(len(map_previous_to_actions[row])):
+                    prev, after = map_previous_to_actions[row][col], map_after_actions[row][col]
+                    
+                    # Check if there's a change in the map at the current position
+                    if prev != after:
+                        # Handle apple consumption
+                        if prev == 'A' and after != 'B':
+                            message = f"Hello, I am {agent.name} and I ate an Apple at position [{row},{col}]"
+                            own_actions.append(message)
+                            
+                            # Update apple consumption count
+                            tree_index = agent.spatial_memory.global_trees_fixed[(row, col)][0]
+                            apple_count = apples_by_tree[tree_index]
+                            agent.apple_consumption_per_remaining[apple_count-1] += 1
+                            
+                            # Update remaining apples for all trees
+                            for tree in set_of_remaining_apples_by_tree:
+                                agent.remaining_total[tree - 1] += 1
+                        
+                        # Handle attacks
+                        if prev.isnumeric() and prev != agent.agent_registry.agent_name_to_id[agent.name]:
+                            attacked_agent = agent.agent_registry.agent_id_to_name[prev]
+                            message = f"Hello, I am {agent.name} and I Attacked to the agent {attacked_agent} at position {row},{col}"
+                            own_actions.append(message)
+
+            # Communicate the actions to the other agents
             agent.communicate_own_actions(own_actions, rounds_count)
 
 
@@ -126,6 +152,24 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
         logger.info('Round %s completed. Executed all the high level actions for each agent.', rounds_count)
         env.update_history_file(logger_timestamp, rounds_count, steps_count)
         time.sleep(0.01)
+    metrics = {
+        'updated_frequency_map': {},
+        'apple_consumption_per_remaining': {},
+        'remaining_total': {},
+        'react_per_round': {},
+        'explored_map_per_round': {},
+        'known_trees_per_round': {},
+        'attacks': {},
+    }
+    for agent in agents:
+        metrics['updated_frequency_map'][agent.name] = agent.spatial_memory.updated_frequency_map
+        metrics['apple_consumption_per_remaining'][agent.name] = agent.apple_consumption_per_remaining
+        metrics['remaining_total'][agent.name] = agent.remaining_total
+        metrics['react_per_round'][agent.name] = agent.reacted_times_per_round
+        metrics['explored_map_per_round'][agent.name] = agent.spatial_memory.explored_map_per_round
+        metrics['known_trees_per_round'][agent.name] = agent.spatial_memory.known_trees_per_round
+        metrics['attacks'][agent.name] = agent.attacks
+    env.write_snowartz_metrics(logger_timestamp, metrics)
     logger.info('Game ended after %s rounds', rounds_count)
 if __name__ == "__main__":
     args = get_args()

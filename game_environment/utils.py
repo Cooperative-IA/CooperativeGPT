@@ -190,3 +190,98 @@ def get_local_position_of_element(current_map: list[list[str]], element: str) ->
             if cell == element:
                 return (i, j)
     return None
+
+def get_number_of_apples_by_tree(global_map: list[list[str]], global_trees_fixed:dict) -> dict[str, int]:
+
+    matrix_global_map = "\n".join(["".join(row) for row in global_map]).split('\n')
+    trees = {}
+    for i, row in enumerate(matrix_global_map):
+        for j, element in enumerate(row):
+            if element == 'A':
+                if global_trees_fixed[(i, j)][0] not in trees:
+                    trees[global_trees_fixed[(i, j)][0]] = 1
+                else:
+                    trees[global_trees_fixed[(i, j)][0]] += 1
+    return trees
+
+def get_final_position_along_path(start, path):
+    x, y = start
+    for direction in path:
+        if direction == 'move up':
+            x -= 1
+        elif direction == 'move right':
+            y += 1
+        elif direction == 'move down':
+            x += 1
+        elif direction == 'move left':
+            y -= 1
+
+    return (x, y)
+
+def determine_target_orientation(current_position, target_position):
+    current_row, current_col = current_position
+    target_row, target_col = target_position
+
+    delta_row = abs(target_row - current_row)
+    delta_col = abs(target_col - current_col)
+
+    if delta_row > delta_col:
+        if target_row > current_row:
+            return 2
+        else:
+            return 0
+    else:
+        if target_col > current_col:
+            return 1
+        else:
+            return 3
+
+
+def generate_actions_for_looking_at(actual_orientation: int, desired_orientation: int):
+    """
+    Description: Generates the actions to look at a desired orientation
+
+    Args:
+        actual_orientation (int): Actual orientation of the agent
+        desired_orientation (int): Desired orientation of the agent
+
+    Returns:
+        list[str]: Actions to look at the desired orientation
+    """
+    actions = []
+    if actual_orientation == desired_orientation:
+        return actions
+
+    if actual_orientation == 0:
+        if desired_orientation == 1:
+            actions.append('turn right')
+        elif desired_orientation == 2:
+            actions.append('turn right')
+            actions.append('turn right')
+        elif desired_orientation == 3:
+            actions.append('turn left')
+    elif actual_orientation == 1:
+        if desired_orientation == 0:
+            actions.append('turn left')
+        elif desired_orientation == 2:
+            actions.append('turn right')
+        elif desired_orientation == 3:
+            actions.append('turn right')
+            actions.append('turn right')
+    elif actual_orientation == 2:
+        if desired_orientation == 0:
+            actions.append('turn right')
+            actions.append('turn right')
+        elif desired_orientation == 1:
+            actions.append('turn left')
+        elif desired_orientation == 3:
+            actions.append('turn right')
+    elif actual_orientation == 3:
+        if desired_orientation == 0:
+            actions.append('turn right')
+        elif desired_orientation == 1:
+            actions.append('turn right')
+            actions.append('turn right')
+        elif desired_orientation == 2:
+            actions.append('turn left')
+    return actions

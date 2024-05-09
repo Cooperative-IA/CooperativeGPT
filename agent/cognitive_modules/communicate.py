@@ -75,7 +75,7 @@ def communicate_environment_observations_to_agent(sender_agent_name:str, receive
             if sender_agent_known_map[x][y] in what_to_communicate(receiver_agent, what_mode):
                 receiver_agent.spatial_memory.update_pixel_if_newer(x, y, sender_agent_known_map[x][y], sender_agent.spatial_memory.timestamp_map[x][y])
 
-def communicate_observed_actions_to_agent(sender_agent_name:str, receiver_agent_name:str, agent_registry, observations:list[str], state_changes:list[str], rounds_count, game_time, poignancy) -> None:
+def communicate_observed_actions_to_agent(sender_agent_name:str, receiver_agent_name:str, agent_registry, observations:list[str], state_changes:list[str], game_time, rounds_count, poignancy) -> None:
     receiver_agent = agent_registry.get_agents([receiver_agent_name])[receiver_agent_name]
 
     for observation in observations:
@@ -84,7 +84,7 @@ def communicate_observed_actions_to_agent(sender_agent_name:str, receiver_agent_
             if receiver_agent_name != agent_name_match:
                 if receiver_agent.stm.add_known_agent_interaction(rounds_count, sender_agent_name, "attacks_received", agent_name_match):
                     receiver_agent.stm.add_known_agent_interaction(rounds_count, agent_name_match, "attacks_made", sender_agent_name)
-                    receiver_agent.ltm.add_memory(f'Agent {sender_agent_name} told me that he was attacked by {agent_name_match} at {game_time}', game_time, poignancy, {'type': 'observation'})
+                    receiver_agent.ltm.add_memory(f'Agent {sender_agent_name} told me that he was attacked by {agent_name_match} at round {rounds_count}', game_time, poignancy, {'type': 'observation'})
 
     for state_change in state_changes:
         _rounds_count = rounds_count
@@ -95,7 +95,7 @@ def communicate_observed_actions_to_agent(sender_agent_name:str, receiver_agent_
                 if sender_agent_name == "Pedro" or (sender_agent_name == "Juan" and agent_name_match == "Laura"):
                     _rounds_count -= 1
                 if receiver_agent.stm.add_known_agent_interaction(_rounds_count, agent_name_match, "ate_apple", apple_position):
-                    receiver_agent.ltm.add_memory(f'Agent {sender_agent_name} told me that {agent_name_match} ate an apple at {game_time}', game_time, poignancy, {'type': 'observation'})
+                    receiver_agent.ltm.add_memory(f'Agent {sender_agent_name} told me that {agent_name_match} ate an apple at round {rounds_count}', game_time, poignancy, {'type': 'observation'})
 
 def communicate_own_actions_to_agent(sender_agent_name:str, receiver_agent_name:str, agent_registry, actions:list[str], rounds_count, game_time, poignancy) -> None:
     receiver_agent = agent_registry.get_agents([receiver_agent_name])[receiver_agent_name]
@@ -105,12 +105,12 @@ def communicate_own_actions_to_agent(sender_agent_name:str, receiver_agent_name:
             agent_name_match = re.search(r"agent (\S+)", action).group(1)
             if receiver_agent.stm.add_known_agent_interaction(rounds_count, sender_agent_name, "attacks_made", agent_name_match):
                 receiver_agent.stm.add_known_agent_interaction(rounds_count, agent_name_match, "attacks_received", sender_agent_name)
-                receiver_agent.ltm.add_memory(f'Agent {sender_agent_name} told me that he attacked {agent_name_match} at {game_time}', game_time, poignancy, {'type': 'observation'})
+                receiver_agent.ltm.add_memory(f'Agent {sender_agent_name} told me that he attacked {agent_name_match} at round {rounds_count}', game_time, poignancy, {'type': 'observation'})
         elif "ate" in action.lower():
             apple_position = "".join(re.search(r'\[(\d+),\s*(\d+)\]', action).groups())
             if receiver_agent.stm.add_known_agent_interaction(rounds_count, sender_agent_name, "ate_apple", apple_position):
-                receiver_agent.ltm.add_memory(f'Agent {sender_agent_name} told me that he ate an apple at {game_time}', game_time, poignancy, {'type': 'observation'})
+                receiver_agent.ltm.add_memory(f'Agent {sender_agent_name} told me that he ate an apple at round {rounds_count}', game_time, poignancy, {'type': 'observation'})
 
-def communicate_reflection_to_agent(sender_agent_name:str, receiver_agent_name:str, agent_registry, reflection:str, game_time:str, poignancy:int) -> None:
+def communicate_reflection_to_agent(sender_agent_name:str, receiver_agent_name:str, agent_registry, reflection:str, game_time:str, rounds_count:str, poignancy:int) -> None:
     receiver_agent = agent_registry.get_agents([receiver_agent_name])[receiver_agent_name]
-    receiver_agent.ltm.add_memory(f'Reflection communicated by {sender_agent_name} at {game_time}:{reflection}', game_time, poignancy, {'type': 'reflection'})
+    receiver_agent.ltm.add_memory(f'Reflection communicated by {sender_agent_name} at round {rounds_count}:{reflection}', game_time, poignancy, {'type': 'reflection'})

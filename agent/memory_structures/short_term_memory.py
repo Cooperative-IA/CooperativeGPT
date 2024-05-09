@@ -76,9 +76,7 @@ class ShortTermMemory:
     def check_known_observation(self, observation: str) -> bool:
         if observation not in self.last_observations:
             self.last_observations.append(observation)
-            self.logger.info(f"New observation: {observation}, {self.last_observations}")
             return True
-        self.logger.info(f"Reppeated observation: {observation}, {self.last_observations}")
         return False
         
     def clear_last_observations(self) -> None:
@@ -86,7 +84,6 @@ class ShortTermMemory:
 
     def add_known_agent_interaction(self, rounds_count, agent, interaction, info) -> None:
         if self.check_known_observation(str(rounds_count)+agent + interaction + info):
-            self.logger.info(f"{self.name} learned that {agent} {interaction} {info} at round {rounds_count}")
             agent_interactions = self.memory.setdefault("known_agent_interactions", {}).setdefault(agent, {})
             if interaction == "ate_apple":
                 agent_interactions["apples_eaten"] = agent_interactions.get("apples_eaten", 0) + 1
@@ -95,7 +92,6 @@ class ShortTermMemory:
             elif interaction == "attacks_received":
                 agent_interactions["attacks_received"] = agent_interactions.get("attacks_received", 0) + 1
             return True
-        self.logger.info(f"{self.name} already knew that {agent} {interaction} {info} at round {rounds_count}")
         return False
 
     def get_known_agent_interactions(self, agent) -> dict:

@@ -4,23 +4,47 @@ from chromadb import Documents, EmbeddingFunction, Embeddings
 
 from llm import LLMModels
 
-def extract_answers(response: str) -> dict[str, str]:
+#def extract_answers(response: str) -> dict[str, str]:
+#    """Extracts the answers from the response. The answers are extracted by parsing the json part of the response.
+#    
+#    Args:
+#        response (str): Response from the LLM. The response should have a json code snippet with the answers. For example: ```json{"plan": "go to the kitchen", #"goals": "go to the kitchen"}```
+#
+#    Returns:
+#        dict[str, str]: Dictionary with the answers.
+#    """
+#    patt = re.compile(r'\s*```json\s*([\w\W\n\r\t]*?)\s*```\s*', re.MULTILINE)
+#    try:
+#        response = response.replace('\n', ' ') # Remove new lines to avoid errors on multiline double quotes
+#        answers = re.findall(patt, response)[0].strip() # Get the first json part of the response
+#        answers =  re.sub(r'(:\s*"[^"]+")\s*("[^"]+"\s*:)', r'\1, \2', answers) # Add missing commas between items
+#        answers = re.sub(r'"\s*,\s*}', '"}', answers) # Remove commas before the closing bracket
+#        parsed_answers = json.loads(answers)
+#    except:
+#        parsed_answers = {}
+#    return parsed_answers
+
+def extract_answers(response: str):
     """Extracts the answers from the response. The answers are extracted by parsing the json part of the response.
     
     Args:
-        response (str): Response from the LLM. The response should have a json code snippet with the answers. For example: ```json{"plan": "go to the kitchen", "goals": "go to the kitchen"}```
-
+        response (str): Response from the LLM. The response should have a json code snippet with the answers.
+    
     Returns:
         dict[str, str]: Dictionary with the answers.
     """
-    patt = re.compile(r'\s*```json\s*([\w\W\n\r\t]*?)\s*```\s*', re.MULTILINE)
+    patt = re.compile(r'\s*```json\s*([\w\W]*?)\s*```\s*', re.MULTILINE)
     try:
-        response = response.replace('\n', ' ') # Remove new lines to avoid errors on multiline double quotes
-        answers = re.findall(patt, response)[0].strip() # Get the first json part of the response
-        answers =  re.sub(r'(:\s*"[^"]+")\s*("[^"]+"\s*:)', r'\1, \2', answers) # Add missing commas between items
-        answers = re.sub(r'"\s*,\s*}', '"}', answers) # Remove commas before the closing bracket
-        parsed_answers = json.loads(answers)
-    except:
+        response = response.replace('\n', ' ')  # Remove new lines to handle multiline strings more reliably
+        json_str = re.findall(patt, response)[0].strip()  # Get the json part from the response
+
+        # Add missing commas between items
+        json_str = re.sub(r'(?<=["}\]])\s*(?=["{["])', ',', json_str)  # Add commas where needed
+        json_str = re.sub(r',\s*([}\]])', r'\1', json_str)  # Remove any misplaced commas before closing brackets or braces
+
+        parsed_answers = json.loads(json_str)  # Parse the corrected JSON string
+    except Exception as e:
+        print(f"Error parsing JSON: {e}")
         parsed_answers = {}
     return parsed_answers
 

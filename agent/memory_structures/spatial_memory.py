@@ -4,7 +4,7 @@ import logging
 import datetime
 
 from queue import Queue
-from game_environment.utils import connected_elems_map
+from game_environment.utils import connected_elems_map, determine_target_orientation, generate_actions_for_looking_at, get_final_position_along_path
 from utils.logging import CustomAdapter
 from utils.math import manhattan_distance
 from utils.route_plan import get_shortest_valid_route_snowartz
@@ -15,7 +15,7 @@ class SpatialMemory:
     Class for the spacial memory. Memories are stored in a dictionary.
     """
 
-    def __init__ (self, scenario_map: str, scenario_obstacles: list[str] = ['W']  ) -> None:
+    def __init__ (self, scenario_map: str, agent_id:str, scenario_obstacles: list[str] = ['W']) -> None:
         """
         Initializes the spacial memory.
 
@@ -41,7 +41,12 @@ class SpatialMemory:
         self.known_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
         #TODO: Change the timestamp to step_number
         self.timestamp_map = [[datetime.datetime.now() for _ in range(self.mapSize[1])] for _ in range(self.mapSize[0])]
+        self.updated_frequency_map = [[0 for _ in range(self.mapSize[1])] for _ in range(self.mapSize[0])]
         self.near_agents = list()
+        self.agent_id = agent_id 
+        self.explored_map_per_round = [0]
+        self.known_trees = set()
+        self.known_trees_per_round = [0]
     
     def get_observations_from_known_map(self, agent_registry):
         observations = list()
@@ -64,7 +69,7 @@ class SpatialMemory:
                     agent_name = agent_registry.agent_id_to_name[element]
                     observations.append(f"Observed agent {agent_name} at position {[i, j]}.")
         for tree, values in trees.items():
-            observations.append(f'Observed tree {tree} at position {values[2]}. This tree has {values[0]} apples remaining and {values[1]} grass for apples regrowing')
+            observations.append(f'Observed tree {tree}. This tree has {values[0]} apples remaining and {values[1]} grass for apples regrowing')
         return observations
         
     def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
@@ -84,25 +89,32 @@ class SpatialMemory:
         
         # By using the current observed map, we can update the known map
         self.update_known_map()
-
+        self.explored_map_per_round.append(self.get_percentage_known())
+        self.known_trees_per_round.append(self.get_known_trees())
 
     def update_known_map(self) -> None:
         """
         Updates the map with a new current map.
         """
         self.near_agents = list()
+        timestamp = datetime.datetime.now()
         for i, row in enumerate(self.current_observed_map.split('\n')):
             for j, element in enumerate(row):
                 if element != '-':
                     if re.match(r'^[0-9]$', element):
                         self.near_agents.append(element)
+                    if element == "#":
+                        element = self.agent_id
                     try:
                         global_position = self.get_global_position((i,j), self.get_local_self_position())
-                        self.update_pixel_if_newer(global_position[0], global_position[1], element, datetime.datetime.now())
-
+                        self.update_pixel_if_newer(global_position[0], global_position[1], element, timestamp)
                     except:
                         self.logger.error(f'Error updating the explored map with the element {element} {(i,j)} at position {global_position}')
                         continue
+        for i, row in enumerate(self.known_map):
+            for j, element in enumerate(row):
+                if element in self.near_agents or element == self.agent_id:
+                    self.update_pixel_if_newer(i, j, "?", timestamp)
 
     def get_percentage_known(self) -> float:
         """
@@ -114,8 +126,23 @@ class SpatialMemory:
         n_known = sum([row.count('?') for row in self.known_map])
         percentage = (1 - n_known / (self.mapSize[0] * self.mapSize[1])) * 100
         return float("{:.2f}".format(percentage))
+    
+    def get_known_trees(self):
+        tree_apple_count = {}
+        for i, row in enumerate(self.known_map):
+            for j, element in enumerate(row):
+                if element == 'G' or element == 'A':
+                    tree_id = self.global_trees_fixed[(i, j)][0]
+                    if tree_id not in tree_apple_count:
+                        tree_apple_count[tree_id] = 1
+                    else:
+                        tree_apple_count[tree_id] += 1
+        for tree_id, apple_count in tree_apple_count.items():
+            if apple_count >= int(len(self.global_trees[tree_id]['elements'])*0.5):
+                self.known_trees.add(tree_id)
+        return len(self.known_trees)
 
-    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True, optional_obstacles=['A'], reach_end=True) -> Queue[str] | list[str]:
+    def find_route_to_position(self, current_global_map, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True, optional_obstacles=['A'], reach_end=True) -> Queue[str] | list[str]:
         """
         Finds the shortest route to a position.
 
@@ -128,18 +155,21 @@ class SpatialMemory:
         Returns:
             Queue(str): Steps sequence for the route.
         """
-        self.logger.info(f'Finding route from {self.scenario_map} to {position_end}')
+        current_global_map = "\n".join(["".join(row) for row in current_global_map]).split('\n')
+        self.logger.info(f'Finding route in {current_global_map} from {self.position} to {position_end}')
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
-        route = get_shortest_valid_route_snowartz(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, optional_obstacles= optional_obstacles,orientation=orientation, reach_end=reach_end)
+        route = get_shortest_valid_route_snowartz(current_global_map, self.position, position_end, invalid_symbols=self.scenario_obstacles+["0","1","2"], optional_obstacles= optional_obstacles,orientation=orientation, reach_end=reach_end)
 
 
         if not include_last_pos and len(route) > 0:
             route = route[:-2] + route[-1:]
         
         # Adds a change on orientation on the last step of the route
-        if len(route) > 0:
+        if not reach_end:
+            route = route + generate_actions_for_looking_at(orientation, determine_target_orientation(get_final_position_along_path(self.position, route), position_end))
+        elif len(route) > 0:
             new_orientation = 'turn '+ route[-1].split(' ')[1]
             # If the new orientation is the same as the current one, we do not need to change it, if down we need to turn twice
             if new_orientation == 'turn down':
@@ -174,7 +204,7 @@ class SpatialMemory:
 
 
 
-    def get_steps_sequence(self, current_action) -> Queue[str]:
+    def get_steps_sequence(self, current_global_map, current_action) -> Queue[str]:
         """
         Returns a new steps sequence for the current action.
 
@@ -189,23 +219,23 @@ class SpatialMemory:
 
         if current_action.startswith(('grab ')) or current_action.startswith(('consume ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(end_position, self.orientation) 
+            sequence_steps = self.find_route_to_position(current_global_map, end_position, self.orientation) 
 
         elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False, reach_end=False)
+            sequence_steps = self.find_route_to_position(current_global_map, agent2attack_pos, self.orientation, include_last_pos=True, reach_end=False)
             sequence_steps.put('attack')
 
         elif current_action.startswith('clean '):
             dirt_pos = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(dirt_pos, self.orientation, include_last_pos=False)
+            sequence_steps = self.find_route_to_position(current_global_map, dirt_pos, self.orientation, include_last_pos=False)
             sequence_steps.put('clean')
 
         elif current_action.startswith('explore'):
             explore_pos = self.get_position_from_action(current_action)
             if not self.is_position_valid(explore_pos):
                 explore_pos = None
-            sequence_steps = self.generate_explore_sequence(explore_pos)
+            sequence_steps = self.generate_explore_sequence(current_global_map, explore_pos)
             
         elif current_action.startswith('avoid consuming'):
             sequence_steps.put('stay put')
@@ -240,7 +270,7 @@ class SpatialMemory:
             return (-1,-1)
         
     
-    def sort_observations_by_distance(self, observations: list[str]) -> list[str]:
+    def sort_observations_by_distance(self, observations: list[str], att_bandwidth:int) -> list[str]:
         """
         Sorts the observations by distance to the agent in ascending order.
 
@@ -252,10 +282,57 @@ class SpatialMemory:
         """
 
         observations_positions = [self.get_position_from_action(observation) for observation in observations]
-        observations_distances = [manhattan_distance(self.position, position) for position in observations_positions]
+        observations_distances = [manhattan_distance(self.position, position) if position != (-1, -1) else 0 for position in observations_positions]
+        x = observations_distances.count(0)
 
-        return sorted(observations, key=lambda x: observations_distances[observations.index(x)])
+        return sorted(observations, key=lambda x: observations_distances[observations.index(x)])[:att_bandwidth+x][::-1]
     
+    def sort_observations_by_distance(self, observations: list[str], att_bandwidth:int) -> list[str]:
+        """
+        Sorts the observations by distance to the agent. It always includes observations with a specific
+        condition (position not found, i.e., (-1, -1)) as prioritized by treating their distance as 0, 
+        and includes up to `att_bandwidth` non-prioritized observations based on their distance.
+
+        Args:
+            observations (list[str]): List of observations.
+            att_bandwidth (int): The maximum number of non-prioritized observations to return after sorting.
+
+        Returns:
+            list[str]: Sorted list of prioritized observations followed by up to `att_bandwidth` non-prioritized observations.
+        """
+
+        # Extract positions and calculate distances
+        observations_positions = [self.get_position_from_action(observation) for observation in observations]
+        observations_distances = [
+            (manhattan_distance(self.position, position) if position != (-1, -1) else 0)
+            for position in observations_positions
+        ]
+
+        # Combine observations with their distances for sorting
+        observations_with_distances = list(zip(observations, observations_distances))
+
+        # Sort based on distance
+        sorted_observations = sorted(observations_with_distances, key=lambda item: item[1])
+
+        # Separate prioritized (distance == 0) and non-prioritized observations
+        prioritized_observations = [obs for obs, dist in sorted_observations if dist == 0]
+        non_prioritized_observations = [obs for obs, dist in sorted_observations if dist != 0]
+
+        # Include all prioritized and up to `att_bandwidth` non-prioritized observations
+        result = non_prioritized_observations[:att_bandwidth] + prioritized_observations
+
+        return result
+
+
+    
+    def summarize_observations(self, observations: list[str]) -> str:
+        summarized_observations = []
+        for observation in observations:
+            if "Observed tree" in observation:
+                summarized_observations.append(observation)
+            elif "Observed agent" in observation:
+                summarized_observations.append(observation)
+        return summarized_observations
 
     def get_global_position(self, local_dest_pos: tuple[int, int], local_self_pos: tuple[int, int]) -> tuple[int, int]:
         """Get the global position of an element given its local position on the observed map.
@@ -299,7 +376,7 @@ class SpatialMemory:
         #        return (i, row.index('#'))
         return (9,5)
 
-    def generate_explore_sequence(self, position: str = None) -> Queue[str]:
+    def generate_explore_sequence(self, current_global_map, position: str = None) -> Queue[str]:
         """
         Generates a sequence of steps to explore the map.
         Takes a random position from the current_observed map
@@ -332,8 +409,8 @@ class SpatialMemory:
             destination = self.get_global_position((random_row, random_col), agent_local_pos)
 
         # Finds the shortest route to that position
-        self.logger.info(f"Finding route to {destination} from {self.position} with orientation {self.orientation} using the map {self.scenario_map}")
-        sequence_steps = self.find_route_to_position(destination, self.orientation)
+        self.logger.info(f"Finding route to {destination} from {self.position} with orientation {self.orientation} using the map {current_global_map}")
+        sequence_steps = self.find_route_to_position(current_global_map, destination, self.orientation)
         if sequence_steps.qsize() < 1:
             self.logger.error(f'Could not find a route from {position} to the destination {destination}')
             return new_empty_queue()
@@ -414,3 +491,4 @@ class SpatialMemory:
         if  new_timestamp > current_timestamp:
             self.known_map[x] = self.known_map[x][:y] + new_value + self.known_map[x][y+1:]
             self.timestamp_map[x][y] = new_timestamp
+            self.updated_frequency_map[x][y] += 1
