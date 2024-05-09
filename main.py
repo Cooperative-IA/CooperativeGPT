@@ -7,11 +7,14 @@ import traceback
 from utils.logging import setup_logging, CustomAdapter
 from game_environment.utils import generate_agent_actions_map, check_agent_out_of_game, get_defined_valid_actions
 from agent.agent import Agent
+from agent.human_agent import HumanAgent
 from game_environment.server import start_server, get_scenario_map,  default_agent_actions_map, condition_to_end_game
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
+from utils.agent_creator import agentCreator
 from utils.files import extract_players, persist_short_term_memories, create_directory_if_not_exists
+from utils.player_gui import PlayerGUI
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -21,13 +24,14 @@ load_dotenv(override=True)
 logger = logging.getLogger(__name__)
 rounds_count = 0
 
-def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) -> None:
+def game_loop(agents: list[Agent | HumanAgent], substrate_name:str, persist_memories:bool, gui:PlayerGUI) -> None:
     """Main game loop. The game loop is executed until the game ends or the maximum number of steps is reached.
 
     Args:
         agents (list[Agent]): List of agents.
         substrate_name (str): Name of the substrate.
         persist_memories (bool): Whether to persist the agents memories to the logs folder.
+        gui (PlayerGUI): GUI object.
     Returns:
         None
     """
@@ -47,6 +51,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
         # Reset the actions for each agent
         actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
         # Execute an action for each agent on each step
+        id_turn = 0
         for agent in agents:
             # Helps to define the dynamic number of bot steps per action as acumulated number
             accumulated_steps = 0
@@ -58,16 +63,20 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             state_changes = all_observations['state_changes']
             # Get the current observations and environment information
             game_time = env.get_time()
+            player_images, agents_orientations  = list(env.get_agents_view_imgs().values()), list(env.get_agents_orientations().values())
+            gui.update(player_images, agents_orientations, id_turn, "Aloooo observaciones mi papa")
+            
+            
             logger.info("\n\n" + f"Agent's {agent.name} turn".center(50, '#') + "\n")
             logger.info('%s Observations: %s, Scene descriptions: %s', agent.name, observations, scene_description)
             # Get the steps for the agent to execute a high level action
             agent_reward = env.score[agent.name]
             if check_agent_out_of_game(observations):
                 logger.info('Agent %s was taken out of the game', agent.name)
-                agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
+                agent.move(observations, scene_description, state_changes, game_time, gui, agent_reward , agent_is_out=True)
                 step_actions = new_empty_queue()
             else:
-                step_actions = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
+                step_actions = agent.move(observations, scene_description, state_changes, game_time, gui, agent_reward)
 
 
             while not step_actions.empty():
@@ -95,10 +104,12 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                     env.step(actions)
                     steps_count += 1
                     accumulated_steps += 1
+                    player_images, agents_orientations  = list(env.get_agents_view_imgs().values()), list(env.get_agents_orientations().values())
+                    gui.update(player_images, agents_orientations, id_turn, "")
                 except:
                     logger.exception("Error executing action %s", step_action)
                     step_actions = new_empty_queue()
-
+            id_turn += 1
             # Reset actions for the agent until its next turn
             actions[agent.name] = default_agent_actions_map()
             
@@ -135,6 +146,7 @@ if __name__ == "__main__":
     players_context = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
 
     players = extract_players(players_context)
+    players_names = [player['name'] for player in players]
     
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
     valid_actions = get_defined_valid_actions(game_name= args.substrate)
@@ -143,13 +155,18 @@ if __name__ == "__main__":
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
     # Create agents
-    agents = [Agent(name=player, data_folder=data_folder, agent_context_file=player_context,
-                    world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path) 
-              for player, player_context in zip(players, players_context)]
+    agents = [agentCreator(is_human_player=player.get('isHuman', False), name=player['name'], data_folder="data", agent_context_file=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode, prompts_folder=args.prompts_source,
+                           substrate_name=args.substrate, start_from_scene = scene_path) for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
+    env = start_server(players_names, init_timestamp=logger_timestamp, record=(not args.not_record), game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
+    
+    # Start the GUI 
+    
+    player_images  = list (env.get_agents_view_imgs().values())
+    gui = PlayerGUI(player_images,players_names)
+    gui.start_gui_thread()
+    
     logger = CustomAdapter(logger, game_env=env)
     # We are setting args.prompts_source as a global variable to be used in the LLMModels class
     llm = LLMModels()
@@ -158,7 +175,7 @@ if __name__ == "__main__":
     embedding_model = llm.get_embedding_model()
     gpt_best_model = llm.get_best_model()
     try:
-        game_loop(agents, args.substrate, args.persist_memories)
+        game_loop(agents, args.substrate, args.persist_memories, gui)
     except KeyboardInterrupt:
         logger.info("Program interrupted. %s rounds executed.", rounds_count)
     except Exception as e:

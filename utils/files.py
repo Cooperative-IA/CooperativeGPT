@@ -40,7 +40,7 @@ def load_config() -> dict:
     return config_file
 
 
-def extract_players(players_context:list[str]) -> list[str]:
+def extract_players(players_context:list[str]) -> list[dict]:
     """Extracts the players names from the players context list.
     Read each player context file as json and extract the player name
 
@@ -48,9 +48,9 @@ def extract_players(players_context:list[str]) -> list[str]:
         players_context (list[str]): List with the players context. Each element is a .json directory with the player context.
 
     Returns:
-        list[str]: List with the players names.
+        list[dict]: List with the info of the players.
     """
-    return [json.load(open(player_context))['name'] for player_context in players_context]
+    return [json.load(open(player_context)) for player_context in players_context]
 
 
 def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int, log_timestamp:str):
