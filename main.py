@@ -37,7 +37,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 10
+    rounds_count, steps_count, max_rounds = 0, 0, 6
     bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
@@ -107,6 +107,12 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             apples_by_tree = get_number_of_apples_by_tree(map_previous_to_actions, agent.spatial_memory.global_trees_fixed)
             set_of_remaining_apples_by_tree = {apples_by_tree[tree] for tree in apples_by_tree}
 
+            # Obtenemos todos los valores del diccionario
+            valores = list(apples_by_tree.values())
+
+            # Comparamos todos los valores con el primer valor de la lista
+            todos_iguales = all(valor == valores[0] for valor in valores)
+
             # Iterate over the matrix positions
             for row in range(len(map_previous_to_actions)):
                 for col in range(len(map_previous_to_actions[row])):
@@ -122,11 +128,12 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                             # Update apple consumption count
                             tree_index = agent.spatial_memory.global_trees_fixed[(row, col)][0]
                             apple_count = apples_by_tree[tree_index]
-                            agent.apple_consumption_per_remaining[apple_count-1] += 1
+                            if not todos_iguales:
+                                agent.apple_consumption_per_remaining[apple_count-1] += 1
                             
-                            # Update remaining apples for all trees
-                            for tree in set_of_remaining_apples_by_tree:
-                                agent.remaining_total[tree - 1] += 1
+                                # Update remaining apples for all trees
+                                for tree in set_of_remaining_apples_by_tree:
+                                    agent.remaining_total[tree - 1] += 1
                         
                         # Handle attacks
                         if prev.isnumeric() and prev != agent.agent_registry.agent_name_to_id[agent.name]:
@@ -158,8 +165,10 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
         'remaining_total': {},
         'react_per_round': {},
         'explored_map_per_round': {},
+        'updated_map_per_round': {},
         'known_trees_per_round': {},
         'attacks': {},
+        'reflections': {}
     }
     for agent in agents:
         metrics['updated_frequency_map'][agent.name] = agent.spatial_memory.updated_frequency_map
@@ -167,8 +176,10 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
         metrics['remaining_total'][agent.name] = agent.remaining_total
         metrics['react_per_round'][agent.name] = agent.reacted_times_per_round
         metrics['explored_map_per_round'][agent.name] = agent.spatial_memory.explored_map_per_round
+        metrics['updated_map_per_round'][agent.name] = agent.spatial_memory.updated_map_per_round
         metrics['known_trees_per_round'][agent.name] = agent.spatial_memory.known_trees_per_round
         metrics['attacks'][agent.name] = agent.attacks
+        metrics['reflections'][agent.name] = agent.reflections
     env.write_snowartz_metrics(logger_timestamp, metrics)
     logger.info('Game ended after %s rounds', rounds_count)
 if __name__ == "__main__":
@@ -208,7 +219,7 @@ if __name__ == "__main__":
     # Create agents
     agents = [Agent(name=player, data_folder=data_folder, agent_context_file=player_context,
                     world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, agent_registry=agent_registry) 
+                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, agent_registry=agent_registry, game_time = datetime.now().replace(minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")) 
               for player, player_context in zip(players, players_context)]
 
     # Start the game server

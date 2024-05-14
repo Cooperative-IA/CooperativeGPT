@@ -5,7 +5,7 @@ from queue import Queue
 import copy
 from typing import Union, Literal
 
-from agent.cognitive_modules.communicate import CommunicationMode, communicate_observed_actions_to_agent, communicate_environment_observations_to_agent, communicate_own_actions_to_agent, communicate_reflection_to_agent, whom_to_communicate
+from agent.cognitive_modules.communicate import CommunicationMode, answer_agreement_proposal, communicate_observed_actions_to_agent, communicate_environment_observations_to_agent, communicate_own_actions_to_agent, communicate_reflection_to_agent, get_agents_to_communicate_reflection, make_agreement_decision, whom_to_communicate
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
@@ -27,7 +27,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 25, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None, agent_registry=None) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 25, reflection_umbral: int = 30, agreement_umbral: int = 1, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v1", substrate_name = "commons_harvest_open", start_from_scene = None, agent_registry=None, game_time = None) -> None:
         """Initializes the agent.
 
         Args:
@@ -41,7 +41,7 @@ class Agent:
             mode (Mode, optional): Defines the type of architecture to use. Defaults to 'normal'.
             understanding_umbral (int, optional): Understanding umbral. The understanding umbral is the number of poignancy that the agent needs to accumulate to update its understanding (only the poignancy of reflections are taken in account). Defaults to 6.
             observations_poignancy (int, optional): Poignancy of the observations. Defaults to 10.
-            prompts_folder (str, optional): Folder where the prompts are stored. Defaults to "base_prompts_v0".
+            prompts_folder (str, optional): Folder where the prompts are stored. Defaults to "base_prompts_v1".
             substrate_name (str, optional): Name of the substrate. Defaults to "commons_harvest_open".
         """
         self.logger = logging.getLogger(__name__)
@@ -67,7 +67,8 @@ class Agent:
         self.stm.add_memory(memory=scenario_info['valid_actions'], key='valid_actions')
         self.stm.add_memory(memory= f"{self.name}'s bio: {self.stm.get_memory('bio')} \nImportant: make all your decisions taking into account {self.name}'s bio."  if self.stm.get_memory('bio') else "", key='bio_str')
         self.stm.add_memory(memory=("You have not performed any actions yet.",""), key='previous_actions')
-        
+        if self.stm.get_memory('bio'):
+            self.ltm.add_memory(f"{self.name}'s bio: {self.stm.get_memory('bio')} \nImportant: make all your decisions taking into account {self.name}'s bio.", game_time, self.observations_poignancy, {'type': 'perception'})
         if start_from_scene:
             self.ltm.load_memories_from_scene(scene_path = start_from_scene, agent_name=name)
             self.stm.load_memories_from_scene(scene_path = start_from_scene, agent_name=name)
@@ -80,6 +81,7 @@ class Agent:
         self.reacted_times = 0
         self.reacted_times_per_round = list()
         self.attacks = dict()
+        self.reflections = dict()
 
     def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, rounds_count, current_global_map,agent_reward: float = 0,  agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
@@ -107,13 +109,14 @@ class Agent:
             self.reacted_times_per_round.append(self.reacted_times)
             self.spatial_memory.explored_map_per_round.append(self.spatial_memory.get_percentage_known())
             self.spatial_memory.known_trees_per_round.append(self.spatial_memory.get_known_trees())
+            self.spatial_memory.updated_map_per_round.append(self.spatial_memory.get_percentage_map_is_updated(current_global_map))
             self.logger.info(f'{self.name} is out of the game, skipping its turn.')
             step_actions = Queue()
             return step_actions
 
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
-                                                    agent_current_scene['observation'])
+                                                    agent_current_scene['observation'], current_global_map)
         react, filtered_observations, state_changes = self.perceive(self.spatial_memory.get_observations_from_known_map(self.agent_registry), changes_in_state, game_time, rounds_count, agent_reward)
 
         
@@ -122,8 +125,8 @@ class Agent:
             self.generate_new_actions()
             self.reacted_times += 1
         self.reacted_times_per_round.append(self.reacted_times)
-        self.reflect(filtered_observations, rounds_count)
         self.communicate(observations, state_changes, rounds_count)
+        self.reflect(filtered_observations, rounds_count)
         
         step_actions = self.get_actions_to_execute(current_global_map)
             
@@ -318,9 +321,19 @@ class Agent:
         # Add the last reflection to the short term memory
         self.stm.add_memory(game_time, 'last_reflection')
 
-        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+        agents_memories = dict()
+        for agent in self.agent_registry.get_all_agents():
+            if agent != self.name:
+                agent_memories = retrieve_relevant_memories(self, query=f"What do I know about {agent} Agent?", max_memories=3)
+                agents_memories[agent] = agent_memories
+        
+        #for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+        for agent_name in get_agents_to_communicate_reflection(name=self.name, reflection=reflection, world_context=world_context, agent_bio=agent_bio_str, current_plan=self.stm.get_memory('current_plan'), agents_memories=agents_memories, prompts_folder=self.prompts_folder)['Agents']:
             communicate_reflection_to_agent(self.name, agent_name, self.agent_registry, reflection, game_time, rounds_count, self.observations_poignancy)
-  
+            if agent_name in self.reflections:
+                self.reflections[agent_name] += 1
+            else:
+                self.reflections[agent_name] = 1
     def communicate(self, observations:list[str], state_changes: list[str], rounds_count) -> None:
         update_observed_agents_actions(self.name, self.stm, observations, state_changes, rounds_count)
         for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):

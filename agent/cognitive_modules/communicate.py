@@ -1,4 +1,9 @@
+import os
 import re
+
+from llm import LLMModels
+from utils.llm import extract_answers
+
 class CommunicationMode:
 
     class Who:
@@ -114,3 +119,26 @@ def communicate_own_actions_to_agent(sender_agent_name:str, receiver_agent_name:
 def communicate_reflection_to_agent(sender_agent_name:str, receiver_agent_name:str, agent_registry, reflection:str, game_time:str, rounds_count:str, poignancy:int) -> None:
     receiver_agent = agent_registry.get_agents([receiver_agent_name])[receiver_agent_name]
     receiver_agent.ltm.add_memory(f'Reflection communicated by {sender_agent_name} at round {rounds_count}:{reflection}', game_time, poignancy, {'type': 'reflection'})
+
+
+def get_agents_to_communicate_reflection(name:str, reflection: str, world_context: str, agent_bio: str, current_plan:str, agents_memories: dict, prompts_folder = "base_prompts_v0"):
+
+
+    agents_memories_str = ""
+    for agent in agents_memories:
+        agents_memories_str += f"This is what currently I know about {agent} Agent: {', '.join(agents_memories[agent])}\n"
+
+    llm = LLMModels().get_main_model()
+    prompt_path = os.path.join(prompts_folder, 'whom_to_communicate.txt')
+    try:
+        response = llm.completion(prompt=prompt_path, inputs=[name, reflection, world_context, current_plan, agent_bio, agents_memories_str, ", ".join(list(agents_memories.keys()))])
+        agents_dict = extract_answers(response)
+        return agents_dict
+    except ValueError as e:
+        if str(e) == 'Prompt is too long':
+            llm = LLMModels().get_longer_context_fallback()
+            response = llm.completion(prompt=prompt_path, inputs=[name, reflection, world_context, current_plan, agent_bio, agents_memories_str, ", ".join(list(agents_memories.keys()))])
+            agents_dict = extract_answers(response)
+        else:
+            raise e
+        return agents_dict

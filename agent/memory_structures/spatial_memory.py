@@ -45,6 +45,7 @@ class SpatialMemory:
         self.near_agents = list()
         self.agent_id = agent_id 
         self.explored_map_per_round = [0]
+        self.updated_map_per_round = [0]
         self.known_trees = set()
         self.known_trees_per_round = [0]
     
@@ -72,7 +73,7 @@ class SpatialMemory:
             observations.append(f'Observed tree {tree}. This tree has {values[0]} apples remaining and {values[1]} grass for apples regrowing')
         return observations
         
-    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
+    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str, current_global_map) -> None:
         """
         Updates the spatial information of the agent.
 
@@ -91,6 +92,7 @@ class SpatialMemory:
         self.update_known_map()
         self.explored_map_per_round.append(self.get_percentage_known())
         self.known_trees_per_round.append(self.get_known_trees())
+        self.updated_map_per_round.append(self.get_percentage_map_is_updated(current_global_map))
 
     def update_known_map(self) -> None:
         """
@@ -492,3 +494,12 @@ class SpatialMemory:
             self.known_map[x] = self.known_map[x][:y] + new_value + self.known_map[x][y+1:]
             self.timestamp_map[x][y] = new_timestamp
             self.updated_frequency_map[x][y] += 1
+
+    def get_percentage_map_is_updated(self, current_global_map):
+        updated_cells = 0
+        current_global_map = "\n".join(["".join(row) for row in current_global_map]).split('\n')
+        for i, row in enumerate(self.known_map):
+            for j, element in enumerate(row):
+                if element == current_global_map[i][j]:
+                    updated_cells += 1
+        return updated_cells / (len(current_global_map) * len(current_global_map[0])) * 100
