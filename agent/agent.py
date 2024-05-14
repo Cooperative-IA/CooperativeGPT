@@ -5,7 +5,7 @@ from queue import Queue
 import copy
 from typing import Union, Literal
 
-from agent.cognitive_modules.communicate import CommunicationMode, answer_agreement_proposal, communicate_observed_actions_to_agent, communicate_environment_observations_to_agent, communicate_own_actions_to_agent, communicate_reflection_to_agent, get_agents_to_communicate_reflection, make_agreement_decision, whom_to_communicate
+from agent.cognitive_modules.communicate import CommunicationMode, communicate_observed_actions_to_agent, communicate_environment_observations_to_agent, communicate_own_actions_to_agent, communicate_reflection_to_agent, get_agents_to_communicate_reflection, whom_to_communicate
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
@@ -27,7 +27,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 25, reflection_umbral: int = 30, agreement_umbral: int = 1, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v1", substrate_name = "commons_harvest_open", start_from_scene = None, agent_registry=None, game_time = None) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 25, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v1", substrate_name = "commons_harvest_open", start_from_scene = None, agent_registry=None, game_time = None) -> None:
         """Initializes the agent.
 
         Args:
@@ -328,22 +328,22 @@ class Agent:
                 agents_memories[agent] = agent_memories
         
         #for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
-        for agent_name in get_agents_to_communicate_reflection(name=self.name, reflection=reflection, world_context=world_context, agent_bio=agent_bio_str, current_plan=self.stm.get_memory('current_plan'), agents_memories=agents_memories, prompts_folder=self.prompts_folder)['Agents']:
-            communicate_reflection_to_agent(self.name, agent_name, self.agent_registry, reflection, game_time, rounds_count, self.observations_poignancy)
-            if agent_name in self.reflections:
-                self.reflections[agent_name] += 1
-            else:
-                self.reflections[agent_name] = 1
+        #for agent_name in get_agents_to_communicate_reflection(name=self.name, reflection=reflection, world_context=world_context, agent_bio=agent_bio_str, current_plan=self.stm.get_memory('current_plan'), agents_memories=agents_memories, prompts_folder=self.prompts_folder)['Agents']:
+        #    communicate_reflection_to_agent(self.name, agent_name, self.agent_registry, reflection, game_time, rounds_count, self.observations_poignancy)
+        #    if agent_name in self.reflections:
+        #        self.reflections[agent_name] += 1
+        #    else:
+        #        self.reflections[agent_name] = 1
     def communicate(self, observations:list[str], state_changes: list[str], rounds_count) -> None:
-        update_observed_agents_actions(self.name, self.stm, observations, state_changes, rounds_count)
+        #update_observed_agents_actions(self.name, self.stm, observations, state_changes, rounds_count)
         for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
             communicate_environment_observations_to_agent(self.name, agent_name, self.agent_registry, CommunicationMode.What.ALL)
-            communicate_observed_actions_to_agent(self.name, agent_name, self.agent_registry, observations, state_changes, self.stm.get_memory('game_time'), rounds_count, self.observations_poignancy)
+            #communicate_observed_actions_to_agent(self.name, agent_name, self.agent_registry, observations, state_changes, self.stm.get_memory('game_time'), rounds_count, self.observations_poignancy)
 
-    def communicate_own_actions(self, actions: list[str], rounds_count) -> None:
-        update_own_actions(self.name, self.stm, actions, rounds_count, self.agent_registry)
-        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
-            communicate_own_actions_to_agent(self.name, agent_name, self.agent_registry, actions, rounds_count, self.stm.get_memory('game_time'), self.observations_poignancy)
+    #def communicate_own_actions(self, actions: list[str], rounds_count) -> None:
+    #    update_own_actions(self.name, self.stm, actions, rounds_count, self.agent_registry)
+    #    for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+    #        communicate_own_actions_to_agent(self.name, agent_name, self.agent_registry, actions, rounds_count, self.stm.get_memory('game_time'), self.observations_poignancy)
 
     def generate_new_actions(self) -> None:
         """

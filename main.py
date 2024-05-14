@@ -142,7 +142,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                             own_actions.append(message)
 
             # Communicate the actions to the other agents
-            agent.communicate_own_actions(own_actions, rounds_count)
+            #agent.communicate_own_actions(own_actions, rounds_count)
 
 
 
