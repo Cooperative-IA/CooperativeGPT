@@ -128,7 +128,18 @@ class ShortTermMemory:
                     parts.append(f"has received {actions['attacks_received']} attacks")
                 descriptions.append(f"So far, {name} {', and '.join(parts)}")
         return descriptions
+    
+    def get_current_agreements(self) -> dict:
+        return self.memory.get("current_agreements", {})
+    
+    def create_agreement(self, agent:str, agreement: str) -> None:
+        self.memory.setdefault("current_agreements", {})[agent] = agreement
 
+    def modify_agreement(self, agent:str, agreement: str) -> None:
+        self.memory.setdefault("current_agreements", {})[agent] = agreement
+
+    def revoke_agreement(self, agent:str) -> None:
+        self.memory.get("current_agreements", {}).pop(agent, None)
 
     def get_known_objects_by_key(self, object_key:str) -> set[str]:
         """Gets the known objects from the short term memory.

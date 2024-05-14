@@ -142,3 +142,51 @@ def get_agents_to_communicate_reflection(name:str, reflection: str, world_contex
         else:
             raise e
         return agents_dict
+
+def make_agreement_decision(name, rounds_count:int, world_context:str, agent_bio:str, current_plan:str,  agents_memories:dict, current_agreements:dict, prompts_folder:str = "base_prompts_v0"):
+    agents_memories_str = ""
+    for agent in agents_memories:
+        agents_memories_str += f"This is what currently I know about {agent} Agent:\n {', '.join(agents_memories[agent])}\n"
+
+    current_agreements_str = ""
+    for agent in current_agreements:
+        current_agreements_str += f"Currently I have an active agreement with {agent} Agent. This is the agreement: {current_agreements[agent]}\n"
+    llm = LLMModels().get_main_model()
+    prompt_path = os.path.join(prompts_folder, 'agreement_decision.txt')
+    try:
+        response = llm.completion(prompt=prompt_path, inputs=[name, rounds_count, world_context, current_plan, agent_bio, agents_memories_str, current_agreements_str, ", ".join(list(agents_memories.keys()))])
+        agents_dict = extract_answers(response)
+        return agents_dict
+    except ValueError as e:
+        if str(e) == 'Prompt is too long':
+            llm = LLMModels().get_longer_context_fallback()
+            response = llm.completion(prompt=prompt_path, inputs=[name, rounds_count, world_context, current_plan, agent_bio, agents_memories_str, current_agreements_str, ", ".join(list(agents_memories.keys()))])
+            agents_dict = extract_answers(response)
+        else:
+            raise e
+        return agents_dict
+    
+def answer_agreement_proposal(name, proposing_agent:str, proposal:str, action:str, rounds_count:int, world_context:str, agent_bio:str, current_plan:str,  agents_memories:dict, current_agreements:dict, prompts_folder:str = "base_prompts_v0"):
+    agents_memories_str = ""
+    for agent in agents_memories:
+        if agent == proposing_agent:
+            agents_memories_str += f"This is what currently I know about {agent} Agent:\n {', '.join(agents_memories[agent])}\n"
+
+    current_agreements_str = ""
+    for agent in current_agreements:
+        if agent == proposing_agent:
+            current_agreements_str += f"Currently I have an active agreement with {agent} Agent. This is the agreement: {current_agreements[agent]}\n"
+    llm = LLMModels().get_main_model()
+    prompt_path = os.path.join(prompts_folder, 'answer_agreement_proposal.txt')
+    try:
+        response = llm.completion(prompt=prompt_path, inputs=[name, rounds_count, world_context, current_plan, agent_bio, proposing_agent, agents_memories_str, current_agreements_str, proposal, action])
+        agents_dict = extract_answers(response)
+        return agents_dict
+    except ValueError as e:
+        if str(e) == 'Prompt is too long':
+            llm = LLMModels().get_longer_context_fallback()
+            response = llm.completion(prompt=prompt_path, inputs=[name, rounds_count, world_context, current_plan, agent_bio, proposing_agent, agents_memories_str, current_agreements_str, proposal, action])
+            agents_dict = extract_answers(response)
+        else:
+            raise e
+        return str(agents_dict["accept"]) == "True"

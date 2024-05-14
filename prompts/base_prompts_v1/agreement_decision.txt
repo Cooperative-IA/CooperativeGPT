@@ -1,0 +1,29 @@
+You have this information about an agent called <input1> at round <input2>:
+
+- Agent's Biography: <input5>
+- World Understanding: <input3>
+- Current Plan: <input4>
+
+Now, <input1> has to decide if create, modify or revoke an agreement with another agent.
+
+Here's what <input1> currently knows about the other agents:
+
+<input6>
+
+Here are the currently available agreements with the other agents. 
+
+<input7>
+
+Take into account that Agent <input1> can maintain only one agreement with each agent.
+
+Given this context, determine if <input1> should create, modify or revoke an agreement with any other agent of this list: <input8>
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
+
+```json
+{
+    "Agent": str \\ Name of the agent to create, modify or revoke an agreement with. If no action is needed, leave it empty.
+    "Action": str \\ "Create", "Modify", "Revoke" or "None".
+    "Agreement": str \\ If created or modified, include the terms of the agreement.
+    "Reasoning": str \\  Reasoning behind the decision.
+}```

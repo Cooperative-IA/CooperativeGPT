@@ -1,0 +1,24 @@
+You have this information about an agent named <input1> at round <input2>:
+
+- Agent's Biography: <input5>
+- World Understanding: <input3>
+- Current Plan: <input4>
+
+<input1> has received a proposal for <input10> an agreement from the <input6> agent. Now, <input1> must decide whether to accept or reject it.
+
+Here's what <input1> currently knows about the <input6> agent:
+
+<input7>
+
+<input8>
+
+This is the new agreement proposal: <input9>
+
+Given this context, determine if <input1> should accept the agreement proposed by <input6> agent.
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
+
+```json
+{
+    "accept": bool \\ True if <input1> should accept the agreement, False otherwise
+}```

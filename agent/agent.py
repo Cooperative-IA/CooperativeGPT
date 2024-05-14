@@ -51,6 +51,7 @@ class Agent:
         self.mode = mode
         self.att_bandwidth = att_bandwidth
         self.reflection_umbral = reflection_umbral
+        self.agreement_umbral = agreement_umbral
         self.agent_registry = agent_registry
         self.observations_poignancy = observations_poignancy
         ltm_folder = os.path.join(data_folder, 'ltm_database')
@@ -334,6 +335,8 @@ class Agent:
                 self.reflections[agent_name] += 1
             else:
                 self.reflections[agent_name] = 1
+        self.communicate_agreements(rounds_count, agents_memories)
+
     def communicate(self, observations:list[str], state_changes: list[str], rounds_count) -> None:
         update_observed_agents_actions(self.name, self.stm, observations, state_changes, rounds_count)
         for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
@@ -344,6 +347,43 @@ class Agent:
         update_own_actions(self.name, self.stm, actions, rounds_count, self.agent_registry)
         for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
             communicate_own_actions_to_agent(self.name, agent_name, self.agent_registry, actions, rounds_count, self.stm.get_memory('game_time'), self.observations_poignancy)
+
+    def communicate_agreements(self, rounds_count: int, agents_memories: dict) -> None:
+        if rounds_count != 0 and rounds_count % self.agreement_umbral == 0:
+            agreement_decision = make_agreement_decision(
+                name=self.name, 
+                rounds_count=rounds_count, 
+                world_context=self.stm.get_memory('world_context'), 
+                agent_bio=self.stm.get_memory('bio_str'), 
+                current_plan=self.stm.get_memory('current_plan'), 
+                agents_memories=agents_memories, 
+                current_agreements=self.stm.get_current_agreements(), 
+                prompts_folder=self.prompts_folder
+            )
+
+            action = agreement_decision["Action"]
+            if action != "None":
+                if action == "Revoke":
+                    agent = agreement_decision["Agent"]
+                    self.stm.revoke_agreement(agent)
+                    self.agent_registry.get_agents([agent])[agent].stm.revoke_agreement(agent)
+                else:
+                    self.process_create_or_modify(action, agreement_decision, agents_memories, rounds_count)
+
+    def process_create_or_modify(self, action: str, agreement_decision: dict, agents_memories: dict, rounds_count: int) -> None:
+        agent = agreement_decision["Agent"]
+        agreement = agreement_decision["Agreement"]
+
+        if answer_agreement_proposal(
+            self.name, agent, agreement, action, rounds_count, 
+            self.stm.get_memory('world_context'), self.stm.get_memory('bio_str'), 
+            self.stm.get_memory('current_plan'), agents_memories, self.stm.get_current_agreements(), 
+            self.prompts_folder
+        ):
+            # Ejecuta la acción correspondiente sobre el acuerdo
+            getattr(self.stm, f'{action.lower()}_agreement')(agent, agreement)
+            other_agent_stm = self.agent_registry.get_agents([agent])[agent].stm
+            getattr(other_agent_stm, f'{action.lower()}_agreement')(agent, agreement)
 
     def generate_new_actions(self) -> None:
         """
