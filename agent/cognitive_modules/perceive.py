@@ -2,7 +2,7 @@ import os
 from llm import LLMModels
 from utils.llm import extract_answers
 from agent.memory_structures.short_term_memory import ShortTermMemory
-
+from importlib import import_module
 def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str], changes_in_state: list[str], game_time: str, agent_bio: str = "", prompts_folder = "base_prompts_v0" ) -> tuple[bool, str]:
     """Decides if the agent should react to the observation.
 
@@ -69,21 +69,9 @@ def update_known_objects(observations: list[str], stm: ShortTermMemory, substrat
     Returns:
         None
     """
-    
-    if substrate_name == 'commons_harvest_open':
-        known_trees = list(stm.get_known_objects_by_key(object_key='known_trees'))
-
-        for observation in observations:
-            # Trees observations are like "Observed tree 2" we stract the number of the tree
-            if 'Observed tree' in observation:
-                tree_number = observation.split(' ')[2]
-                tree_position = ''.join(observation.split(' ')[5:7])[:-1]
-                if tree_number not in known_trees:
-                    known_trees.append((tree_number,tree_position))
+    substrate_utils_module =  import_module(f'game_environment.substrates.{substrate_name}_utilities.substrate_utils')
+    substrate_utils_module.update_known_objects(observations, stm)
         
-        known_trees = set(known_trees)
-        stm.set_known_objects_by_key(known_trees, 'known_trees')
-
 
 def create_memory(agent_name: str, curr_time: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str], position: list[int], orientation: str) -> str:
     """Creates a memory from the action, state changes, reward and observations.

@@ -13,7 +13,7 @@ from game_environment.playing_utils import level_playing_utils as level_playing_
 from game_environment.bots import get_bots_for_scenario, Bot
 from utils.logging import CustomAdapter
 from typing import Dict, Any
-import importlib
+from importlib import import_module
 import os
 
 # Import functions 
@@ -28,13 +28,14 @@ def import_game(substrate_name:str, kind_experiment:str = ""):
     """
     substrate_name = f'{substrate_name}___{kind_experiment}' if kind_experiment!="" else substrate_name
     game_module_path = f'game_environment.substrates.python.{substrate_name}'
-    game_module = importlib.import_module(game_module_path)
+    game_module = import_module(game_module_path)
     return game_module
 
 
 # Global variables
 ASCII_MAP = None
 game = None
+substrate_utils = None
 FLAGS = flags.FLAGS
 
 flags.DEFINE_integer('screen_width', 800,
@@ -164,11 +165,14 @@ def start_server(players: list[str],init_timestamp: str,  game_name: str = "comm
     Returns:
         A game environment
     """
-    #global ASCII_MAP
+    
     global game
+    global substrate_utils 
+    
     #Imports the game module
     game = import_game(game_name, kind_experiment)
-
+    substrate_utils =  import_module(f'game_environment.substrates.{game_name}_utilities.substrate_utils')
+    
     return run_episode(game_name, record, players, init_timestamp, scenario, kind_experiment)
 
 def get_scenario_map  (game_name:str)-> str:
@@ -230,6 +234,8 @@ def change_avatars_appearance(lab2d_settings: Dict[str, Any],is_focal_player: li
 def condition_to_end_game(substrate_name:str, current_map:list[str]):
     """
     Check if the game has ended
+    Function is extracted from the substrate utilities
+    the path is game_environment/substrates/{substrate_name}_utilities/substrate_utils.py
     Args:
         substrate_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
         current_map: The current map of the game
@@ -237,11 +243,4 @@ def condition_to_end_game(substrate_name:str, current_map:list[str]):
         A boolean indicating if the game has ended if condition for the specific substrate is met
     """
     
-    if substrate_name == "commons_harvest_open":
-        # Checks if there's any apple "A" in the current map
-        for row in current_map:
-            if "A" in row:
-                return False
-    
-    
-    return True
+    return substrate_utils.condition_to_end_game(current_map)

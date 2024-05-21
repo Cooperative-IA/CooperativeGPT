@@ -1,4 +1,4 @@
-from llm.openai import GPT35, Ada, GPT35_16K, GPT4
+from llm.openai import GPT35, Ada, GPT35_16K, GPT4, GPT4o
 from llm.base_llm import BaseLLM
 
 class LLMModels():
@@ -13,10 +13,11 @@ class LLMModels():
             "gpt-3.5": GPT35(),
             "gpt-3.5-16k": GPT35_16K(),
             "gpt-4": GPT4(),
+            "gpt-4o": GPT4o(), # GPT-4o 
             "ada": Ada()
             }
             self.instance.main_model = "gpt-3.5"
-            self.instance.best_model = "gpt-4"
+            self.instance.best_model = "gpt-3.5" # Avoid using gpt-4 for now
             self.instance.longer_context_fallback = "gpt-3.5-16k"
             self.instance.embedding_model = "ada"
         return self.instance
@@ -48,6 +49,13 @@ class LLMModels():
             BaseLLM: Best model
         """
         return self.llm_models[self.best_model]
+    
+    def get_gpt_4o_model(self) -> BaseLLM:
+        """Get the GPT-4 model
+        Returns:
+            BaseLLM: GPT-4 model
+        """
+        return self.llm_models["gpt-4o"]
     
     def get_costs(self) -> dict:
         """Get the costs of the models

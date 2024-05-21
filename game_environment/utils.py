@@ -3,55 +3,67 @@ import numpy as np
 from copy import deepcopy
 from scipy.ndimage import label, center_of_mass
 from collections import defaultdict
-
+from importlib import import_module
 from agent.agent import Agent
+import inflect 
 
 
-def parse_string_to_matrix(input_string):
+def parse_string_to_matrix(input_string:str):
+    """
+    Description: Parses a string into a matrix
+    
+    Args:
+        input_string (str): String to parse
+        
+    Returns:
+        np.array: Matrix
+    """
     rows = input_string.strip().split('\n')
     matrix = np.array([list(row) for row in rows])
     return matrix
 
 
-def matrix_to_string(matrix):
+def matrix_to_string(matrix:np.array):
+    """
+    Description: Converts a matrix into a string
+    
+    Args:
+        matrix (np.array): Matrix to convert
+        
+    Returns:
+        str: String
+    """
     rows = [''.join(row) for row in matrix]
     return '\n'.join(rows)
 
 
 def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
-    if game_name == 'commons_harvest_open':
-        return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
-                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
-                 'stay put: This action keep the agent in the same position.',
-                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
-                 ]
+    
+    """
+    Description: Returns the defined valid actions for the substrate
+    
+    Args:
+        substrate_name (str): Name of the substrate
         
-    elif game_name == 'clean_up':
-        return ['grab apple (x,y)', 
-                'attack player (player_name) at (x,y)',
-                'explore',
-                'clean dirt of river at (x,y)',
-                'go to river bank at (x,y)',
-                'go to apples field edge at (x,y)',]
+    Returns:
+        list: List of valid actions
+        
+    """
+    substrate_utils = import_module(f'game_environment.substrates.{game_name}_utilities.substrate_utils')
+    return substrate_utils.get_defined_valid_actions()
     
 def default_agent_actions_map(substrate_name:str = 'commons_harvest_open'):
     """
     Description: Returns the base action map for the agent
+    
+    Args:
+        substrate_name (str): Name of the substrate
+        
+    Returns:
+        dict: Base action map for the agent
     """
-
-    if substrate_name == 'commons_harvest_open':
-        return {
-            'move': 0,
-            'turn': 0,
-            'fireZap': 0,
-        }
-    elif substrate_name == 'clean_up':
-        return {
-            'move': 0,
-            'turn': 0,
-            'fireZap': 0,
-            'fireClean': 0,
-        }
+    substrate_utils = import_module(f'game_environment.substrates.{substrate_name}_utilities.substrate_utils')
+    return substrate_utils.default_agent_actions_map()
 
 
 def generate_agent_actions_map( action:str, base_action_map: dict):
@@ -192,3 +204,31 @@ def get_local_position_of_element(current_map: list[list[str]], element: str) ->
             if cell == element:
                 return (i, j)
     return None
+
+
+
+def get_matrix(map: str) -> np.array:
+    """Convert a map in ascci format to a matrix
+
+    Args:
+        map (str): Map in ascci format
+
+    Returns:
+        np.array: Map in matrix format
+    """
+    return np.array([[l for l in row] for row in map.split('\n')])
+
+@staticmethod
+def number_to_words(number: int) -> str:
+    """
+    Description: Returns the number in words
+    
+    Args:
+        number (int): Number to convert to words
+    Returns:
+        str: Number in words
+    """
+    p = inflect.engine()
+    words = p.number_to_words(number)
+    return words
+
