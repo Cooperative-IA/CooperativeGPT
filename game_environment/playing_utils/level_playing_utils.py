@@ -306,7 +306,7 @@ class Game:
         # Update the config with the overrides.
         full_config.lab2d_settings.update(config_overrides)
         # Create a descriptor to get the raw observations from the game environment
-        descriptor = SceneDescriptor(full_config)
+        descriptor = SceneDescriptor(full_config, substrate_name)
 
         # Define the player ids
         if player_prefixes is None:
