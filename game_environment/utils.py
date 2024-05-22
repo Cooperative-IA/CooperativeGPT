@@ -3,69 +3,73 @@ import numpy as np
 from copy import deepcopy
 from scipy.ndimage import label, center_of_mass
 from collections import defaultdict
-
+from importlib import import_module
 from agent.agent import Agent
+import inflect
 
 
-def parse_string_to_matrix(input_string):
+def parse_string_to_matrix(input_string:str):
+    """
+    Description: Parses a string into a matrix
+
+    Args:
+        input_string (str): String to parse
+
+    Returns:
+        np.array: Matrix
+    """
     rows = input_string.strip().split('\n')
     matrix = np.array([list(row) for row in rows])
     return matrix
 
 
-def matrix_to_string(matrix):
+def matrix_to_string(matrix:np.array):
+    """
+    Description: Converts a matrix into a string
+
+    Args:
+        matrix (np.array): Matrix to convert
+
+    Returns:
+        str: String
+    """
     rows = [''.join(row) for row in matrix]
     return '\n'.join(rows)
 
 
 def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
-    if game_name == 'commons_harvest_open':
-        return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
-                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
-                 'stay put: This action keep the agent in the same position.',
-                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
-                 ]
-        
-    elif game_name == 'clean_up':
-        return ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
-                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
-                 'stay put: This action keep the agent in the same position.',
-                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
-                 'clean river at (x,y)',
-                 'go to river bank at (x,y)',
-                 'go to apples field edge at (x,y)',]
-        
-    elif game_name == 'coins':
-        return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
-                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
-                 'stay put: This action keep the agent in the same position.',
-                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
-                 ]
-    
+
+    """
+    Description: Returns the defined valid actions for the substrate
+
+    Args:
+        substrate_name (str): Name of the substrate
+
+    Returns:
+        list: List of valid actions
+
+    """
+    substrate_utils = import_module(f'game_environment.substrates.{game_name}_utilities.substrate_utils')
+    return substrate_utils.get_defined_valid_actions()
+
 def default_agent_actions_map(substrate_name:str = 'commons_harvest_open'):
     """
     Description: Returns the base action map for the agent
-    """
 
-    if substrate_name == 'commons_harvest_open' or substrate_name == 'coins':
-        return {
-            'move': 0,
-            'turn': 0,
-            'fireZap': 0,
-        }
-    elif substrate_name == 'clean_up':
-        return {
-            'move': 0,
-            'turn': 0,
-            'fireZap': 0,
-            'fireClean': 0,
-        }
+    Args:
+        substrate_name (str): Name of the substrate
+
+    Returns:
+        dict: Base action map for the agent
+    """
+    substrate_utils = import_module(f'game_environment.substrates.{substrate_name}_utilities.substrate_utils')
+    return substrate_utils.default_agent_actions_map()
 
 
 def generate_agent_actions_map( action:str, base_action_map: dict):
     """
     Description: Generates the action map for the agent
-    
+
     Args:
         action (str): Action of the agent
         base_action_map (dict): Base action map for the agent
@@ -73,13 +77,13 @@ def generate_agent_actions_map( action:str, base_action_map: dict):
     Returns:
         dict: Action map for the agent
     """
-    
+
     if len(action.split(' ')) == 1:
         if action == 'attack':
             base_action_map['fireZap'] = 1
         elif action == 'clean':
             base_action_map['fireClean'] = 1
-    
+
     elif len(action.split(' ')) == 2:
 
         kind, dir = action.split(' ')
@@ -87,7 +91,7 @@ def generate_agent_actions_map( action:str, base_action_map: dict):
         if kind == 'move':
             int_dir = 1 if dir == 'up' else 2 if dir == 'right'\
                         else 3 if dir == 'down' else 4 if dir == 'left'\
-                        else 0 
+                        else 0
         elif kind == 'turn':
             int_dir = 1 if dir == 'right' else -1 if dir == 'left' else 0
         elif action == 'stay put':
@@ -106,7 +110,7 @@ def get_element_global_pos( element_local_pos, local_position, global_position, 
 
     Args:
         element_local (tuple): Local position of the element
-        local_position (tuple): Local position of the agent 
+        local_position (tuple): Local position of the agent
         global_position (tuple): Global position of the agent
         agent_orientation (int, optional): Orientation of the agent. Defaults to 0.
 
@@ -133,10 +137,10 @@ def get_element_global_pos( element_local_pos, local_position, global_position, 
 def check_agent_out_of_game(observations:list[str]):
    """
     Description: Checks if the agent is out of the game
-    
+
     Args:
         observations (list[str]): Observations of the agents
-    
+
     Returns:
         bool: True if the agent is out of the game, False otherwise
    """
@@ -164,7 +168,7 @@ def connected_elems_map(ascci_map: str | list[list[str]], elements_to_find):
             matrix = np.array(ascci_map)
 
         # Generate mask
-        mask = (matrix == elements_to_find[0]) 
+        mask = (matrix == elements_to_find[0])
         for elem in elements_to_find[1:]:
             mask |= (matrix == elem)
 
@@ -200,3 +204,30 @@ def get_local_position_of_element(current_map: list[list[str]], element: str) ->
             if cell == element:
                 return (i, j)
     return None
+
+
+
+def get_matrix(map: str) -> np.array:
+    """Convert a map in ascci format to a matrix
+
+    Args:
+        map (str): Map in ascci format
+
+    Returns:
+        np.array: Map in matrix format
+    """
+    return np.array([[l for l in row] for row in map.split('\n')])
+
+@staticmethod
+def number_to_words(number: int) -> str:
+    """
+    Description: Returns the number in words
+
+    Args:
+        number (int): Number to convert to words
+    Returns:
+        str: Number in words
+    """
+    p = inflect.engine()
+    words = p.number_to_words(number)
+    return words

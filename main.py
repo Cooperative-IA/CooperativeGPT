@@ -1,4 +1,5 @@
 from datetime import datetime
+from importlib import import_module
 import logging
 import os
 from dotenv import load_dotenv
@@ -121,6 +122,9 @@ if __name__ == "__main__":
     # Define the simulation mode
     mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
     
+    global substrate_utils
+    substrate_utils = import_module(f'game_environment.substrates.{args.substrate}_utilities.substrate_utils')
+    
     # If the experiment is "personalized", prepare a start_variables.txt file on config path
     # It will be copied from args.scene_path, file is called variables.txt 
     scene_path = None
@@ -137,9 +141,10 @@ if __name__ == "__main__":
     players = extract_players(players_context)
     
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
-    valid_actions = get_defined_valid_actions(game_name= args.substrate)
-    scenario_obstacles  = ['W', '$'] # TODO : Change this. This should be also loaded from the scenario file
-    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
+
+    # Load the scenario map, the valid actions and the scenario obstacles
+    scenario_info = substrate_utils.load_scenario_info()
+    
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
     # Create agents
