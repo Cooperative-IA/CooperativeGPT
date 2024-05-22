@@ -247,5 +247,9 @@ def condition_to_end_game(substrate_name:str, current_map:list[str]):
         # Checks if there's any trash "T" in the current map
         return False
     
+    if "coins" in substrate_name:
+        # Checks if there's any trash "T" in the current map
+        return False
+    
     logger.info(f"The game has ended due to the condition of the substrate {substrate_name}")
     return True

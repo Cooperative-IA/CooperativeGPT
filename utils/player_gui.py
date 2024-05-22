@@ -11,9 +11,10 @@ from tkinter import ttk
 import queue
 
 class PlayerGUI:
-    def __init__(self, player_images, player_names):
+    def __init__(self, player_images, player_names, substrate_name):
         self.player_images = player_images
         self.player_names = player_names
+        self.substrate_name = substrate_name
         self.root = tk.Tk()
         self.root.configure(bg='light gray')
         self.frame = tk.Frame(self.root, bg='light gray')
@@ -99,6 +100,8 @@ class PlayerGUI:
         
     def add_action_buttons(self):
         actions = ["go to", "immobilize player", "explore", "stay put"]
+        if self.substrate_name == "clean_up":
+            actions.append("clean river")
         for action in actions:
             button = tk.Button(self.left_panel, text=action, command=lambda a=action: self.handle_action(a))
             button.pack(pady=5)
@@ -119,7 +122,6 @@ class PlayerGUI:
             entry.pack()
             button = tk.Button(self.left_panel, text="Set position", command=lambda: self.update_action_text(f"{action} {entry.get()}"))
             button.pack()
-            self.able_to_move = True
         elif action == "immobilize player":
             self.listbox = tk.Listbox(self.left_panel)
             for name in self.player_names:
@@ -127,15 +129,19 @@ class PlayerGUI:
             self.listbox.pack()
             button = tk.Button(self.left_panel, text="Choose Player", command=lambda: self.choose_player(action))
             button.pack()
-            self.able_to_move = True
         elif action == "explore":
             label = tk.Label(self.left_panel, text="Exploring...")
             label.pack()
-            self.able_to_move = True
         elif action == "stay put":
             label = tk.Label(self.left_panel, text="Staying put...")
             label.pack()
-            self.able_to_move = True
+        elif action == "clean river":
+            entry = tk.Entry(self.left_panel)
+            entry.pack()
+            button = tk.Button(self.left_panel, text="Set position", command=lambda: self.update_action_text(f"{action} {entry.get()}"))
+            button.pack()
+            
+        self.able_to_move = True
 
     def update_action_text(self, text):
         self.right_panel.config(state=tk.NORMAL)

@@ -82,9 +82,6 @@ class Avatar:
                 f"state={self.avatar_state})")
 
 
-        
-
-
 class SceneDescriptor:
 
     def __init__(self, substrate_config):
@@ -94,8 +91,10 @@ class SceneDescriptor:
         self.last_map = None # Map of the inmediately last step
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"{avatar.name} is player {avatar_id}")
+    
+    
         
-
+        
     def get_avatars(self, names):
         avatars = {}
         for i, config in enumerate(self.substrate_config.lab2d_settings.simulation.gameObjects):
@@ -205,14 +204,78 @@ class SceneDescriptor:
     def reset_population(self):
         for avatar_id, avatar in self.avatars.items():
             avatar.reset_observation_variables()
+    def calculate_coins_colors(self, current_matrix_map, map_rgb):
+        """
+        Calculate the coins and colors in the map based on the text and RGB map 
+        coins are represented with a character "c" in the current_matrix_map. The colors will be extracted from the RGB map
+        which is a representation of the pixels in the map. We are using the shapes to identify the colors in the map.
+        
+        Args:
+            current_matrix_map (np.array): Matrix map with chars with the current state of the game, where the coins are represented with "c"
+            map_rgb (np.array): RGB map, pixels in the map with colors in [R, G, B] format.
+        
+        Returns:
+            np.array: Matrix map with the coins and colors replaced by the corresponding character.
+            Possible colors are "red"  (238, 102, 119) that is replaced by "r" and "yellow" that is replaced by "y" (204, 187, 68),
+        """
+        # Get the coins in the map
+        coins = np.where(current_matrix_map == "c")
+        coins = list(zip(coins[1], coins[0]))  # Reversed coordinates (y, x) due to numpy indexing
+        
+        matrix_map_width = current_matrix_map.shape[1]
+        matrix_map_height = current_matrix_map.shape[0]
+        
+        rgb_map_width = map_rgb.shape[1]
+        rgb_map_height = map_rgb.shape[0]
+        
+        # Scale factor for coordinates conversion
+        scale_x = rgb_map_width / matrix_map_width
+        scale_y = rgb_map_height / matrix_map_height
+        
+        for coin in coins:
+            x, y = coin
+            # Scale coordinates to match RGB map
+            x_rgb = int(x * scale_x)
+            y_rgb = int(y * scale_y)
+            x_rgb_end = int((x + 1) * scale_x)-1
+            y_rgb_end = int((y + 1) * scale_y)-1
+            # Check if the scaled coordinates are within the boundaries of the RGB map
+            if 0 <= x_rgb < rgb_map_width and 0 <= y_rgb < rgb_map_height:
+                # Print all the colors between the scaled coordinates                
+                for i in range(x_rgb, x_rgb_end):
+                    for j in range(y_rgb, y_rgb_end):
+                        color_char = self.get_color_name(map_rgb[j, i])
+                        if color_char == "r" or color_char == "y":
+                            current_matrix_map[y, x] = color_char
+                            break
 
+                
+        return current_matrix_map
+    def get_color_name(self, color):
+        """
+        Get the color name based on the RGB values
+        
+        Args:
+            color (np.array): RGB values
+        
+        Returns:
+            str: Color name
+        """
+        color = list(color)
+        if color == [238, 102, 119]:
+            return "r"
+        elif color == [204, 187, 68]:
+            return "y"
+        else:
+            return "u"  # Unknown color
     def parse_timestep(self, timestep):
         
         map = timestep.observation["GLOBAL.TEXT"].item().decode("utf-8")
         map = parse_string_to_matrix(map)
         zaps = timestep.observation["WORLD.WHO_ZAPPED_WHO"]
-
+        
         states = timestep.observation["WORLD.AVATAR_STATES"]
+        map = self.calculate_coins_colors(map, timestep.observation["WORLD.RGB"])
         for avatar_id, avatar in self.avatars.items():
             _id = avatar_id + 1
             position = timestep.observation[f"{_id}.POSITION"]

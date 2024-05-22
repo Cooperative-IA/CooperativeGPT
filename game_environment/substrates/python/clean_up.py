@@ -397,7 +397,7 @@ POTENTIAL_APPLE = {
         {
             "component": "AppleGrow",
             "kwargs": {
-                "maxAppleGrowthRate": 0.05,
+                "maxAppleGrowthRate": 0.005,
                 "thresholdDepletion": 0.4,
                 "thresholdRestoration": 0.0,
             }

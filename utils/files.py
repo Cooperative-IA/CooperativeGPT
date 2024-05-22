@@ -34,13 +34,13 @@ def load_config() -> dict:
     Returns:
         dict: Dictionary with the config file.
     """
-    
+
     with open("config/config.json") as json_file:
         config_file = json.load(json_file)
     return config_file
 
 
-def extract_players(players_context:list[str]) -> list[dict]:
+def extract_players(players_context:list[str]) -> list[str]:
     """Extracts the players names from the players context list.
     Read each player context file as json and extract the player name
 
@@ -48,9 +48,9 @@ def extract_players(players_context:list[str]) -> list[dict]:
         players_context (list[str]): List with the players context. Each element is a .json directory with the player context.
 
     Returns:
-        list[dict]: List with the info of the players.
+        list[str]: List with the players names.
     """
-    return [json.load(open(player_context)) for player_context in players_context]
+    return [json.load(open(player_context))['name'] for player_context in players_context]
 
 
 def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int, log_timestamp:str):
@@ -59,22 +59,22 @@ def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int
     First creates the file if it doesn't exist, then appends the memories to the file.
     By appending a line with {"rounds_count": rounds_count, "steps_count": steps_count, "memories": memories} to the file.
     Memories dict is a dict with the agent name as key and the agent short term memories as value.
-    
+
     Args:
         memories (dict): Dictionary with the short term memories of the agents.
         rounds_count (int): Number of rounds.
         steps_count (int): Number of steps.
     """
-    
+
     log_folder = f"logs/{log_timestamp}"
     file_path = f"{log_folder}/short_term_memories.txt"
 
     os.makedirs(log_folder, exist_ok=True)
-    
+
     for agent_name in memories.keys():
         memories[agent_name]['current_steps_sequence'] = ""
         memories[agent_name]['actions_sequence'] = ""
-        
+
     # Open the file in append+read mode
     with open(file_path, "a+") as file:
         # Move the file pointer to the beginning of the file to read its content
@@ -86,14 +86,14 @@ def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int
             file.write("\n")
         # Write (or append) the new dictionary to the file
         file.write(str(dict_to_write))
-            
-    
 
-@staticmethod 
+
+
+@staticmethod
 def create_directory_if_not_exists(directory_path:str):
     """
     Creates a directory if it doesn't exist.
-    
+
     Args:
         directory_path (str): Path to the directory.
     """

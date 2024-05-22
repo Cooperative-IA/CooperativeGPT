@@ -27,19 +27,27 @@ def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
                  ]
         
     elif game_name == 'clean_up':
-        return ['grab apple (x,y)', 
-                'attack player (player_name) at (x,y)',
-                'explore',
-                'clean dirt of river at (x,y)',
-                'go to river bank at (x,y)',
-                'go to apples field edge at (x,y)',]
+        return ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
+                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
+                 'stay put: This action keep the agent in the same position.',
+                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
+                 'clean river at (x,y)',
+                 'go to river bank at (x,y)',
+                 'go to apples field edge at (x,y)',]
+        
+    elif game_name == 'coins':
+        return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
+                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
+                 'stay put: This action keep the agent in the same position.',
+                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
+                 ]
     
 def default_agent_actions_map(substrate_name:str = 'commons_harvest_open'):
     """
     Description: Returns the base action map for the agent
     """
 
-    if substrate_name == 'commons_harvest_open':
+    if substrate_name == 'commons_harvest_open' or substrate_name == 'coins':
         return {
             'move': 0,
             'turn': 0,

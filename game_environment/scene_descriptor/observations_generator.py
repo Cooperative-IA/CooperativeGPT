@@ -139,6 +139,11 @@ class ObservationsGenerator (object):
                 # Get objects of clean up descriptions
                 items_descriptions = self.get_clean_up_descriptions(local_observation_map, local_map_position, global_position, agent_orientation)
                 list_of_observations.extend(items_descriptions)
+            
+            elif 'coins' in self.substrate_name :
+                # Get coins descriptions
+                coins_descriptions = self.get_coins_descriptions(local_observation_map, local_map_position, global_position, agent_orientation)
+                list_of_observations.extend(coins_descriptions)
 
             # Get agents observed descriptions
             agents_observed = self.get_agents_observed(local_observation_map, local_map_position, global_position, agent_orientation)
@@ -380,6 +385,32 @@ class ObservationsGenerator (object):
 
         return items_observed
 
+    def get_coins_descriptions (self, local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int):
+        """
+        Description: Returns a list with the descriptions of the coins observed by the agent
+
+        Args:
+            local_map (str): Local map in ascci format
+            local_position (tuple): Local position of the agent
+            global_position (tuple): Global position of the agent
+            agent_orientation (int): Orientation of the agent
+            
+        Returns:
+            list: List with the descriptions of the coins observed by the agent
+        """
+        
+        coins_observed = []
+        # Get coins (C) observed descriptions
+        for i, row in enumerate(local_map.split('\n')):
+            for j, char in enumerate(row):
+                if char == 'r' or char == 'R':
+                    coin_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                    coins_observed.append("Observed a red coin at position {}".format(coin_global_pos))
+                elif char == 'y' or char == 'Y':
+                    coin_global_pos = self.get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                    coins_observed.append("Observed a yellow coin at position {}".format(coin_global_pos))
+        return coins_observed
+    
     @staticmethod
     def number_to_words(number):
         """
