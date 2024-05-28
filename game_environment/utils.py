@@ -18,11 +18,10 @@ def matrix_to_string(matrix):
 
 def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
     if game_name == 'commons_harvest_open':
-        return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
-                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
-                 'stay put: This action keep the agent in the same position.',
-                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
-                 ]
+        return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in that position the agent will eat the apple there. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
+        'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, that agent would be immobilized and will be inactive for a few rounds, after those few rounds, it would be reinstanted on the game on another position.',
+        'stay put: This action keep the agent in the same position.',
+        'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.']
         
     elif game_name == 'clean_up':
         return ['grab apple (x,y)', 
@@ -204,18 +203,19 @@ def get_number_of_apples_by_tree(global_map: list[list[str]], global_trees_fixed
                     trees[global_trees_fixed[(i, j)][0]] += 1
     return trees
 
-def get_final_position_along_path(start, path):
+def get_final_position_along_path(start, path, orientation):
+    directions = ['move up', 'move right', 'move down', 'move left']
+    directions_ = directions[orientation:] + directions[:orientation]
     x, y = start
     for direction in path:
-        if direction == 'move up':
+        if directions_[directions.index(direction)] == 'move up':
             x -= 1
-        elif direction == 'move right':
+        elif directions_[directions.index(direction)] == 'move right':
             y += 1
-        elif direction == 'move down':
+        elif directions_[directions.index(direction)] == 'move down':
             x += 1
-        elif direction == 'move left':
+        elif directions_[directions.index(direction)] == 'move left':
             y -= 1
-
     return (x, y)
 
 def determine_target_orientation(current_position, target_position):
@@ -251,7 +251,6 @@ def generate_actions_for_looking_at(actual_orientation: int, desired_orientation
     actions = []
     if actual_orientation == desired_orientation:
         return actions
-
     if actual_orientation == 0:
         if desired_orientation == 1:
             actions.append('turn right')

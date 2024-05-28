@@ -8,7 +8,7 @@ from chromadb.utils import embedding_functions
 from utils.files import load_config
 from utils.time import str_to_timestamp
 from utils.logging import CustomAdapter
-from utils.llm import CustomEmbeddingFunction
+from utils.utils_llm import CustomEmbeddingFunction
 
 class LongTermMemory:
     """Class for long term memory. Memories are stored in the chromadb database.

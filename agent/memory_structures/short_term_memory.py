@@ -112,11 +112,11 @@ class ShortTermMemory:
             if name == self.name:
                 parts = []
                 if 'apples_eaten' in actions:
-                    parts.append(f"you have eaten {actions['apples_eaten']} apples")
+                    parts.append(f"I have eaten {actions['apples_eaten']} apples")
                 if 'attacks_made' in actions:
-                    parts.append(f"you have made {actions['attacks_made']} attacks")
+                    parts.append(f"I have made {actions['attacks_made']} attacks")
                 if 'attacks_received' in actions:
-                    parts.append(f"you have received {actions['attacks_received']} attacks")
+                    parts.append(f"I have received {actions['attacks_received']} attacks")
                 descriptions.append(f"So far, {', and '.join(parts)}")
             else:
                 parts = []
@@ -126,7 +126,7 @@ class ShortTermMemory:
                     parts.append(f"has made {actions['attacks_made']} attacks")
                 if 'attacks_received' in actions:
                     parts.append(f"has received {actions['attacks_received']} attacks")
-                descriptions.append(f"So far, {name} {', and '.join(parts)}")
+                descriptions.append(f"{name} {', and '.join(parts)}")
         return descriptions
 
 

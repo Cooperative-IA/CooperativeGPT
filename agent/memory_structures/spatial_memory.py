@@ -55,13 +55,13 @@ class SpatialMemory:
         for i, row in enumerate(self.known_map):
             for j, element in enumerate(row):
                 if element =='G':
-                    observations.append(f'Observed grass to grow apples at position {[i, j]}. This grass belongs to tree {self.global_trees_fixed[(i, j)][0]}.')
+                    observations.append(f'Observed grass to grow apples at position {[i, j]}, this grass belongs to tree {self.global_trees_fixed[(i, j)][0]}.')
                     if self.global_trees_fixed[(i, j)][0] not in trees:
                         trees[self.global_trees_fixed[(i, j)][0]] = [0, 1, self.global_trees_fixed[(i, j)][1]]
                     else:
                         trees[self.global_trees_fixed[(i, j)][0]][1] += 1
                 elif element == 'A':
-                    observations.append(f'Observed an apple at position {[i, j]}. This apple belongs to tree {self.global_trees_fixed[(i, j)][0]}.')
+                    observations.append(f'Observed an apple at position {[i, j]}, this apple belongs to tree {self.global_trees_fixed[(i, j)][0]}.')
                     if self.global_trees_fixed[(i, j)][0] not in trees:
                         trees[self.global_trees_fixed[(i, j)][0]] = [1, 0, self.global_trees_fixed[(i, j)][1]]
                     else:
@@ -70,7 +70,7 @@ class SpatialMemory:
                     agent_name = agent_registry.agent_id_to_name[element]
                     observations.append(f"Observed agent {agent_name} at position {[i, j]}.")
         for tree, values in trees.items():
-            observations.append(f'Observed tree {tree}. This tree has {values[0]} apples remaining and {values[1]} grass for apples regrowing')
+            observations.append(f'Observed tree {tree} with {values[0]} apples remaining and {values[1]} grass for apples regrowing')
         return observations
         
     def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str, current_global_map) -> None:
@@ -144,7 +144,7 @@ class SpatialMemory:
                 self.known_trees.add(tree_id)
         return len(self.known_trees)
 
-    def find_route_to_position(self, current_global_map, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True, optional_obstacles=['A'], reach_end=True) -> Queue[str] | list[str]:
+    def find_route_to_position(self, current_global_map, position_end: tuple, orientation:int, agent_registry, return_list: bool = False, include_last_pos=True, optional_obstacles=['A'], reach_end=True) -> Queue[str] | list[str]:
         """
         Finds the shortest route to a position.
 
@@ -162,7 +162,8 @@ class SpatialMemory:
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
-        route = get_shortest_valid_route_snowartz(current_global_map, self.position, position_end, invalid_symbols=self.scenario_obstacles+["0","1","2"], optional_obstacles= optional_obstacles,orientation=orientation, reach_end=reach_end)
+        
+        route = get_shortest_valid_route_snowartz(current_global_map, self.position, position_end, invalid_symbols=self.scenario_obstacles+[str(i) for i in range(len(agent_registry.agents_turn))], optional_obstacles= optional_obstacles,orientation=orientation, reach_end=reach_end)
 
 
         if not include_last_pos and len(route) > 0:
@@ -170,7 +171,7 @@ class SpatialMemory:
         
         # Adds a change on orientation on the last step of the route
         if not reach_end:
-            route = route + generate_actions_for_looking_at(orientation, determine_target_orientation(get_final_position_along_path(self.position, route), position_end))
+            route = route + generate_actions_for_looking_at(orientation, determine_target_orientation(get_final_position_along_path(self.position, route, orientation), position_end))
         elif len(route) > 0:
             new_orientation = 'turn '+ route[-1].split(' ')[1]
             # If the new orientation is the same as the current one, we do not need to change it, if down we need to turn twice
@@ -206,7 +207,7 @@ class SpatialMemory:
 
 
 
-    def get_steps_sequence(self, current_global_map, current_action) -> Queue[str]:
+    def get_steps_sequence(self, current_global_map, current_action, agent_registry) -> Queue[str]:
         """
         Returns a new steps sequence for the current action.
 
@@ -221,23 +222,23 @@ class SpatialMemory:
 
         if current_action.startswith(('grab ')) or current_action.startswith(('consume ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(current_global_map, end_position, self.orientation) 
+            sequence_steps = self.find_route_to_position(current_global_map, end_position, self.orientation, agent_registry) 
 
         elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(current_global_map, agent2attack_pos, self.orientation, include_last_pos=True, reach_end=False)
+            sequence_steps = self.find_route_to_position(current_global_map, agent2attack_pos, self.orientation, agent_registry, include_last_pos=True, reach_end=False)
             sequence_steps.put('attack')
 
         elif current_action.startswith('clean '):
             dirt_pos = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(current_global_map, dirt_pos, self.orientation, include_last_pos=False)
+            sequence_steps = self.find_route_to_position(current_global_map, dirt_pos, self.orientation, agent_registry, include_last_pos=False)
             sequence_steps.put('clean')
 
         elif current_action.startswith('explore'):
             explore_pos = self.get_position_from_action(current_action)
             if not self.is_position_valid(explore_pos):
                 explore_pos = None
-            sequence_steps = self.generate_explore_sequence(current_global_map, explore_pos)
+            sequence_steps = self.generate_explore_sequence(current_global_map, agent_registry, explore_pos)
             
         elif current_action.startswith('avoid consuming'):
             sequence_steps.put('stay put')
@@ -378,7 +379,7 @@ class SpatialMemory:
         #        return (i, row.index('#'))
         return (9,5)
 
-    def generate_explore_sequence(self, current_global_map, position: str = None) -> Queue[str]:
+    def generate_explore_sequence(self, current_global_map, agent_registry, position: str = None) -> Queue[str]:
         """
         Generates a sequence of steps to explore the map.
         Takes a random position from the current_observed map
@@ -412,7 +413,7 @@ class SpatialMemory:
 
         # Finds the shortest route to that position
         self.logger.info(f"Finding route to {destination} from {self.position} with orientation {self.orientation} using the map {current_global_map}")
-        sequence_steps = self.find_route_to_position(current_global_map, destination, self.orientation)
+        sequence_steps = self.find_route_to_position(current_global_map, destination, self.orientation, agent_registry)
         if sequence_steps.qsize() < 1:
             self.logger.error(f'Could not find a route from {position} to the destination {destination}')
             return new_empty_queue()

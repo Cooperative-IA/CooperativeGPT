@@ -5,17 +5,17 @@ from queue import Queue
 import copy
 from typing import Union, Literal
 
-from agent.cognitive_modules.communicate import CommunicationMode, answer_agreement_proposal, communicate_observed_actions_to_agent, communicate_environment_observations_to_agent, communicate_own_actions_to_agent, communicate_reflection_to_agent, get_agents_to_communicate_reflection, make_agreement_decision, whom_to_communicate
+from agent.cognitive_modules.communicate import CommunicationMode, communicate_observed_actions_to_agent, communicate_environment_observations_to_agent, communicate_own_actions_to_agent, communicate_reflection_to_agent, get_agents_to_communicate_reflection, whom_to_communicate
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
-from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory, update_known_objects, update_observed_agents_actions, update_own_actions
+from agent.cognitive_modules.perceive import create_agent_action_memory, create_environment_memory, should_react, update_known_agents, update_known_objects, update_observed_agents_actions, update_own_actions
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
 from agent.cognitive_modules.act import actions_sequence
 from agent.cognitive_modules.retrieve import retrieve_relevant_memories
-from agent.cooperative_modules.understanding import update_understanding, update_understanding_2, update_understanding_4
+from agent.cooperative_modules.understanding import update_understanding_4
 from utils.queue_utils import list_from_queue
 from utils.logging import CustomAdapter
 from utils.time import str_to_timestamp
@@ -105,7 +105,7 @@ class Agent:
         
         # If the agent is out of the game, it does not take any action
         if agent_is_out:
-            self.communicate(observations, changes_in_state, rounds_count)
+            self.communicate_observed_actions(observations, changes_in_state, rounds_count)
             self.reacted_times_per_round.append(self.reacted_times)
             self.spatial_memory.explored_map_per_round.append(self.spatial_memory.get_percentage_known())
             self.spatial_memory.known_trees_per_round.append(self.spatial_memory.get_known_trees())
@@ -125,10 +125,10 @@ class Agent:
             self.generate_new_actions()
             self.reacted_times += 1
         self.reacted_times_per_round.append(self.reacted_times)
-        self.communicate(observations, state_changes, rounds_count)
+        self.communicate_observed_actions(observations, state_changes, rounds_count)
         self.reflect(filtered_observations, rounds_count)
         
-        step_actions = self.get_actions_to_execute(current_global_map)
+        step_actions = self.get_actions_to_execute(current_global_map, self.agent_registry)
             
         return step_actions
     
@@ -188,10 +188,12 @@ class Agent:
         """
         action_executed = self.stm.get_memory('current_action')
         result = self.stm.describe_known_agents_interactions()
-        known_agent_interactions = '\n'.join(result) if result else None
+        known_agent_interactions = '. '.join(result) if result else None
         if is_agent_out:
-            memory = create_memory(self.name, rounds_count, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name(), known_agent_interactions, True)
-            self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+            environment_memory = create_environment_memory(rounds_count, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name())
+            self.ltm.add_memory(environment_memory, game_time, self.observations_poignancy, {'type': 'perception'})
+            agent_action_memory = create_agent_action_memory(rounds_count, known_agent_interactions)
+            self.ltm.add_memory(agent_action_memory, game_time, self.observations_poignancy, {'type': 'perception'})
             current_observation = '\n'.join(observations)
             self.stm.add_memory(current_observation, 'current_observation')
             return False, observations, changes_in_state
@@ -214,8 +216,10 @@ class Agent:
         # Create a memory from the observations, the changes in the state of the environment and the reward, and add it to the long term memory
         position = self.spatial_memory.position
         orientation = self.spatial_memory.get_orientation_name()
-        memory = create_memory(self.name, rounds_count, action_executed, changes, reward, summarized_observations, position, orientation, known_agent_interactions)
-        self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+        environment_memory = create_environment_memory(rounds_count, action_executed, changes, reward, summarized_observations, position, orientation)
+        self.ltm.add_memory(environment_memory, game_time, self.observations_poignancy, {'type': 'perception'})
+        agent_action_memory = create_agent_action_memory(rounds_count, known_agent_interactions)
+        self.ltm.add_memory(agent_action_memory, game_time, self.observations_poignancy, {'type': 'perception'})
 
         current_observation = '\n'.join(sorted_observations)
         self.stm.add_memory(current_observation, 'current_observation')
@@ -286,19 +290,24 @@ class Agent:
 
         # Get observations to reflect on
         last_reflection = self.stm.get_memory('last_reflection')
-        filter = {'$and': [{'type': 'perception'}, {'timestamp': {'$gt': str_to_timestamp(last_reflection, self.ltm.date_format)}}]}
+        observations_filter = {'$and': [{'type': 'perception'}, {'timestamp': {'$gt': str_to_timestamp(last_reflection, self.ltm.date_format)}}]}
         if last_reflection is None:
-            filter = {'type': 'perception'}
-        filtered_observations = self.ltm.get_memories(filter=filter)
+            observations_filter = {'type': 'perception'}
+        filtered_observations = self.ltm.get_memories(filter=observations_filter, limit=2)
+        reflections_filter = {'type': 'reflection'}
+        filtered_reflections = self.ltm.get_memories(filter=reflections_filter)
 
         observations_str = '\n'.join(filtered_observations['documents'])
+        reflections_str = '\n'.join(filtered_reflections['documents'])
+
+        statements = reflections_str + observations_str
 
         world_context = self.stm.get_memory('world_context')
         agent_bio_str = self.stm.get_memory('bio_str')        
         result = self.stm.describe_known_agents_interactions()
         known_agent_interactions = '\n'.join(result) if result else None
         # Get the relevant questions
-        relevant_questions = reflect_questions(self.name, world_context, observations_str, agent_bio_str, self.prompts_folder, known_agent_interactions)
+        relevant_questions = reflect_questions(self.name, world_context, statements, agent_bio_str, self.prompts_folder, known_agent_interactions)
         self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
         # Get the relevant memories for each question, relevant memories is a list of lists
         relevant_memories_list = [] 
@@ -328,16 +337,21 @@ class Agent:
                 agents_memories[agent] = agent_memories
         
         #for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
-        for agent_name in get_agents_to_communicate_reflection(name=self.name, reflection=reflection, world_context=world_context, agent_bio=agent_bio_str, current_plan=self.stm.get_memory('current_plan'), agents_memories=agents_memories, prompts_folder=self.prompts_folder)['Agents']:
-            communicate_reflection_to_agent(self.name, agent_name, self.agent_registry, reflection, game_time, rounds_count, self.observations_poignancy)
+        answer = get_agents_to_communicate_reflection(name=self.name, reflections=reflections, world_context=world_context, agent_bio=agent_bio_str, current_plan=self.stm.get_memory('current_plan'), agents_memories=agents_memories, prompts_folder=self.prompts_folder)
+        for agent_name in answer['Agents']:
+            communicate_reflection_to_agent(self.name, agent_name, self.agent_registry, answer["Reflection"], game_time, rounds_count, self.observations_poignancy)
             if agent_name in self.reflections:
                 self.reflections[agent_name] += 1
             else:
                 self.reflections[agent_name] = 1
-    def communicate(self, observations:list[str], state_changes: list[str], rounds_count) -> None:
-        update_observed_agents_actions(self.name, self.stm, observations, state_changes, rounds_count)
+
+    def communicate_environment_observations(self) -> None:
         for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
             communicate_environment_observations_to_agent(self.name, agent_name, self.agent_registry, CommunicationMode.What.ALL)
+
+    def communicate_observed_actions(self, observations:list[str], state_changes: list[str], rounds_count) -> None:
+        update_observed_agents_actions(self.name, self.stm, observations, state_changes, rounds_count, self.agent_registry)
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
             communicate_observed_actions_to_agent(self.name, agent_name, self.agent_registry, observations, state_changes, self.stm.get_memory('game_time'), rounds_count, self.observations_poignancy)
 
     def communicate_own_actions(self, actions: list[str], rounds_count) -> None:
@@ -375,7 +389,7 @@ class Agent:
 
 
 
-    def get_actions_to_execute(self, current_global_map) -> Queue:
+    def get_actions_to_execute(self, current_global_map, agent_registry) -> Queue:
         """
         Executes the current actions of the agent. 
         If the current gameloop is empty, it generates a new one.
@@ -396,7 +410,7 @@ class Agent:
             self.stm.add_memory(current_action, 'current_action')
             
             # Now defines a gameloop for the current action
-            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action = current_action)
+            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action, agent_registry)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
            
 
@@ -407,13 +421,13 @@ class Agent:
         while self.stm.get_memory('current_steps_sequence').empty() and self.stm.get_memory('current_action') != 'stay put':
             if self.stm.get_memory('actions_sequence').empty():
                 self.logger.warn(f'{self.name} current gameloop is empty and there are no more actions to execute, agent will explore')
-                steps_sequence = self.spatial_memory.generate_explore_sequence(current_global_map)
+                steps_sequence = self.spatial_memory.generate_explore_sequence(current_global_map, self.agent_registry)
                 self.stm.add_memory(steps_sequence, 'current_steps_sequence')
                 break 
             self.logger.warn(f'{self.name} current gameloop is empty, getting the next action')
             current_action = self.stm.get_memory('actions_sequence').get()
             self.stm.add_memory(current_action, 'current_action')
-            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action = current_action)
+            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action, agent_registry)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
             self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
     

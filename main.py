@@ -37,7 +37,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 6
+    rounds_count, steps_count, max_rounds = 0, 0, 100
     bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
@@ -100,6 +100,13 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
                 except:
                     logger.exception("Error executing action %s", step_action)
                     step_actions = new_empty_queue()
+            if not check_agent_out_of_game(observations):
+                all_observations =  env.get_observations_by_player(agent.name)
+                observations = all_observations['curr_state']
+                scene_description = all_observations['scene_description']
+                agent.spatial_memory.update_current_scene(scene_description['global_position'], scene_description['orientation'],\
+                                                        scene_description['observation'], env.get_current_global_map())
+                agent.communicate_environment_observations()
             map_after_actions = env.get_current_global_map()
             own_actions = list()
 

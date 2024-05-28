@@ -1,7 +1,7 @@
 import os
 import re
 from llm import LLMModels
-from utils.llm import extract_answers
+from utils.utils_llm import extract_answers
 from agent.memory_structures.short_term_memory import ShortTermMemory
 
 def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str], changes_in_state: list[str], rounds_count: str, agent_bio: str = "", prompts_folder = "base_prompts_v0" ) -> tuple[bool, str]:
@@ -86,7 +86,7 @@ def update_known_objects(observations: list[str], stm: ShortTermMemory, substrat
         stm.set_known_objects_by_key(known_trees, 'known_trees')
 
 
-def create_memory(agent_name: str, rounds_count: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str], position: list[int], orientation: str, known_agent_interactions:str) -> str:
+def create_environment_memory(rounds_count: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str], position: list[int], orientation: str) -> str:
     """Creates a memory from the action, state changes, reward and observations.
 
     Args:
@@ -103,25 +103,29 @@ def create_memory(agent_name: str, rounds_count: str, action: str|None, state_ch
         str: Memory.
     """
 
-    memory = f'This is a past memory done at round {rounds_count}:'
+    memory = f'This is a past memory done at round {rounds_count}: '
     if action is not None:
-        memory += f'In the previous round I took the action "{action}".'
+        memory += f'In the previous round I took the action "{action}". '
     if state_changes:
         state_changes = ', '.join(state_changes)
         memory += f'. In the round {rounds_count} I observed the following changes in the environment: {state_changes}.'
-    memory += f'In round {rounds_count} the reward I had earnead up to that round was {reward}. I was at the position {position} looking to the {orientation}.'
+    memory += f'In round {rounds_count} the reward I had earnead up to that round was {int(reward)}. I was at the position {position} looking to the {orientation}. '
     if curr_observations:
-        curr_observations = ', '.join(curr_observations)
-        memory += f'In that moment (round {rounds_count}) I observed the following:{curr_observations}'
+        curr_observations = '. '.join(curr_observations)
+        memory += f'. In that moment (round {rounds_count}) I observed the following: {curr_observations}. '
     else:
-        memory += f'In that moment I could not observe anything.'
-    if known_agent_interactions:
-        memory += f'In that moment I knew the following interactions between agents: {known_agent_interactions}'
-    else:
-        memory += f'In that moment I did not know any interactions between agents.'
+        memory += f'In that moment I could not observe anything. '
     return memory
 
-def update_observed_agents_actions(agent_name:str, stm:ShortTermMemory, observations:list[str], state_changes:list[str], rounds_count:int):
+def create_agent_action_memory(rounds_count: str, known_agent_interactions:str) -> str:
+    memory = f'This is a past memory done at round {rounds_count}: '
+    if known_agent_interactions:
+        memory += f'In round {rounds_count} I knew the following about the actions of the other agents: {known_agent_interactions}'
+    else:
+        memory += f'In round {rounds_count} I did not know nothing about any action of the other agents.'
+    return memory
+
+def update_observed_agents_actions(agent_name:str, stm:ShortTermMemory, observations:list[str], state_changes:list[str], rounds_count:int, agent_registry):
     for observation in observations:
         if "You were attacked" in observation:
             agent_name_match = re.search(r"attacked by agent (.*?) and currently", observation).group(1)
@@ -132,7 +136,7 @@ def update_observed_agents_actions(agent_name:str, stm:ShortTermMemory, observat
         if "took an apple from position" in state_change:
             agent_name_match = re.search(r"agent (\S+)", state_change).group(1)
             apple_position = "".join(re.search(r'\[(\d+),\s*(\d+)\]', state_change).groups())
-            if agent_name == "Pedro" or (agent_name == "Juan" and agent_name_match == "Laura"):
+            if agent_registry.get_agent_turn(agent_name) < agent_registry.get_agent_turn(agent_name_match):
                 _rounds_count -= 1
             stm.add_known_agent_interaction(_rounds_count, agent_name_match, "ate_apple", apple_position)
 

@@ -4,22 +4,25 @@ You have this information about an agent called <input1>:
 - World Understanding: <input3>
 - Current Plan: <input4>
 
-While following its plan, <input1> had the following reflection: <input2>
+While following its plan, <input1> had the following reflections:
 
-Now, <input1> needs to decide which other agents to share this information with.
+<input2>
+
+Now, <input1> needs to decide which reflection and which other agents to share this information with.
 
 Here's what <input1> knows about the other agents:
 
 <input6>
 
-Given this context, determine the appropriate agents for <input1> to share the information with from the list: <input7>
+Given this context, determine the most important reflection and the appropriate agents for <input1> to share the information with from the list: <input7>
 
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
 
 ```json
 {
+    "Reflection": string \\ The most important reflection from the list
     "Agents": list \\ List of agents with whom <input1> should share the information. If none are suitable, this should be an empty list.
-    "Reasoning": str \\  Explanation of why these agents were chosen or why no sharing is appropriate
+    "Reasoning": string \\  Explanation of why these agents were chosen or why no sharing is appropriate
 }```
 
 

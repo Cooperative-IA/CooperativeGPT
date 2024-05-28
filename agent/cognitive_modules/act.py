@@ -3,7 +3,7 @@ from queue import Queue
 import logging
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from llm import LLMModels
-from utils.llm import extract_answers
+from utils.utils_llm import extract_answers
 from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
