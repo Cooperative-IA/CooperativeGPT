@@ -123,7 +123,7 @@ if __name__ == "__main__":
     mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
     
     global substrate_utils
-    substrate_utils = import_module(f'game_environment.substrates.{args.substrate}_utilities.substrate_utils')
+    substrate_utils = import_module(f'game_environment.substrates.utilities.{args.substrate}.substrate_utils')
     
     # If the experiment is "personalized", prepare a start_variables.txt file on config path
     # It will be copied from args.scene_path, file is called variables.txt 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
 
     # Load the scenario map, the valid actions and the scenario obstacles
-    scenario_info = substrate_utils.load_scenario_info()
+    scenario_info = substrate_utils.load_scenario_info(players_context)
     
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)

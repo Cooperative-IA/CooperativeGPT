@@ -44,7 +44,7 @@ class ObservationsGenerator (object):
         self.other_players_symbols = [str(i) for i in range(len(players_names))]
         self.observed_changes = {name: [] for name in players_names}
         self.substrate_name = substrate_name
-        self.substrate_utils_module = import_module(f'game_environment.substrates.{substrate_name}_utilities.substrate_utils')
+        self.substrate_utils_module = import_module(f'game_environment.substrates.utilities.{substrate_name}.substrate_utils')
 
         self.connected_elments = self.substrate_utils_module.get_connected_elements(global_map)
 
@@ -122,7 +122,7 @@ class ObservationsGenerator (object):
             agent_orientation = agent_dict['orientation']
 
             # Get observed changes in the environment. If the agent is observing, the changes are stored in the observed_changes dictionary
-            observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, agent_orientation, game_time)
+            observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, agent_orientation, game_time, agent_name)
             self.observed_changes[agent_name].extend(observed_changes)
 
     def get_observed_changes_per_agent(self, agent_name: str) -> list[tuple[str, str]]:
@@ -188,7 +188,7 @@ class ObservationsGenerator (object):
 
         return self.substrate_utils_module.get_specific_substrate_obs(local_observation_map, local_map_position, global_position, agent_orientation, connected_elments, symbols)
 
-    def get_observed_changes(self, observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str) -> list[tuple[str, str]]:
+    def get_observed_changes(self, observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, agent_name:str) -> list[tuple[str, str]]:
         """Calls the specific substrate observation function of the substrate utilities module
             It creates a list of tuples with the changes in the environment and the game time
 
@@ -199,9 +199,10 @@ class ObservationsGenerator (object):
             agent_global_position (tuple): Global position of the agent
             agent_orientation (int): Orientation of the agent
             game_time (str): Current game time
+            agent_name (str): Name of the agent
 
         Returns:
             list[tuple[str, str]]: List of tuples with the changes in the environment, and the game time
         """
 
-        return self.substrate_utils_module.get_observed_changes(observed_map, last_observed_map, agent_local_position, agent_global_position, agent_orientation, game_time, self.players_names)
+        return self.substrate_utils_module.get_observed_changes(observed_map, last_observed_map, agent_local_position, agent_global_position, agent_orientation, game_time, self.players_names, agent_name)

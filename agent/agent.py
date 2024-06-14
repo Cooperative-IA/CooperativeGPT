@@ -49,7 +49,7 @@ class Agent:
         self.logger = CustomAdapter(self.logger)
         self.substrate_name = substrate_name
         global substrate_utils
-        substrate_utils = import_module(f'game_environment.substrates.{self.substrate_name}_utilities.substrate_utils')
+        substrate_utils = import_module(f'game_environment.substrates.utilities.{self.substrate_name}.substrate_utils')
         
         self.name = name
         self.mode = mode

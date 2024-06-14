@@ -39,6 +39,28 @@ def load_config() -> dict:
         config_file = json.load(json_file)
     return config_file
 
+def get_players_context_paths(agents_bio_dir: str) -> list[str]:
+    """
+    Get the paths of the players context files from the agents bio directory.
+    The players context files are the .json files that contain the players context.
+    
+    Args:
+        agents_bio_dir (str): Path to the agents bio directory.
+        
+    Returns:
+        list[str]: List with the paths of the players context files. 
+    """
+    
+    paths_list = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
+    
+    # Sort the list by the player's id, ids is in string, "agent_1", "agent_2", etc. This list only contain .jsons files names. Data shoud be evaluated to sort.
+    evaluated_data = [json.load(open(player_context)) for player_context in paths_list]
+    
+    # Now we zip the evaluated data with the paths_list and sort the zipped list by the player's id
+    paths_list = [path for _, path in sorted(zip(evaluated_data, paths_list), key=lambda x: x[0]["id"])]
+    
+    return paths_list
+    
 
 def extract_players(players_context:list[str]) -> list[str]:
     """Extracts the players names from the players context list.
@@ -50,7 +72,11 @@ def extract_players(players_context:list[str]) -> list[str]:
     Returns:
         list[str]: List with the players names.
     """
-    return [json.load(open(player_context))['name'] for player_context in players_context]
+    list_of_players = [json.load(open(player_context)) for player_context in players_context]
+    # Sort the list by the player's id, ids is in string, "agent_1", "agent_2", etc
+    #list_of_players.sort(key=lambda x: x["id"])
+    # Return the names of the players
+    return  [player["name"] for player in list_of_players]
 
 
 def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int, log_timestamp:str):

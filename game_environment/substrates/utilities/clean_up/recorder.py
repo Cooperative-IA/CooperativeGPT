@@ -22,7 +22,7 @@ def record(record_obj, timestep, description: dict):
         if description["effective_zap"]:
             record_obj.effective_attack_object[agent]['effective_attack'] += 1
 
-def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict):
+def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict, previous_map: list[list[str]]):
     """
     Record the game state before the agents take any action
 

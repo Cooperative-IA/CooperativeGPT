@@ -22,7 +22,12 @@ class SpatialMemory:
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
+        
+        print('*'*150)
+        print(scenario_map)
         self.scenario_map = scenario_map.split('\n')[1:-1]
+        print(self.scenario_map)
+        print('*'*150)
         self.position = (-1,-1) # Inits the position of the agent
         self.orientation = 0
         self.current_observed_map = None

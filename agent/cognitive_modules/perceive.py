@@ -69,7 +69,7 @@ def update_known_objects(observations: list[str], stm: ShortTermMemory, substrat
     Returns:
         None
     """
-    substrate_utils_module =  import_module(f'game_environment.substrates.{substrate_name}_utilities.substrate_utils')
+    substrate_utils_module =  import_module(f'game_environment.substrates.utilities.{substrate_name}.substrate_utils')
     substrate_utils_module.update_known_objects(observations, stm)
         
 

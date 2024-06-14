@@ -2,5 +2,6 @@
     "id": "agent_1",
     "name": "Juan",
     "role": "Consumer",
-    "bio": ""
+    "team": "yellow",
+    "bio": "You are part of the yellow team."
 }

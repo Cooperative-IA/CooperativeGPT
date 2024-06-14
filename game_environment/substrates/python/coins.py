@@ -31,7 +31,7 @@ PrefabConfig = game_object_utils.PrefabConfig
 # Warning: setting `_ENABLE_DEBUG_OBSERVATIONS = True` may cause slowdown.
 _ENABLE_DEBUG_OBSERVATIONS = False
 
-MANDATED_NUM_PLAYERS = 2  # TODO
+MANDATED_NUM_PLAYERS = 4  # TODO
 
 COIN_PALETTES = {
     "coin_red": shapes.get_palette((238, 102, 119)),    # Red.
@@ -80,6 +80,8 @@ def get_ascii_map(
 
   # Join list of strings into single string.
   ascii_map = "".join(ascii_map)
+  # Add a blank line at the beginning and end of the map. All maps are formatted this way.
+  ascii_map = "\n" + ascii_map + "\n"
   return ascii_map
 
 # `prefab` determines which prefab game object to use for each `char` in the
@@ -611,8 +613,10 @@ def build(
 ) -> Mapping[str, Any]:
   """Build the coins substrate given player roles."""
   #assert len(roles) == MANDATED_NUM_PLAYERS, "Wrong number of players"
-  # Randomly choose colors.
-  coin_type_a, coin_type_b = random.sample(tuple(COIN_PALETTES), k=2)
+  ### Randomly choose colors.
+  #coin_type_a, coin_type_b = random.sample(tuple(COIN_PALETTES), k=2)
+  #Select coin_type_a as the yellow coin and coin_type_b as the red coin
+  coin_type_a, coin_type_b =  "coin_yellow", "coin_red"
   # Manually build avatar config.
   num_players = MANDATED_NUM_PLAYERS
   player_color_palettes = get_player_color_palettes(

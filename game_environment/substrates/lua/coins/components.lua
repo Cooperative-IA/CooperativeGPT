@@ -93,8 +93,8 @@ end
 function Coin:onEnter(enteringGameObject, contactName)
   local simulation = self.gameObject.simulation
   assert(
-    simulation:getNumPlayers() <= 2, 'We only allow 1 or 2 players in Coins.')
-
+    simulation:getNumPlayers() <= 8, 'We only allow 1 or 2 players in Coins.')
+  --local file_to_write = 'coin_collection.txt'
   if contactName == 'avatar' then
     local coinState = self.gameObject:getState()
     if coinState ~= self._waitState then
@@ -111,6 +111,18 @@ function Coin:onEnter(enteringGameObject, contactName)
         'PlayerCoinType')
       local playerCoinType = playerCoinTypeComponent:getCoinType()
 
+      -- Required changes for Team Coins.
+      local teamIndex = playerIndex % 2
+      if teamIndex == 0 then
+        teamIndex = 2
+      end
+
+      -- Write on the coin collection file. The playerCoinType variable and the coinState variable are the coin types of the player and the coin respectively.
+      --local file = io.open(file_to_write, 'a')
+      -- Write team index, player index, player coin type, and coin state.
+      --file:write(teamIndex .. ' ' .. playerIndex .. ' ' .. playerCoinType .. ' ' .. coinState .. '\n')
+      --file:write(playerCoinType .. ' ' .. coinState .. '\n')
+      --file:close()
       -- Check for match between this coin's type and collecting player's type.
       if playerCoinType == coinState then
         -- Reward collecting player and others for match.
@@ -119,9 +131,9 @@ function Coin:onEnter(enteringGameObject, contactName)
         avatarComponent:addReward(selfReward)
         local otherReward = roleComponent:getRewardOtherForMatch(
             self._config.rewardOtherForMatch)
-        self:rewardOthers(otherReward, playerIndex)
+        self:rewardOthers(otherReward, teamIndex)
         -- Record collection event.
-        coinsCollected(playerIndex, playerIndex):val(1)
+        coinsCollected(teamIndex, teamIndex):val(1)
         partnerTracker:reportMatch()
       else
         -- Reward collecting player and others for mismatch.
@@ -130,10 +142,10 @@ function Coin:onEnter(enteringGameObject, contactName)
         avatarComponent:addReward(selfReward)
         local otherReward = roleComponent:getRewardOtherForMismatch(
             self._config.rewardOtherForMismatch)
-        self:rewardOthers(otherReward, playerIndex)
+        self:rewardOthers(otherReward, teamIndex)
         -- Record collection event.
         coinIndex = playerIndex % 2 + 1
-        coinsCollected(playerIndex, coinIndex):val(1)
+        coinsCollected(teamIndex, coinIndex):val(1)
         partnerTracker:reportMismatch()
       end
 

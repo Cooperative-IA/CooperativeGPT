@@ -1,4 +1,5 @@
 from datetime import datetime
+from importlib import import_module
 import logging
 import os
 from dotenv import load_dotenv
@@ -13,7 +14,7 @@ from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
 from utils.agent_creator import agentCreator
-from utils.files import extract_players, persist_short_term_memories, create_directory_if_not_exists
+from utils.files import extract_players, persist_short_term_memories, create_directory_if_not_exists, get_players_context_paths
 from utils.player_gui import PlayerGUI
 
 # Set up logging timestamp
@@ -131,6 +132,9 @@ if __name__ == "__main__":
 
     # Define the simulation mode
     mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
+        
+    global substrate_utils
+    substrate_utils = import_module(f'game_environment.substrates.utilities.{args.substrate}.substrate_utils')
     
     # If the experiment is "personalized", prepare a start_variables.txt file on config path
     # It will be copied from args.scene_path, file is called variables.txt 
@@ -143,14 +147,14 @@ if __name__ == "__main__":
     experiment_path = os.path.join("data", "defined_experiments", args.substrate)
     agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
     game_scenario = args.scenario if args.scenario != "default" else None
-    players_context = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
+    players_context = get_players_context_paths(agents_bio_dir)
 
     players_names = extract_players(players_context)
     
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
     valid_actions = get_defined_valid_actions(game_name= args.substrate)
     scenario_obstacles  = ['W', '$'] # TODO : Change this. This should be also loaded from the scenario file
-    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
+    scenario_info = substrate_utils.load_scenario_info(players_context)
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
     # Create agents

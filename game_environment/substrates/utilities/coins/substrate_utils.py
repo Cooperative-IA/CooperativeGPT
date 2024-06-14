@@ -1,3 +1,4 @@
+import json
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from game_environment.utils import connected_elems_map, get_element_global_pos, check_agent_out_of_game, get_matrix
 import numpy as np
@@ -6,10 +7,39 @@ from game_environment.server import get_scenario_map
 substrate_name = "coins"
 scenario_obstacles = ["W", "$"]
 
-def load_scenario_info():
-    return {'scenario_map': get_scenario_map(game_name=substrate_name), 
+
+
+def load_scenario_info(players_context: list[str]):
+    """
+    Description: Load the scenario information for the substrate
+    And set the agents context given from the main file
+    Args:
+        players_context (dict): Dictionary with the players context
+    Returns:
+        dict: Dictionary with the scenario information
+    """
+    global agents_context
+    agents_context = [json.load(open(player_context)) for player_context in players_context]
+    print("#"*120)
+    print("Agents context", agents_context)
+    print("#"*120)
+    return {'scenario_map': get_scenario_map(substrate_name), 
             'valid_actions': get_defined_valid_actions(), 
             'scenario_obstacles': scenario_obstacles}
+
+
+def get_agent_team_by_name(agent_name: str):
+    """
+    Description: Get the team of the agent by the name
+    
+    Args:
+        agent_name (str): Name of the agent
+        
+    Returns:
+        str: Team of the agent
+    """
+    return [context['team'] for context in agents_context if context['name'] == agent_name][0]
+
 
 def default_agent_actions_map():
     """
@@ -32,13 +62,13 @@ def get_defined_valid_actions():
     Returns:
         list: List of valid actions that will be given to the agent action module.
     """
-    return  ['go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [17, 23]', 
+    map_dimensions = get_scenario_map(substrate_name).split('\n')[1:-1]
+    height, width = len(map_dimensions) -1 , len(map_dimensions[0]) -1
+    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
                 'stay put: This action keep the agent in the same position.',
                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
                 ]
-    
-
     
 
 def update_known_objects(observations: list[str], stm: ShortTermMemory):
@@ -65,7 +95,7 @@ def get_textually_known_objects(stm: ShortTermMemory):
         str: Textual representation of the known objects. 
         For this substrate it will return nothing.
     """
-    return ""
+    return "" # For this substrate theres not need to update the known objects.
     
     
     
@@ -78,7 +108,7 @@ def condition_to_end_game( current_map:list[str]):
     Returns:
         A boolean indicating if the game has ended if condition for the specific substrate is met
     """
-    # For Clean Up we dont have a condition to end the game
+    # For Coins we dont have a condition to end the game according to the map state
     return False
 
 
@@ -93,7 +123,7 @@ def get_connected_elements(global_map: str):
     Returns:
         dict: Dictionary with the connected elements
     """
-    return {}
+    return {} # For this substrate theres not need to update the known objects.
     
     
     
@@ -113,23 +143,33 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
             list: List with the descriptions of the coins observed by the agent
         """
         
-        coins_observed = []
+        obaservations = []
         # Get coins (C) observed descriptions
         for i, row in enumerate(local_map.split('\n')):
             for j, char in enumerate(row):
                 if char == 'r' or char == 'R':
                     coin_global_pos = get_element_global_pos((i,j), local_position, global_position, agent_orientation)
-                    coins_observed.append("Observed a red coin at position {}".format(coin_global_pos))
+                    obaservations.append("Observed a red coin at position {}".format(coin_global_pos))
                 elif char == 'y' or char == 'Y':
                     coin_global_pos = get_element_global_pos((i,j), local_position, global_position, agent_orientation)
-                    coins_observed.append("Observed a yellow coin at position {}".format(coin_global_pos))
-        return coins_observed
+                    obaservations.append("Observed a yellow coin at position {}".format(coin_global_pos))
+                else:
+                    try:
+                        other_agent_id = int(char)
+                        other_agent_team = 'yellow' if other_agent_id%2 == 0  else 'red'
+                        other_agent_name = agents_context[other_agent_id]['name']
+                        other_agent_pos = get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                        obaservations.append(f"Observed agent {other_agent_name} from {other_agent_team} team at position {other_agent_pos}")
+                    except:
+                        pass
+                    
+        return obaservations
     
 
 
 
 
-def get_observed_changes(observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, players_names: dict) -> list[tuple[str, str]]:
+def get_observed_changes(observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, players_names: dict, agent_name:str) -> list[tuple[str, str]]:
     """Create a list of observations of the changes in the environment
     
     Args:
@@ -152,6 +192,7 @@ def get_observed_changes(observed_map: str, last_observed_map: str | None, agent
     
     curr_m = get_matrix(observed_map)
     last_m = get_matrix(last_observed_map)
+
     for index in np.ndindex(curr_m.shape):
         curr_el = curr_m[index]
         last_el = last_m[index]
@@ -166,23 +207,22 @@ def get_observed_changes(observed_map: str, last_observed_map: str | None, agent
             elif last_el == 'B':
                 pass
             # If an apple was taken
-            elif last_el == 'A':
-                agent_id = int(curr_el)
-                agent_name = players_names[agent_id]
+            elif last_el == 'y' or last_el == 'r':
+                color_coin = 'red' if last_el == 'r' else 'yellow'
+                agent_team = get_agent_team_by_name(agent_name)
+                other_agent_id = int(curr_el)
+                other_agent_name = players_names[other_agent_id]
+                other_agent_team = get_agent_team_by_name(other_agent_name)
                 el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Observed that agent {agent_name} took an apple from position {el_pos}.", game_time))
-            # If grass desappeared
-            elif last_el == 'G' and curr_el == 'F':
+                if other_agent_team == agent_team:
+                    observations.append((f"Observed that teammate {other_agent_name} took a {color_coin} coin at position {el_pos}.", game_time))
+                else:
+                    observations.append((f"Observed that agent {other_agent_name} from team {other_agent_team} took a {color_coin} coin at position {el_pos}.", game_time))
+            # If apple appeared
+            elif last_el == ' ' and (curr_el == 'r' or curr_el == 'y'):
                 el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Observed that the grass at position {el_pos} disappeared.", game_time))
-            # If grass appeared
-            elif last_el == 'F' and curr_el == 'G':
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Observed that grass to grow apples appeared at position {el_pos}.", game_time))
-            # If an apple appeared
-            elif last_el == 'G' and curr_el == 'A':
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Observed that an apple grew at position {el_pos}.", game_time))
+                color_coin = 'red' if curr_el == 'r' else 'yellow'
+                observations.append((f"Observed a {color_coin} coin appeared at position {el_pos}.", game_time))
 
     return observations
 

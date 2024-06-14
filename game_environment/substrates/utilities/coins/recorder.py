@@ -17,12 +17,25 @@ def record(record_obj, timestep, description: dict):
     # Keep track of how many times the agent effectively attacked
     if not hasattr(record_obj, 'effective_attack_object'):
         record_obj.effective_attack_object = {agent:{'effective_attack': 0} for agent in record_obj.player_names}
-
+    
+    if not hasattr(record_obj, 'collected_coins_object'):
+            record_obj.collected_coins_object = {agent:{'red_coins':0,  'yellow_coins':0} for agent in record_obj.player_names}
+            
     for agent, description in description.items():
         if description["effective_zap"]:
             record_obj.effective_attack_object[agent]['effective_attack'] += 1
+        
+        agent_position = (9,5)
+        previous_map = description["last_observation"]
+        #Transform it from str into list[list[str]]
+        previous_map = [list(row) for row in previous_map.split('\n') if row]
+        if previous_map[agent_position[0]][agent_position[1]] == 'y':
+            record_obj.collected_coins_object[agent]['yellow_coins'] += 1
+            #C
+        elif previous_map[agent_position[0]][agent_position[1]] == 'r':
+            record_obj.collected_coins_object[agent]['red_coins'] += 1
 
-def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict):
+def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict, previous_map: list[list[str]]):
     """
     Record the game state before the agents take any action
 
@@ -38,16 +51,29 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     if not hasattr(record_obj, 'attack_object'):
         record_obj.attack_object = {agent:{'decide_to_attack': 0} for agent in record_obj.player_names}
 
+    #if not hasattr(record_obj, 'collected_coins_object'):
+    #    record_obj.collected_coins_object = {agent:{'red_coins':0,  'yellow_coins':0} for agent in record_obj.player_names}
+        
     # Get the agents that are taking actions
     agents_taking_actions = [agent for agent in record_obj.player_names if agent not in agents_observing]
 
     for agent in agents_taking_actions:
         agent_id = record_obj.agents_ids[agent]
         agent_position = get_local_position_of_element(current_map, agent_id)
-        if agent_position is None:
+        if agent_position is None or previous_map is None:
             continue
+        #print(agent_position)
+        #print(previous_map)
+        #input("Press Enter to continue...")
+        # Check if the agent collected a coin
+        #if previous_map[agent_position[0]][agent_position[1]] == 'y':
+        #    record_obj.collected_coins_object[agent]['yellow_coins'] += 1
+            #C
+        #elif previous_map[agent_position[0]][agent_position[1]] == 'r':
+        #    record_obj.collected_coins_object[agent]['red_coins'] += 1
 
-
+        # Check for 
+        
         # Check if the agent decided to attack
         if current_actions_map:
             did_attack = current_actions_map[agent]['fireZap'] # This is a boolean (1 or 0)
@@ -71,9 +97,15 @@ def save_custom_indicators(record_obj):
     # Number of times the agent effectively attacked
     effective_attack = {agent: record_obj.effective_attack_object[agent]['effective_attack'] for agent in record_obj.effective_attack_object}
 
+    # Number of coins collected
+    collected_coins = {agent: record_obj.collected_coins_object[agent] for agent in record_obj.collected_coins_object}
+    
+    
+
     custom_indicators = {
         'times_decide_to_attack': times_decide_to_attack,
-        'effective_attack': effective_attack
+        'effective_attack': effective_attack,
+        'collected_coins': collected_coins
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:

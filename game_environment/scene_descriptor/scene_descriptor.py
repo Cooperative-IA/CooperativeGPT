@@ -94,7 +94,7 @@ class SceneDescriptor:
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"{avatar.name} is player {avatar_id}")
         global substrate_utils 
-        substrate_utils = import_module(f'game_environment.substrates.{substrate_name}_utilities.substrate_utils')
+        substrate_utils = import_module(f'game_environment.substrates.utilities.{substrate_name}.substrate_utils')
         
         
     def get_avatars(self, names):
@@ -108,7 +108,6 @@ class SceneDescriptor:
         map, zaps = self.parse_timestep(timestep)
         self.parse_zaps(zaps)
         self.compute_partial_observations(map, self.last_map)
-
         self.last_map = map
 
         result = {}

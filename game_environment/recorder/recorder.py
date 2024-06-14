@@ -27,7 +27,7 @@ class Recorder:
         # Import custom recorder functions for the substrate
         # Try to import the custom recorder functions for the substrate
         try:
-            custom_recorder_module = importlib.import_module(f"game_environment.substrates.{substrate_name}_utilities.recorder")
+            custom_recorder_module = importlib.import_module(f"game_environment.substrates.utilities.{substrate_name}.recorder")
             self._record = custom_recorder_module.record if hasattr(custom_recorder_module, 'record') else None
             self._record_game_state_before_actions = custom_recorder_module.record_game_state_before_actions if hasattr(custom_recorder_module, 'record_game_state_before_actions') else None
             self._record_elements_status = custom_recorder_module.record_elements_status if hasattr(custom_recorder_module, 'record_elements_status') else None
@@ -97,7 +97,7 @@ class Recorder:
             with open(os.path.join(self.log_path, "apples_history.txt"), "a") as f:
                 f.write(f"{self.step}: A_{apples} - D_{dirt}\n ")
 
-    def record_game_state_before_actions(self, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict):
+    def record_game_state_before_actions(self, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict, previous_map: list[list[str]]):
         """
         Record the game state before the agents take any action
 
@@ -107,7 +107,7 @@ class Recorder:
             agents_observing (list[str]): Agents that are not going to take any action
         """
         if self._record_game_state_before_actions:
-            self._record_game_state_before_actions(self, initial_map, current_map, agents_observing, current_actions_map)
+            self._record_game_state_before_actions(self, initial_map, current_map, agents_observing, current_actions_map, previous_map)
 
     def save_log(self):
         recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)

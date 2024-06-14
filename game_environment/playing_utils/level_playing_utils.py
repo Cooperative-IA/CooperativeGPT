@@ -441,18 +441,19 @@ class Game:
             return None, None
 
         self.game_steps += 1
-
         action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
-
+        prev_global_map = self.prev_global_map.copy() if hasattr(self, 'prev_global_map') else None
+        print(f'Previous global map: \n{prev_global_map}')
+        print(f'Current global map: \n{curr_global_map}')
         # Get the agents that are observing and didn't move
         agents_observing = []
         if current_actions_map:
             agents_observing = [agent_name for agent_name, action_map in current_actions_map.items() if action_map == default_agent_actions_map(self.substrate_name)]
 
         if self.record:
-            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, agents_observing, current_actions_map)
+            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, agents_observing, current_actions_map, prev_global_map)
 
         if self.first_move_done :
             # Get the next action map
@@ -516,7 +517,8 @@ class Game:
 
             # Update the time: One hour per step
             self.time += datetime.timedelta(hours=1)
-
+        self.prev_global_map = curr_global_map
+        
         # Get the raw observations from the environment after the actions are executed
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
 
@@ -534,6 +536,7 @@ class Game:
 
         self.curr_scene_description = description
         self.curr_global_map = curr_global_map
+        
         # Return the observations of each player and the descriptions
         # return self.observationsGenerator.get_all_observations_descriptions(str(description).strip(), agents_observing), description
 

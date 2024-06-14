@@ -171,7 +171,7 @@ def start_server(players: list[str],init_timestamp: str,  game_name: str = "comm
 
     #Imports the game module
     game = import_game(game_name, kind_experiment)
-    substrate_utils =  import_module(f'game_environment.substrates.{game_name}_utilities.substrate_utils')
+    substrate_utils =  import_module(f'game_environment.substrates.utilities.{game_name}.substrate_utils')
 
     return run_episode(game_name, record, players, init_timestamp, scenario, kind_experiment)
 

@@ -49,7 +49,7 @@ def get_defined_valid_actions(game_name:str = 'commons_harvest_open'):
         list: List of valid actions
 
     """
-    substrate_utils = import_module(f'game_environment.substrates.{game_name}_utilities.substrate_utils')
+    substrate_utils = import_module(f'game_environment.substrates.utilities.{game_name}.substrate_utils')
     return substrate_utils.get_defined_valid_actions()
 
 def default_agent_actions_map(substrate_name:str = 'commons_harvest_open'):
@@ -62,7 +62,7 @@ def default_agent_actions_map(substrate_name:str = 'commons_harvest_open'):
     Returns:
         dict: Base action map for the agent
     """
-    substrate_utils = import_module(f'game_environment.substrates.{substrate_name}_utilities.substrate_utils')
+    substrate_utils = import_module(f'game_environment.substrates.utilities.{substrate_name}.substrate_utils')
     return substrate_utils.default_agent_actions_map()
 
 
