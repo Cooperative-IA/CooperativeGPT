@@ -7,12 +7,12 @@ def run_simulation(simulation_id, start_delay):
     time.sleep(start_delay)  # Delay for the staggered start time
     command = [
         "python", "main.py",
-        "--substrate=commons_harvest_open",
+        "--substrate=coins",
         "--scenario=",
-        "--agents_bio_config=all_coop",
+        "--agents_bio_config=no_bio_4",
         "--world_context=context_with_definitions",
         "--llm_model=gpt-3.5",
-        f"--simulation_id=sim_{str(simulation_id).format(2)}",
+        f"--simulation_id=sim_prueba_{str(simulation_id).format(2)}",
     ]
     subprocess.run(command)
 

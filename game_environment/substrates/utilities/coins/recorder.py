@@ -25,15 +25,8 @@ def record(record_obj, timestep, description: dict):
         if description["effective_zap"]:
             record_obj.effective_attack_object[agent]['effective_attack'] += 1
         
-        agent_position = (9,5)
-        previous_map = description["last_observation"]
-        #Transform it from str into list[list[str]]
-        previous_map = [list(row) for row in previous_map.split('\n') if row]
-        if previous_map[agent_position[0]][agent_position[1]] == 'y':
-            record_obj.collected_coins_object[agent]['yellow_coins'] += 1
-            #C
-        elif previous_map[agent_position[0]][agent_position[1]] == 'r':
-            record_obj.collected_coins_object[agent]['red_coins'] += 1
+        
+        
 
 def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict, previous_map: list[list[str]]):
     """
@@ -45,7 +38,6 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         current_map (list[list[str]]): Current map
         agents_observing (list[str]): Agents that are not going to take any action
     """
-    # Create the last_apple_object if it does not exist
     
     # Create the attack_object if it does not exist
     if not hasattr(record_obj, 'attack_object'):
@@ -62,17 +54,14 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         agent_position = get_local_position_of_element(current_map, agent_id)
         if agent_position is None or previous_map is None:
             continue
-        #print(agent_position)
-        #print(previous_map)
-        #input("Press Enter to continue...")
+        
         # Check if the agent collected a coin
-        #if previous_map[agent_position[0]][agent_position[1]] == 'y':
-        #    record_obj.collected_coins_object[agent]['yellow_coins'] += 1
-            #C
-        #elif previous_map[agent_position[0]][agent_position[1]] == 'r':
-        #    record_obj.collected_coins_object[agent]['red_coins'] += 1
+        if previous_map[agent_position[0]][agent_position[1]] == 'y':
+            record_obj.collected_coins_object[agent]['yellow_coins'] += 1
+            
+        elif previous_map[agent_position[0]][agent_position[1]] == 'r':
+            record_obj.collected_coins_object[agent]['red_coins'] += 1
 
-        # Check for 
         
         # Check if the agent decided to attack
         if current_actions_map:

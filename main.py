@@ -12,7 +12,7 @@ from game_environment.server import start_server, get_scenario_map,  default_age
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
-from utils.files import extract_players, persist_short_term_memories, create_directory_if_not_exists
+from utils.files import extract_players, get_players_contexts, persist_short_term_memories, create_directory_if_not_exists
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -36,7 +36,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 100
+    rounds_count, steps_count, max_rounds = 0, 0, 8
     bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
@@ -136,8 +136,7 @@ if __name__ == "__main__":
     experiment_path = os.path.join("data", "defined_experiments", args.substrate)
     agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
     game_scenario = args.scenario if args.scenario != "default" else None
-    players_context = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
-
+    players_context = get_players_contexts(agents_bio_dir)
     players = extract_players(players_context)
     
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')

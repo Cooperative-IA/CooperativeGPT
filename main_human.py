@@ -14,7 +14,7 @@ from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
 from utils.agent_creator import agentCreator
-from utils.files import extract_players, persist_short_term_memories, create_directory_if_not_exists, get_players_context_paths
+from utils.files import extract_players, get_players_contexts, persist_short_term_memories, create_directory_if_not_exists
 from utils.player_gui import PlayerGUI
 
 # Set up logging timestamp
@@ -147,8 +147,7 @@ if __name__ == "__main__":
     experiment_path = os.path.join("data", "defined_experiments", args.substrate)
     agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
     game_scenario = args.scenario if args.scenario != "default" else None
-    players_context = get_players_context_paths(agents_bio_dir)
-
+    players_context = get_players_contexts(agents_bio_dir)
     players_names = extract_players(players_context)
     
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')

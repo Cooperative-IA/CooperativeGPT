@@ -19,10 +19,8 @@ def load_scenario_info(players_context: list[str]):
         dict: Dictionary with the scenario information
     """
     global agents_context
-    agents_context = [json.load(open(player_context)) for player_context in players_context]
-    print("#"*120)
-    print("Agents context", agents_context)
-    print("#"*120)
+    agents_context = players_context
+    
     return {'scenario_map': get_scenario_map(substrate_name), 
             'valid_actions': get_defined_valid_actions(), 
             'scenario_obstacles': scenario_obstacles}

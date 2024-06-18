@@ -2,19 +2,6 @@ import json
 import os
 
 
-def load_agent_context(agent_context_file: str) -> dict:
-    """Loads the agent context from a json file.
-
-    Args:
-        agent_context_file (str): Path to the json agent context file.
-
-    Returns:
-        dict: Dictionary with the agent context.
-    """
-    with open(agent_context_file, "r") as file:
-        agent_context = json.load(file)
-    return agent_context
-
 def load_world_context(world_context_file: str) -> str:
     """Loads the world context from a text file.
 
@@ -39,7 +26,7 @@ def load_config() -> dict:
         config_file = json.load(json_file)
     return config_file
 
-def get_players_context_paths(agents_bio_dir: str) -> list[str]:
+def get_players_contexts(agents_bio_dir: str) -> list[str]:
     """
     Get the paths of the players context files from the agents bio directory.
     The players context files are the .json files that contain the players context.
@@ -56,10 +43,10 @@ def get_players_context_paths(agents_bio_dir: str) -> list[str]:
     # Sort the list by the player's id, ids is in string, "agent_1", "agent_2", etc. This list only contain .jsons files names. Data shoud be evaluated to sort.
     evaluated_data = [json.load(open(player_context)) for player_context in paths_list]
     
-    # Now we zip the evaluated data with the paths_list and sort the zipped list by the player's id
-    paths_list = [path for _, path in sorted(zip(evaluated_data, paths_list), key=lambda x: x[0]["id"])]
+    # Now sort the list by the player's id
+    sorted_evaluated_data = sorted(evaluated_data, key=lambda x: x["id"])
     
-    return paths_list
+    return sorted_evaluated_data
     
 
 def extract_players(players_context:list[str]) -> list[str]:
@@ -72,11 +59,11 @@ def extract_players(players_context:list[str]) -> list[str]:
     Returns:
         list[str]: List with the players names.
     """
-    list_of_players = [json.load(open(player_context)) for player_context in players_context]
+    #list_of_players = [json.load(open(player_context)) for player_context in players_context]
     # Sort the list by the player's id, ids is in string, "agent_1", "agent_2", etc
     #list_of_players.sort(key=lambda x: x["id"])
     # Return the names of the players
-    return  [player["name"] for player in list_of_players]
+    return  [player["name"] for player in players_context]
 
 
 def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int, log_timestamp:str):

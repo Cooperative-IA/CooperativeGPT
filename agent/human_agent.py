@@ -11,7 +11,7 @@ class HumanAgent(Agent):
     """HumanAgent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: dict, world_context_file: str, scenario_info:dict, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None) -> None:
         """Initializes the agent.
 
         Args:

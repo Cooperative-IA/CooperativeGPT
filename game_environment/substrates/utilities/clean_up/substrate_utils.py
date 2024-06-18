@@ -6,7 +6,7 @@ from game_environment.server import get_scenario_map
 substrate_name = "clean_up"
 scenario_obstacles = ["W", "$"]
 
-def load_scenario_info():
+def load_scenario_info(players_context: list[str] = None):
     return {'scenario_map': get_scenario_map(game_name=substrate_name), 
             'valid_actions': get_defined_valid_actions(), 
             'scenario_obstacles': scenario_obstacles}
@@ -144,7 +144,7 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
 
 
 
-def get_observed_changes(observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, players_names: dict) -> list[tuple[str, str]]:
+def get_observed_changes(observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, players_names: dict, agent_name:str) -> list[tuple[str, str]]:
     """Create a list of observations of the changes in the environment
     
     Args:

@@ -445,8 +445,6 @@ class Game:
         # Get the raw observations from the environment
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
         prev_global_map = self.prev_global_map.copy() if hasattr(self, 'prev_global_map') else None
-        print(f'Previous global map: \n{prev_global_map}')
-        print(f'Current global map: \n{curr_global_map}')
         # Get the agents that are observing and didn't move
         agents_observing = []
         if current_actions_map:
