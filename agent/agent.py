@@ -216,7 +216,7 @@ class Agent:
         current_action = self.stm.get_memory('current_action')
         if current_action and not self.stm.get_memory('current_steps_sequence').empty():
             actions_sequence.insert(0, current_action)
-        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, game_time, agent_bio_str, self.prompts_folder)
+        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, position, agent_bio_str, self.prompts_folder)
         self.stm.add_memory(reasoning, 'reason_to_react')
         self.logger.info(f'{self.name} should react to the observation: {react}')
         return react, observations, changes
