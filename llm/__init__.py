@@ -1,4 +1,4 @@
-from llm.openai import GPT35, Ada, GPT35_16K, GPT4
+from llm.openai import GPT4oMini, GPT4o, Embedding
 from llm.base_llm import BaseLLM
 
 class LLMModels():
@@ -10,15 +10,14 @@ class LLMModels():
         if not hasattr(self, 'instance'):
             self.instance = super(LLMModels, self).__new__(self)
             self.instance.llm_models: dict[str, BaseLLM] = {
-            "gpt-3.5": GPT35(),
-            "gpt-3.5-16k": GPT35_16K(),
-            "gpt-4": GPT4(),
-            "ada": Ada()
+            "gpt-4o-mini": GPT4oMini(),
+            "gpt-4o": GPT4o(),
+            "embedding": Embedding()
             }
-            self.instance.main_model = "gpt-3.5"
-            self.instance.best_model = "gpt-4"
-            self.instance.longer_context_fallback = "gpt-3.5-16k"
-            self.instance.embedding_model = "ada"
+            self.instance.main_model = "gpt-4o-mini"
+            self.instance.best_model = "gpt-4o"
+            self.instance.longer_context_fallback = "gpt-4o-mini"
+            self.instance.embedding_model = "embedding"
         return self.instance
 
     def get_main_model(self) -> BaseLLM:
