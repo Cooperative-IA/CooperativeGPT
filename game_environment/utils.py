@@ -54,7 +54,7 @@ def default_agent_actions_map(substrate_name:str = 'commons_harvest_open'):
         }
 
 
-def generate_agent_actions_map( action:str, base_action_map: dict):
+def generate_agent_actions_map( action:str|None, base_action_map: dict):
     """
     Description: Generates the action map for the agent
     
@@ -65,6 +65,8 @@ def generate_agent_actions_map( action:str, base_action_map: dict):
     Returns:
         dict: Action map for the agent
     """
+    if action is None:
+        return base_action_map
     
     if len(action.split(' ')) == 1:
         if action == 'attack':

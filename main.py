@@ -36,7 +36,6 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
 
     # Define bots number of steps per action
     rounds_count, steps_count, max_rounds = 0, 0, 100
-    bots_steps_per_agent_move = 2
 
     # Get the initial observations and environment information
     env.step(actions)
@@ -46,12 +45,9 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     while rounds_count < max_rounds and not condition_to_end_game(substrate_name, env.get_current_global_map()):
         # Reset the actions for each agent
         actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
-        # Execute an action for each agent on each step
+        # Execute an action for every agent in one step
         for agent in agents:
-            # Helps to define the dynamic number of bot steps per action as acumulated number
-            accumulated_steps = 0
-
-            #Updates the observations for the current agent
+            # Updates the observations for the current agent
             all_observations =  env.get_observations_by_player(agent.name)
             observations = all_observations['curr_state']
             scene_description = all_observations['scene_description']
@@ -64,51 +60,41 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             agent_reward = env.score[agent.name]
             if check_agent_out_of_game(observations):
                 logger.info('Agent %s was taken out of the game', agent.name)
-                agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
-                step_actions = new_empty_queue()
+                step_action = agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
             else:
-                step_actions = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
+                step_action = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
 
 
-            while not step_actions.empty():
-                step_action = step_actions.get()
-                # Update the actions map for the agent
-                actions[agent.name] = generate_agent_actions_map(step_action, default_agent_actions_map())
-                logger.info('Agent %s action map: %s', agent.name, actions[agent.name] )
+            # Update the actions map for the agent
+            actions[agent.name] = generate_agent_actions_map(step_action, default_agent_actions_map())
+            logger.info('Agent %s action map: %s', agent.name, actions[agent.name] )
 
-                # Execute a move for the bots
-                if env.bots:
-                    for bot in env.bots:
-                        bot_observations =  env.get_observations_by_player(bot.name)
-                        bot_observations = bot_observations['curr_state']
-                        if check_agent_out_of_game(bot_observations):
-                            logger.info(f'Bot {bot.name} was taken out of the game. Skipping bot move.')
-                            actions[bot.name] = default_agent_actions_map()
-                        if env.get_current_step_number() % bots_steps_per_agent_move == 0:
-                            bot_action = bot.move(env.timestep)
-                            actions[bot.name] = bot_action
-                        else:
-                            actions[bot.name] = default_agent_actions_map()
+        # Execute a move for the bots
+        if env.bots:
+            for bot in env.bots:
+                bot_observations =  env.get_observations_by_player(bot.name)
+                bot_observations = bot_observations['curr_state']
+                if check_agent_out_of_game(bot_observations):
+                    logger.info(f'Bot {bot.name} was taken out of the game. Skipping bot move.')
+                    actions[bot.name] = default_agent_actions_map()
+                else:
+                    bot_action = bot.move(env.timestep)
+                    actions[bot.name] = bot_action
 
-                # Execute each step one by one until the agent has executed all the steps for the high level action
-                try:
-                    env.step(actions)
-                    steps_count += 1
-                    accumulated_steps += 1
-                except:
-                    logger.exception("Error executing action %s", step_action)
-                    step_actions = new_empty_queue()
-
-            # Reset actions for the agent until its next turn
-            actions[agent.name] = default_agent_actions_map()
+        # Execute the step with all the actions per agent at the same time
+        try:
+            env.step(actions)
+            steps_count += 1
+        except:
+            logger.exception("Error executing actions %s", actions)
             
-            # Persist the short term memories of the agents
-            if persist_memories:
-                memories = {agent.name: agent.stm.get_memories().copy() for agent in agents}
-                persist_short_term_memories(memories, rounds_count, steps_count, logger_timestamp)
+        # Persist the short term memories of the agents
+        if persist_memories:
+            memories = {agent.name: agent.stm.get_memories().copy() for agent in agents}
+            persist_short_term_memories(memories, rounds_count, steps_count, logger_timestamp)
 
         rounds_count += 1
-        logger.info('Round %s completed. Executed all the high level actions for each agent.', rounds_count)
+        logger.info('Round %s completed. Every agent executed an action.', rounds_count)
         env.update_history_file(logger_timestamp, rounds_count, steps_count)
         time.sleep(0.01)
 
