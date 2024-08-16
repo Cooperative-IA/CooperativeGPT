@@ -530,7 +530,7 @@ class Game:
         
         # Update the observations generator
         game_time = self.get_time()
-        self.observationsGenerator.update_state_changes(description, agents_observing, game_time)
+        self.observationsGenerator.update_state_changes(description, game_time)
 
         self.curr_scene_description = description
         self.curr_global_map = curr_global_map

@@ -222,7 +222,7 @@ def test_get_observed_changes():
     local_position = (1,1)
     global_position = (5, 5)
     expected_output = [('Observed that agent agent3 took an apple from position [6, 4].', game_time)]
-    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, agent_orientation, game_time)
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, global_position, agent_orientation, agent_orientation, game_time)
     assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
 
     observed_map = 'AAA\nF#F\nAAF'
@@ -231,7 +231,7 @@ def test_get_observed_changes():
     local_position = (1,1)
     global_position = (5, 5)
     expected_output = [('Observed that an apple grew at position [6, 4].', game_time)]
-    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, agent_orientation, game_time)
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, global_position, agent_orientation, agent_orientation, game_time)
     assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
 
     observed_map = 'AAA\nF#F\nFAF'
@@ -240,7 +240,7 @@ def test_get_observed_changes():
     local_position = (1,1)
     global_position = (5, 5)
     expected_output = [('Observed that the grass at position [6, 4] disappeared.', game_time)]
-    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, agent_orientation, game_time)
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, global_position, agent_orientation, agent_orientation, game_time)
     assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
 
     observed_map = 'AAA\nF#F\nGAF'
@@ -249,7 +249,7 @@ def test_get_observed_changes():
     local_position = (1,1)
     global_position = (5, 5)
     expected_output = [('Observed that grass to grow apples appeared at position [6, 4].', game_time)]
-    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, agent_orientation, game_time)
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, global_position, agent_orientation, agent_orientation, game_time)
     assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
 
     observed_map = 'AAA\nF#F\n2FF'
@@ -258,5 +258,80 @@ def test_get_observed_changes():
     local_position = (1,1)
     global_position = (5, 5)
     expected_output = [('Observed that agent agent3 took an apple from position [6, 4].', game_time), ('Observed that the grass at position [6, 5] disappeared.', game_time)]
-    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, agent_orientation, game_time)
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, global_position, agent_orientation, agent_orientation, game_time)
+    assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
+
+    # Detect that the attack was effective
+    observed_map = 'FBF\nBBB\nBBB\nB#B\nFAF'
+    last_observed_map = 'FFF\nFFF\nA1A\nF#F\nFAF'
+    agent_orientation = 0
+    local_position = (3,1)
+    global_position = (5, 5)
+    expected_output = [('I successfully attacked agent2 at position [4, 5].', game_time)]
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, global_position, agent_orientation, agent_orientation, game_time)
+    assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
+
+    # Detect that someone was attacked by other agent
+    observed_map = 'BFF\nFFF\nAFA\nF#F\nFAF'
+    last_observed_map = '1FF\nFFF\nAFA\nF#F\nFAF'
+    agent_orientation = 0
+    local_position = (3,1)
+    global_position = (5, 5)
+    expected_output = [('agent2 was attacked at position [2, 4].', game_time)]
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, global_position, agent_orientation, agent_orientation, game_time)
+    assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
+
+
+# Tests to verify that changes in state are detected correctly while the agent is moving over the map
+def test_get_observed_changes_while_moving():
+    # Detect that the agent took an apple
+    game_time = '2021-09-30 12:00:00'
+    observed_map = 'FFA\nA#A\nFFF'
+    last_observed_map = 'AAA\nF#F\nAAF'
+    agent_orientation = 0
+    last_agent_orientation = 0
+    local_position = (1,1)
+    global_position = (4, 5)
+    last_global_position = (5, 5)
+    expected_output = [('I took an apple from position [4, 5].', game_time)]
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, last_global_position, agent_orientation, last_agent_orientation, game_time)
+    assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
+
+    # Detect that another agent took an apple
+    game_time = '2021-09-30 12:00:00'
+    observed_map = 'FFA\nA#2\nFFF'
+    last_observed_map = 'AAA\nF#F\nAAF'
+    agent_orientation = 0
+    last_agent_orientation = 0
+    local_position = (1,1)
+    global_position = (4, 5)
+    last_global_position = (5, 5)
+    expected_output = [('I took an apple from position [4, 5].', game_time), ('Observed that agent agent3 took an apple from position [4, 6].', game_time)]
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, last_global_position, agent_orientation, last_agent_orientation, game_time)
+    assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
+
+    # Detect a change even if the agent changed orientation
+    game_time = '2021-09-30 12:00:00'
+    observed_map = 'AGF\nAAF\nF#F\nFFF'
+    last_observed_map = 'AAA\nFFA\nF#G\nFFF'
+    agent_orientation = 0
+    last_agent_orientation = 3
+    local_position = (2,1)
+    global_position = (6, 7)
+    last_global_position = (6, 7)
+    expected_output = [('Observed that an apple grew at position [5, 7].', game_time)]
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, last_global_position, agent_orientation, last_agent_orientation, game_time)
+    assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
+
+    # Detect a change even if the agent changed orientation
+    game_time = '2021-09-30 12:00:00'
+    observed_map = 'AGF\nBGF\nF#F\nFFF'
+    last_observed_map = 'AAA\nFF2\nF#G\nFFF'
+    agent_orientation = 0
+    last_agent_orientation = 3
+    local_position = (2,1)
+    global_position = (6, 7)
+    last_global_position = (6, 7)
+    expected_output = [('agent3 was attacked at position [5, 6].', game_time)]
+    observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, last_global_position, agent_orientation, last_agent_orientation, game_time)
     assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
