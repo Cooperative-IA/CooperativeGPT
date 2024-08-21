@@ -157,7 +157,7 @@ if __name__ == "__main__":
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
     # Create agents
-    agents = [agentCreator(is_human_player=True, name=player_name, data_folder="data", agent_context_file=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode, prompts_folder=args.prompts_source,
+    agents = [agentCreator(is_human_player=True, name=player_name, data_folder="data", agent_context=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode, prompts_folder=args.prompts_source,
                            substrate_name=args.substrate, start_from_scene = scene_path) for player_name, player_context in zip(players_names, players_context)]
 
     # Start the game server

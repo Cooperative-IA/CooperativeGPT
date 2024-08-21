@@ -19,6 +19,7 @@ class Avatar:
             avatar_config (dict): Avatar configuration
         """
         self.name = name
+        
         self.avatar_component = list(filter(lambda component: component["component"] == "Avatar",
                                             avatar_config["components"]))[0]
         self.avatar_view = self.avatar_component["kwargs"]["view"]
@@ -99,7 +100,12 @@ class SceneDescriptor:
         
     def get_avatars(self, names):
         avatars = {}
-        for i, config in enumerate(self.substrate_config.lab2d_settings.simulation.gameObjects):
+        # Avatar objects have the value related to the key 'name' equals to 'avatar'. 
+        # We look in the self.substrate_config.lab2d_settings.simulation.gameObjects list the ones that have those
+        
+        avatar_regex = re.compile(r'^avatar\d*$')
+        avatar_objects = [game_object for game_object in self.substrate_config.lab2d_settings.simulation.gameObjects if avatar_regex.match(game_object['name'])]
+        for i, config in enumerate(avatar_objects):
             avatars[i] = Avatar(names[i], config)
         return avatars
 
@@ -109,7 +115,7 @@ class SceneDescriptor:
         self.parse_zaps(zaps)
         self.compute_partial_observations(map, self.last_map)
         self.last_map = map
-
+        print(zaps)
         result = {}
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"Avatar {avatar_id} is in position {avatar.position}")

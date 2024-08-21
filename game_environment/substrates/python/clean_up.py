@@ -692,6 +692,12 @@ def create_avatar_object(player_idx: int,
               "component": "Transform",
           },
           {
+              "component": "ReadyToShootObservation",
+              "kwargs": {
+                  "zapperComponent": "MineBeam",
+              },
+          },
+          {
               "component": "Appearance",
               "kwargs": {
                   "renderMode": "ascii_shape",

@@ -13,13 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ]]
 
--- Entry point lua file for the coins substrate.
+-- Entry point lua file for the collaborative cooking substrate.
 
 local meltingpot = 'meltingpot.lua.modules.'
 local api_factory = require(meltingpot .. 'api_factory')
 local simulation = require(meltingpot .. 'base_simulation')
 
--- Required to be able to use the components in the substrate
+-- Required to be able to use the components in the level
 local component_library = require(meltingpot .. 'component_library')
 local avatar_library = require(meltingpot .. 'avatar_library')
 local components = require 'components'

@@ -11,13 +11,13 @@ class HumanAgent(Agent):
     """HumanAgent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: dict, world_context_file: str, scenario_info:dict, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None) -> None:
         """Initializes the agent.
 
         Args:
             name (str): Name of the agent.
             data_folder (str): Path to the data folder.
-            agent_context_file (str): Path to the json agent context file. Initial info about the agent.
+            agent_context (str): Path to the json agent context file. Initial info about the agent.
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to.
             scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
             att_bandwidth (int, optional): Attention bandwidth. The attention bandwidth is the number of observations that the agent can attend to at the same time. Defaults to 10.
@@ -31,7 +31,7 @@ class HumanAgent(Agent):
         att_bandwidth = 100
         reflection_umbral = float('inf')
         mode = 'normal'
-        super().__init__(name, data_folder, agent_context_file, world_context_file, scenario_info, att_bandwidth, reflection_umbral, mode, observations_poignancy, prompts_folder=prompts_folder, substrate_name=substrate_name, start_from_scene=start_from_scene)
+        super().__init__(name, data_folder, agent_context, world_context_file, scenario_info, att_bandwidth, reflection_umbral, mode, observations_poignancy, prompts_folder=prompts_folder, substrate_name=substrate_name, start_from_scene=start_from_scene)
         
         self.ltm = None
         self.logger.info(f'Initializing {self.name} HumanAgent')

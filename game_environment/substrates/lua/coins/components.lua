@@ -407,7 +407,6 @@ local allComponents = {
     PartnerTracker = PartnerTracker,
 
     -- Trackers
-    
     AvatarsStateObserver = AvatarsStateObserver,
     GlobalStateTracker = GlobalStateTracker,
 }
