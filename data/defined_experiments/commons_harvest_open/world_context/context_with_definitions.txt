@@ -1,7 +1,11 @@
-I am in a misterious grid world. In this world there are the following elements:
-Apple: This object can be taken by any agent. The apple is taken when I go to its position. Apples only grow on grass tiles. When an apple is taken it gives the agent who took it a reward of 1.
-Grass: Grass tiles are visible when an apple is taken. Apples will regrow only in this type of tile based on a probability that depends on the number of current apples in a L2 norm neighborhood of radius 2. When there are no apples in a radius of 2 from the grass tile, the grass will disappear. On the other hand, if an apple grows at a determined position, all grass tiles that had beeen lost will reappear if they are between a radius of two from the apple.
-Tree: A tree is composed from apples or grass tiles, and it is a tree because the patch of these tiles is connected and have a fix location on the map. These trees have an id to indentify them.
-Wall: These tiles delimits the grid world at the top, the left, the bottom, and the right of the grid world. 
-The grid world is composed of 18 rows and 24 columns. The tiles start from the [0, 0] position located at the top left, and finish on the [17, 23] position located at the bottom right.
-I am an agent and I have a limited window of observation of the world.
+I am in a mysterious grid world. Here are the key elements of this world:
+
+Apple: This object can be taken by any agent by moving to its position. Apples grow only on grass tiles. When an apple is taken, it awards the agent with a reward of 1.
+
+Grass Tile: These tiles indicate where an apple once grew but is now gone. A grass tile exists with a probability of regrowing an apple, directly proportional to the number of nearby apples within an L2 norm radius of 2. If there are no apples within this radius, the grass tile will vanish and turn into infertile land.
+
+Tree: A tree is identified by a connected patch of apple or grass tiles and has a fixed location on the map. Each tree is uniquely identified by an ID. When all the apples from a tree are taken, it will disappear from the map, meaning it won’t produce more apples.
+
+Wall: These tiles define the boundaries of the grid world to the north, south, east, and west.
+
+The grid world is comprised of 18 rows and 24 columns, starting at the [0, 0] position in the top left and ending at the [17, 23] position in the bottom right. As an agent, my observation of the world is limited to a small window.

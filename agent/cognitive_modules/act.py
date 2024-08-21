@@ -3,7 +3,7 @@ from queue import Queue
 import logging
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from llm import LLMModels
-from utils.llm import extract_answers
+from utils.utils_llm import extract_answers
 from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
         list[str]: Actions that the agent should perform
     """
     
-    llm = LLMModels().get_best_model()
+    llm = LLMModels().get_main_model()
     prompt_path = os.path.join(prompts_folder, 'act.txt')
     if isinstance(current_observations, list):
         current_observations = "\n".join(current_observations)

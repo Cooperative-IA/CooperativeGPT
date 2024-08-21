@@ -1,7 +1,7 @@
 import os
 from llm import LLMModels
 from utils.time import str_to_timestamp
-from utils.llm import extract_answers, extract_text, extract_tags
+from utils.utils_llm import extract_answers, extract_text, extract_tags
 
 def update_understanding(current_observations: list[str], agent, game_time: str, understanding_umbral = 30, prompts_folder = "base_prompts_v0") -> None:
     """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 

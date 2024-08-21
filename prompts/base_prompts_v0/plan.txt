@@ -10,6 +10,9 @@ Recent analysis of past observations:
 Current observations: 
 <input3>
 
+Agents Activity Records:
+<input9>
+
 Current plan: <input4>
 This is the reason to change the current plan: <input6>
 

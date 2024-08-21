@@ -24,6 +24,7 @@ import enum
 import time
 import logging
 import datetime
+import json
 
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple
 import dm_env
@@ -577,7 +578,11 @@ class Game:
         with open(f'logs/{logger_timestamp}/steps_history.txt', 'a') as file:
             # Write round_number and actions_count in the history file
             file.write(f'{round_count} {steps_count}\n')
-    
+
+    def write_snowartz_metrics(self, logger_timestamp: str, metrics: dict) -> None:
+        with open(f'logs/{logger_timestamp}/snowartz_metrics.json', 'w') as file:
+            json.dump(metrics, file)
+
     def get_current_global_map(self) -> dict:
         """Returns the current scene description."""
         return self.curr_global_map

@@ -7,9 +7,11 @@ You have this information about an agent called <input1>:
 Here you have a list of statements:
 <input3>
 
+Agents Activity Records:
+<input5>
+
 Given only the information above, formulate the 3 most salient high-level questions 
 you can answer about the events, entities, and agents in the statements. 
-
 
 The output should be a markdown code snippet formatted in the following schema, 
 including the leading and trailing "```json" and "```", answer as if you were <input1>:
