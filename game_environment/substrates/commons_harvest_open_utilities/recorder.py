@@ -92,10 +92,10 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     if not hasattr(record_obj, 'attack_object'):
         record_obj.attack_object = {agent:{'decide_to_attack': 0} for agent in record_obj.player_names}
 
-    # Get the agents that are taking actions
-    agents_taking_actions = [agent for agent in record_obj.player_names if agent not in agents_observing]
+    if current_actions_map is None:
+        return
 
-    for agent in agents_taking_actions:
+    for agent in current_actions_map:
         agent_id = record_obj.agents_ids[agent]
         agent_position = get_local_position_of_element(current_map, agent_id)
         if agent_position is None:

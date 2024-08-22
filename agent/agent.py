@@ -363,7 +363,7 @@ class Agent:
         # We check if after the previous step the gameloop is still empty, if it is, we generate a new one,
         # all the process above is repeated until we get a gameloop that is not empty
         # If actions sequence were all invalid, we send an explore sequence
-        while self.stm.get_memory('current_steps_sequence').empty() and self.stm.get_memory('current_action') != 'stay put':
+        while self.stm.get_memory('current_steps_sequence').empty():
             if self.stm.get_memory('actions_sequence').empty():
                 self.logger.warn(f'{self.name} current gameloop is empty and there are no more actions to execute, agent will explore')
                 steps_sequence = self.spatial_memory.generate_explore_sequence()
