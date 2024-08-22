@@ -125,8 +125,9 @@ class SceneDescriptor:
                                  "agents_in_observation": avatar.agents_in_observation,
                                  "global_position": avatar.position,
                                  "orientation": int(avatar.orientation),
+                                 "local_position": (avatar.avatar_view.get("forward"), avatar.avatar_view.get("left")),
                                  "last_global_position": avatar.last_position,
-                                 "last_orientation": int(avatar.last_orientation) if avatar.last_orientation else None,
+                                 "last_orientation": int(avatar.last_orientation) if avatar.last_orientation is not None else None,
                                  "last_observation": avatar.last_partial_observation,
                                  "effective_zap": avatar.name in [a.murder for a in self.avatars.values() if a.just_died],
                                 }
