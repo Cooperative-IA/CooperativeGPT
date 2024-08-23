@@ -1,5 +1,5 @@
 from agent.memory_structures.short_term_memory import ShortTermMemory
-from game_environment.utils import connected_elems_map, get_element_global_pos, check_agent_out_of_game, get_matrix
+from game_environment.utils import connected_elems_map, get_element_global_pos, check_agent_out_of_game, get_matrix, process_observed_matrices
 import numpy as np
 from game_environment.server import get_scenario_map
 
@@ -152,11 +152,10 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
                 if global_tree_id in trees_observed.get(element_type, []): 
                     continue
 
-                local_tree_center = local_tree_data['center']
-                local_center_real_pos = get_element_global_pos(local_tree_center, local_position, global_position, agent_orientation)
+                first_el_real_pos = get_element_global_pos(first_element, local_position, global_position, agent_orientation)
 
                 # Check if the local tree corresponds to the global tree
-                if local_center_real_pos not in global_tree_data['elements']:
+                if first_el_real_pos not in global_tree_data['elements']:
                     continue
 
                 # Find the cluster tree of the local tree
@@ -181,10 +180,105 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
         return list_trees_observations
     
 
+def get_observed_changes( observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_last_global_position: tuple, agent_orientation: int, agent_last_orientation: int, game_time: str, players_names:dict, agent_name: str, self_symbol:str) -> list[tuple[str, str]]:
+    """
+    Create a list of observations of the changes in the environment by comparing the current and last observed maps.
+
+    Args:
+        observed_map (str): Map observed by the agent.
+        last_observed_map (str | None): Last map observed by the agent.
+        agent_local_position (tuple): Position of the agent on the observed map.
+        agent_global_position (tuple): Global position of the agent.
+        agent_last_global_position (tuple): Last global position of the agent.
+        agent_orientation (int): Orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+        agent_last_orientation (int): Last orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+        game_time (str): Current game time.
+        player_names (dict): Dictionary with the names of the players.
+        agent_name (str): Name of the agent.
+        self_symbol (str): Symbol of the agent.
+
+    Returns:
+        list[tuple[str, str]]: List of tuples with the changes in the environment and the game time.
+    """
+    pad_token = '<' # This token cannot be used in any of the games
+    if check_agent_out_of_game([observed_map]):
+        return [(observed_map, game_time)]
+
+    observations = []
+    if last_observed_map is None:
+        return observations
+
+    curr_m = get_matrix(observed_map)
+    last_m = get_matrix(last_observed_map)
+
+    curr_m, last_m, agent_local_position, agent_moved, agent_turned = process_observed_matrices(
+        curr_m,
+        last_m,
+        agent_local_position,
+        agent_global_position,
+        agent_last_global_position,
+        agent_orientation,
+        agent_last_orientation,
+        self_symbol,
+        pad_token
+    )
+
+
+    for index in np.ndindex(curr_m.shape):
+        curr_el = curr_m[index]
+        last_el = last_m[index]
+        if curr_el != last_el:
+            # If someone attacked nearby
+            if curr_el == pad_token or last_el == pad_token:
+                pass
+            elif last_el.isnumeric() and curr_el == 'B':
+                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                agent_name = players_names[int(last_el)]
+                # If agent attacked the agent did not move
+                if agent_moved or agent_turned:
+                    observations.append((f"{agent_name} was attacked at position {el_pos}.", game_time))
+                else:
+                    if agent_local_position[0] >= 3 and curr_m[agent_local_position[0]-3,agent_local_position[1]] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]-1] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]+1] == 'B':
+                        observations.append((f"I successfully attacked {agent_name} at position {el_pos}.", game_time))
+                    else:
+                        observations.append((f"{agent_name} was attacked at position {el_pos}.", game_time))
+            # Ignore this observation for now to avoid generating multiple observations about the position where the ray beam hit
+            # elif curr_el == 'B':
+            #     # If agent attacked the agent did not move
+            #     if original_shape == curr_m.shape and agent_local_position[0] >= 3 and curr_m[agent_local_position[0]-3,agent_local_position[1]] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]-1] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]+1] == 'B':
+            #         pass
+            #     else:
+            #         el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+            #         observations.append((f"Observed a ray beam from an attack at position {el_pos}.", game_time))
+            elif last_el == 'B':
+                pass
+            # If an apple was taken
+            elif last_el == 'A' and curr_el != 'B':
+                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                if (curr_el == self_symbol):
+                    observations.append((f"I took an apple from position {el_pos}.", game_time))
+                else:
+                    agent_id = int(curr_el)
+                    agent_name = players_names[agent_id]
+                    observations.append((f"Observed that agent {agent_name} took an apple from position {el_pos}.", game_time))
+            # If grass desappeared
+            elif last_el == 'G' and curr_el == 'F':
+                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                observations.append((f"Observed that the grass at position {el_pos} disappeared.", game_time))
+            # If grass appeared
+            elif last_el == 'F' and curr_el == 'G':
+                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                observations.append((f"Observed that grass to grow apples appeared at position {el_pos}.", game_time))
+            # If an apple appeared
+            elif last_el == 'G' and curr_el == 'A':
+                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                observations.append((f"Observed that an apple grew at position {el_pos}.", game_time))
+
+    return observations
 
 
 
-def get_observed_changes(observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, players_names: dict, agent_name:str) -> list[tuple[str, str]]:
+def old_get_observed_changes(observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, players_names: dict, agent_name:str) -> list[tuple[str, str]]:
     """Create a list of observations of the changes in the environment
     
     Args:
@@ -240,3 +334,7 @@ def get_observed_changes(observed_map: str, last_observed_map: str | None, agent
                 observations.append((f"Observed that an apple grew at position {el_pos}.", game_time))
 
     return observations
+
+
+
+

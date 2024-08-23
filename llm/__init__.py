@@ -26,35 +26,28 @@ class LLMModels():
             BaseLLM: Main model
         """
         return self.llm_models[self.main_model]
-
+    
     def get_embedding_model(self) -> BaseLLM:
         """Get the embedding model
         Returns:
             BaseLLM: Embedding model
         """
         return self.llm_models[self.embedding_model]
-
+    
     def get_longer_context_fallback(self) -> BaseLLM:
         """Get the longer context fallback model
         Returns:
             BaseLLM: Longer context fallback model
         """
         return self.llm_models[self.longer_context_fallback]
-
+    
     def get_best_model(self) -> BaseLLM:
         """Get the best model
         Returns:
             BaseLLM: Best model
         """
         return self.llm_models[self.best_model]
-
-    def get_gpt_4o_model(self) -> BaseLLM:
-        """Get the GPT-4 model
-        Returns:
-            BaseLLM: GPT-4 model
-        """
-        return self.llm_models["gpt-4o"]
-
+    
     def get_costs(self) -> dict:
         """Get the costs of the models
         Returns:
@@ -70,7 +63,7 @@ class LLMModels():
         costs['total'] = total_cost
 
         return costs
-
+    
     def get_tokens(self) -> dict:
         """Get the tokens used by the models
         Returns:

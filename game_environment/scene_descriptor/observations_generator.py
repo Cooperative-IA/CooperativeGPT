@@ -171,7 +171,7 @@ class ObservationsGenerator (object):
         return agents_observed
 
 
-    def get_specific_substrate_observations (self, local_observation_map: str, local_map_position: tuple, global_position: tuple, agent_orientation: int, connected_elments: dict, symbols: dict) -> list[str]:
+    def delete_get_specific_substrate_observations(self, local_map: str, local_position: tuple, global_position: tuple, agent_orientation: int, connected_elments: dict, symbols: dict) -> list[str]:
         """
         Calls the specific substrate observation function of the substrate utilities module
 
@@ -234,11 +234,18 @@ class ObservationsGenerator (object):
                                                 .format(global_tree_id, list(global_tree_data['center']), apple_count, grass_count))
         return list_trees_observations
 
-    def get_matrix(self, map) -> np.array:
-        """Convert a map in ascci format to a matrix
+
+    def get_specific_substrate_observations (self, local_observation_map: str, local_map_position: tuple, global_position: tuple, agent_orientation: int, connected_elments: dict, symbols: dict) -> list[str]:
+        """
+        Calls the specific substrate observation function of the substrate utilities module
 
         Args:
-            map (str): Map in ascci format
+            local_observation_map (str): Local map in ascci format
+            local_map_position (tuple): Local position of the agent in the observed window
+            global_position (tuple): Global position of the agent
+            agent_orientation (int): Orientation of the agent
+            connected_elments (dict): Connected elements of the map
+            symbols (dict): Symbols used in the map
 
         Returns:
             list[str]: List with the descriptions of the specific substrate observations
@@ -247,6 +254,40 @@ class ObservationsGenerator (object):
         return self.substrate_utils_module.get_specific_substrate_obs(local_observation_map, local_map_position, global_position, agent_orientation, connected_elments, symbols)
 
     def get_observed_changes(self, observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_last_global_position: tuple, agent_orientation: int, agent_last_orientation: int, game_time: str, agent_name:str) -> list[tuple[str, str]]:
+        """Calls the specific substrate observation function of the substrate utilities module
+            It creates a list of tuples with the changes in the environment and the game time
+
+        Args:
+            observed_map (str): Map observed by the agent
+            last_observed_map (str | None): Last map observed by the agent
+            agent_local_position (tuple): Position of the agent on the observed map
+            agent_global_position (tuple): Global position of the agent
+            agent_last_global_position (tuple): Last global position of the agent
+            agent_orientation (int): Orientation of the agent
+            agent_last_orientation (int): Last orientation of the agent
+            game_time (str): Current game time
+            agent_name (str): Name of the agent
+        Returns:
+            list[tuple[str, str]]: List of tuples with the changes in the environment, and the game time
+        """
+
+        return self.substrate_utils_module.get_observed_changes(
+            observed_map, 
+            last_observed_map, 
+            agent_local_position, 
+            agent_global_position, 
+            agent_last_global_position,
+            agent_orientation, 
+            agent_last_orientation,
+            game_time, 
+            self.players_names, 
+            agent_name,
+            self.self_symbol)
+
+
+
+
+    def old_get_observed_changes(self, observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_last_global_position: tuple, agent_orientation: int, agent_last_orientation: int, game_time: str, agent_name:str) -> list[tuple[str, str]]:
         """Create a list of observations of the changes in the environment
 
         Args:
@@ -430,3 +471,6 @@ class ObservationsGenerator (object):
                     observations.append((f"Observed that an apple grew at position {el_pos}.", game_time))
 
         return self.substrate_utils_module.get_observed_changes(observed_map, last_observed_map, agent_local_position, agent_global_position, agent_orientation, game_time, self.players_names, agent_name)
+
+
+

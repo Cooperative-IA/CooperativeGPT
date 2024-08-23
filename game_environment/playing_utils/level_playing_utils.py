@@ -447,7 +447,7 @@ class Game:
         prev_global_map = self.prev_global_map.copy() if hasattr(self, 'prev_global_map') else None
 
         if self.record:
-            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description)
+            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description, prev_global_map)
 
         if self.first_move_done :
             # Get the next action map
