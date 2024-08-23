@@ -23,6 +23,8 @@ class Avatar:
 
         self.position = None
         self.orientation = None
+        self.last_position = None
+        self.last_orientation = None
         self.reward = None
         self.partial_observation = None
         self.last_partial_observation = None
@@ -63,6 +65,12 @@ class Avatar:
 
     def set_orientation(self, orientation):
         self.orientation = orientation
+
+    def set_last_position(self):
+        self.last_position = self.position
+
+    def set_last_orientation(self):
+        self.last_orientation = self.orientation
 
     def set_reward(self, reward):
         self.reward = reward
@@ -117,6 +125,9 @@ class SceneDescriptor:
                                  "agents_in_observation": avatar.agents_in_observation,
                                  "global_position": avatar.position,
                                  "orientation": int(avatar.orientation),
+                                 "local_position": (avatar.avatar_view.get("forward"), avatar.avatar_view.get("left")),
+                                 "last_global_position": avatar.last_position,
+                                 "last_orientation": int(avatar.last_orientation) if avatar.last_orientation is not None else None,
                                  "last_observation": avatar.last_partial_observation,
                                  "effective_zap": avatar.name in [a.murder for a in self.avatars.values() if a.just_died],
                                 }
@@ -149,7 +160,7 @@ class SceneDescriptor:
                 # Get the past observations of the observed map to calculate state changes
                 if last_map is not None and not avatar.just_revived:
                     last_padded_map = self.pad_matrix_to_square(last_map, min_padding)
-                    last_padded_map = np.rot90(last_padded_map, k=int(avatar.orientation))
+                    last_padded_map = np.rot90(last_padded_map, k=int(avatar.last_orientation))
                     last_observation, _ = self.crop_observation(last_padded_map, avatar_id, avatar.avatar_view)
                     avatar.set_last_partial_observation(last_observation)
                 # If the avatar just revived, set the last observation to None
@@ -204,6 +215,8 @@ class SceneDescriptor:
 
     def reset_population(self):
         for avatar_id, avatar in self.avatars.items():
+            avatar.set_last_position()
+            avatar.set_last_orientation()
             avatar.reset_observation_variables()
 
     def parse_timestep(self, timestep):

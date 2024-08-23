@@ -168,7 +168,7 @@ class SpatialMemory:
                 explore_pos = None
             sequence_steps = self.generate_explore_sequence(explore_pos)
             
-        elif current_action.startswith('avoid consuming'):
+        elif current_action.startswith('avoid consuming') or current_action.startswith('stay put'):
             sequence_steps.put('stay put')
     
         self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')

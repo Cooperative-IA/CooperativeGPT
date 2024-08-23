@@ -114,7 +114,28 @@ def test_record_game_state_before_actions():
         'Mi': {'move': 0, 'turn': 0, 'fireZap': 0},
         'Mo': {'move': 0, 'turn': 0, 'fireZap': 0},
     }
+    scene_description = {
+        'Ma': {
+            'orientation': 3,
+            'local_position': (1, 1),
+            'global_position': (0, 0),
+            'observation': '---\nF#-\nFFF'
+        },
+        'Mi': {
+            'orientation': 0,
+            'local_position': (1, 1),
+            'global_position': (4, 2),
+            'observation': 'FFF\nF#A\n---'
+        },
+        'Mo': {
+            'orientation': 0,
+            'local_position': (2, 1),
+            'global_position': (2, 3),
+            'observation': 'GAG\nGGF\nF#F\nFFF'
+        }
+    }
     # Test 1: Record the game state before the agents take any action
+    # Agent Ma (0) is looking to the west so it cannot see the last apple
     current_map = [
         ['0', 'F', 'G', 'A', 'G'],
         ['F', 'F', 'G', 'G', 'F'],
@@ -122,12 +143,12 @@ def test_record_game_state_before_actions():
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', '1', 'A', 'G']
     ]
-    agents_observing = ['Mi', 'Mo']
-    record_game_state_before_actions(record_obj, None, current_map, agents_observing, action_map)
+
+    record_game_state_before_actions(record_obj, None, current_map, action_map, scene_description)
     # The record object should have the last_apple_object attribute
     assert hasattr(record_obj, 'last_apple_object'), "The record object should have the last_apple_object attribute"
     # The record object should have the last_apple_object attribute with the right values for each agent
-    assert record_obj.last_apple_object == {'Ma': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': [0, 3], 'distance': 3, 'move_towards_last_apple': 0}, 'Mi': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}}, "The last_apple_object attribute should have the right values for each agent"
+    assert record_obj.last_apple_object == {'Ma': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mi': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': [4, 3], 'distance': 1, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': [0, 3], 'distance': 2, 'move_towards_last_apple': 0}}, "The last_apple_object attribute should have the right values for each agent"
 
     # Test 2: Record that the agent decided to attack
     assert hasattr(record_obj, 'attack_object'), "The record object should have the attack_object attribute"
@@ -145,19 +166,20 @@ def test_record_elements_status(mocker):
     mocker.patch('builtins.open') # Mock the open function to do not create a file
 
     # Test 1: Move towards the last apple
-    last_apple_object = {'Ma': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': [0, 3], 'distance': 3, 'move_towards_last_apple': 0}, 'Mi': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}}
+    # Agent 0 move towards the last apple but it doesn't know it (so it doen't count), agent 2 move towards last apple, and agent 1 doesn't move so it didn't move towards the last apple
+    last_apple_object = {'Ma': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mi': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': [4, 3], 'distance': 1, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': [0, 3], 'distance': 2, 'move_towards_last_apple': 0}}
     record_obj = RecorderMock(['Ma', 'Mi', 'Mo'], last_apple_object)
     current_map = [
         ['F', '0', 'G', 'A', 'G'],
-        ['F', 'F', 'G', 'G', 'F'],
-        ['F', 'F', 'F', '2', 'F'],
+        ['F', 'F', 'G', '2', 'F'],
+        ['F', 'F', 'F', 'G', 'F'],
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', '1', 'A', 'G']
     ]
-    agents_observing = ['Mi', 'Mo']
-    record_elements_status(record_obj, None, current_map, agents_observing)
+
+    record_elements_status(record_obj, None, current_map)
     # The record object should have the last_apple_object attribute with the right values for each agent
-    assert record_obj.last_apple_object == {'Ma': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 1}, 'Mi': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}}, "The last_apple_object attribute should have the right values for each agent"
+    assert record_obj.last_apple_object == {'Ma': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mi': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 1}}, "The last_apple_object attribute should have the right values for each agent"
 
     # Test 2: Take the last apple
     last_apple_object = {'Ma': {'scenario_seen': 3, 'took_last_apple': 0, 'last_apple_pos': [0, 3], 'distance': 1, 'move_towards_last_apple': 2}, 'Mi': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}}
@@ -169,8 +191,7 @@ def test_record_elements_status(mocker):
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', '1', 'A', 'G']
     ]
-    agents_observing = ['Mi', 'Mo']
-    record_elements_status(record_obj, None, current_map, agents_observing)
+    record_elements_status(record_obj, None, current_map)
     # The record object should have the last_apple_object attribute with the right values for each agent
     assert record_obj.last_apple_object == {'Ma': {'scenario_seen': 3, 'took_last_apple': 1, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 3}, 'Mi': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}}, "The last_apple_object attribute should have the right values for each agent"
 
@@ -184,7 +205,6 @@ def test_record_elements_status(mocker):
         ['F', 'F', 'F', 'F', 'F'],
         ['F', 'F', '1', 'A', 'G']
     ]
-    agents_observing = ['Mi', 'Mo']
-    record_elements_status(record_obj, None, current_map, agents_observing)
+    record_elements_status(record_obj, None, current_map)
     # The record object should have the last_apple_object attribute with the right values for each agent
     assert record_obj.last_apple_object == {'Ma': {'scenario_seen': 1, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mi': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}, 'Mo': {'scenario_seen': 0, 'took_last_apple': 0, 'last_apple_pos': None, 'distance': 0, 'move_towards_last_apple': 0}}, "The last_apple_object attribute should have the right values for each agent"

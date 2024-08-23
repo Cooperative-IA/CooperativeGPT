@@ -146,23 +146,24 @@ class ObservationsGenerator (object):
         
         return list_of_observations
     
-    def update_state_changes(self, scene_description: dict, agents_observing: list[str], game_time: str):
+    def update_state_changes(self, scene_description: dict, game_time: str):
         """Update the state changes of the agents
 
         Args:
             scene_description (dict): Scene description of the agents
-            agents_observing (list[str]): List of the agents that are observing and didn't take an action
         """
-        for agent_name in agents_observing:
+        for agent_name in self.players_names:
             agent_dict = scene_description[agent_name]
             local_observation_map = agent_dict['observation']
             last_observation_map =  agent_dict['last_observation']
+            last_global_position = agent_dict['last_global_position']
+            last_orientation = agent_dict['last_orientation']
             local_map_position = (9,5)
             global_position = agent_dict['global_position']
             agent_orientation = agent_dict['orientation']
 
             # Get observed changes in the environment. If the agent is observing, the changes are stored in the observed_changes dictionary
-            observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, agent_orientation, game_time)
+            observed_changes = self.get_observed_changes(local_observation_map, last_observation_map, local_map_position, global_position, last_global_position, agent_orientation, last_orientation, game_time)
             self.observed_changes[agent_name].extend(observed_changes)
     
     def get_observed_changes_per_agent(self, agent_name: str) -> list[tuple[str, str]]:
@@ -245,11 +246,10 @@ class ObservationsGenerator (object):
                 if global_tree_id in trees_observed.get(element_type, []): 
                     continue
 
-                local_tree_center = local_tree_data['center']
-                local_center_real_pos = self.get_element_global_pos(local_tree_center, local_position, global_position, agent_orientation)
+                first_el_real_pos = self.get_element_global_pos(first_element, local_position, global_position, agent_orientation)
 
                 # Check if the local tree corresponds to the global tree
-                if local_center_real_pos not in global_tree_data['elements']:
+                if first_el_real_pos not in global_tree_data['elements']:
                     continue
 
                 # Find the cluster tree of the local tree
@@ -284,7 +284,7 @@ class ObservationsGenerator (object):
         """
         return np.array([[l for l in row] for row in map.split('\n')])
 
-    def get_observed_changes(self, observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str) -> list[tuple[str, str]]:
+    def get_observed_changes(self, observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_last_global_position: tuple, agent_orientation: int, agent_last_orientation: int, game_time: str) -> list[tuple[str, str]]:
         """Create a list of observations of the changes in the environment
         
         Args:
@@ -292,7 +292,9 @@ class ObservationsGenerator (object):
             last_observed_map (str | None): Last map observed by the agent
             agent_local_position (tuple): Position of the agent on the observed map
             agent_global_position (tuple): Global position of the agent
-            agent_orientation (int): Orientation of the agent
+            agent_last_global_position (tuple): Last global position of the agent
+            agent_orientation (int): Orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+            agent_last_orientation (int): Last orientation of the agent. 0: North, 1: East, 2: South, 3: West.
             game_time (str): Current game time
 
         Returns:
@@ -307,25 +309,150 @@ class ObservationsGenerator (object):
         
         curr_m = self.get_matrix(observed_map)
         last_m = self.get_matrix(last_observed_map)
+
+        # Give the same orientation of the current map to the last observation map
+        pad_token = '<' # This token cannot be used in any of the games
+        agent_turned = False
+        if agent_last_orientation is not None:
+            rotation = agent_orientation - agent_last_orientation
+            if rotation != 0: 
+                agent_turned = True
+        else:
+            rotation = 0
+
+        last_m = np.rot90(last_m, rotation)
+        if agent_turned and last_m.shape != curr_m.shape:
+            original_shape = curr_m.shape
+            # Pad the observation maps so they have a square shape
+            max_rows = max(last_m.shape[0], curr_m.shape[0])
+            max_columns = max(last_m.shape[1], curr_m.shape[1])
+            last_m = np.pad(last_m, ((max_rows - last_m.shape[0],), (max_columns - last_m.shape[1],)), constant_values=pad_token)
+            curr_m = np.pad(curr_m, ((max_rows - curr_m.shape[0],), (max_columns - curr_m.shape[1],)), constant_values=pad_token)
+
+            # Crop the observation maps according to the observation window of the agent
+            # Crop the curr_m
+            x, y = np.where(curr_m == self.self_symbol)
+            actual_local_pos_in_curr_map = (x[0], y[0])
+            rows_diff = agent_local_position[0] - actual_local_pos_in_curr_map[0]
+            if rows_diff < 0:
+                curr_m = curr_m[-rows_diff:,:]
+            cols_diff = agent_local_position[1] - actual_local_pos_in_curr_map[1]
+            if cols_diff < 0:
+                curr_m = curr_m[:,-cols_diff:]
+            curr_m = curr_m[:original_shape[0],:original_shape[1]] # Delete rows and columns excess
+            # Crop the last_m
+            x, y = np.where(last_m == self.self_symbol)
+            actual_local_pos_in_last_map = (x[0], y[0])
+            rows_diff = agent_local_position[0] - actual_local_pos_in_last_map[0]
+            if rows_diff < 0:
+                last_m = last_m[-rows_diff:,:]
+            cols_diff = agent_local_position[1] - actual_local_pos_in_last_map[1]
+            if cols_diff < 0:
+                last_m = last_m[:,-cols_diff:]
+            last_m = last_m[:original_shape[0],:original_shape[1]] # Delete rows and columns excess
+        # If the observation window is square
+        elif agent_turned:
+            x, y = np.where(last_m == self.self_symbol)
+            last_local_pos = (x[0], y[0])
+            cols_diff = agent_local_position[1] - last_local_pos[1]
+            rows_diff = agent_local_position[0] - last_local_pos[0]
+            if cols_diff < 0:
+                # remove columns to the left of last observation map
+                new_map = np.full_like(last_m, pad_token)
+                new_map[:,:cols_diff] = last_m[:,-cols_diff:]
+                last_m = new_map
+            elif cols_diff > 0:
+                # remove columns to the right of last observation map
+                new_map = np.full_like(last_m, pad_token)
+                new_map[:,cols_diff:] = last_m[:,:-cols_diff]
+                last_m = new_map
+            if rows_diff < 0:
+                # remove rows to the top of the last observartion map
+                new_map = np.full_like(last_m, pad_token)
+                new_map[:rows_diff,:] = last_m[-rows_diff:,:]
+                last_m = new_map
+            elif rows_diff > 0:
+                # remove rows to the bottom of the last observation map
+                new_map = np.full_like(last_m, pad_token)
+                new_map[rows_diff:,:] = last_m[:-rows_diff,:]
+                last_m = new_map
+
+        # Make the observations' maps comparable
+        agent_moved = False
+        rows_change = agent_global_position[0] - agent_last_global_position[0]
+        columns_change = agent_global_position[1] - agent_last_global_position[1]
+        if agent_orientation == 2: # south
+            rows_change, columns_change = -rows_change, -columns_change
+        elif agent_orientation == 1: # East
+            rows_change, columns_change = -columns_change, rows_change
+        elif agent_orientation == 3: # west
+            rows_change, columns_change = columns_change, -rows_change
+        # If the agent moved up
+        if rows_change < 0:
+            # Should remove rows to the bottom of the last observation and remove rows to the top of the current observation
+            agent_moved = True
+            last_m = last_m[:rows_change,:]
+            curr_m = curr_m[-rows_change:,:]
+            agent_local_position = (agent_local_position[0] + rows_change, agent_local_position[1])
+        # If the agent moved down
+        elif rows_change > 0:
+            # Should remove rows to the top of the last observation and remove rows to the bottom of the current observation
+            agent_moved = True
+            last_m = last_m[rows_change:,:]
+            curr_m = curr_m[:-rows_change,:]
+            # If the agent moved left, columns_change is negative
+        elif columns_change < 0:
+            # Should remove rows to the right of the last observation and remove rows to the left of the current observation
+            agent_moved = True
+            last_m = last_m[:,:columns_change]
+            curr_m = curr_m[:,-columns_change:]
+            agent_local_position = (agent_local_position[0], agent_local_position[1] + columns_change)
+        # If the agent moved right
+        elif columns_change > 0:
+            agent_moved = True
+            # Should remove rows to the left of the last observation and remove rows to the right of the current observation
+            last_m = last_m[:,columns_change:]
+            curr_m = curr_m[:,:-columns_change]
+
+        assert last_m.shape == curr_m.shape, 'The shapes of the last observation map and current observation map must be identical'
+
         for index in np.ndindex(curr_m.shape):
             curr_el = curr_m[index]
             last_el = last_m[index]
             if curr_el != last_el:
                 # If someone attacked nearby
-                if last_el.isnumeric() and curr_el == 'B':
+                if curr_el == pad_token or last_el == pad_token:
+                    pass
+                elif last_el.isnumeric() and curr_el == 'B':
                     el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                    observations.append((f"Someone was attacked at position {el_pos}.", game_time))
-                elif curr_el == 'B':
-                    el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                    observations.append((f"Observed a ray beam from an attack at position {el_pos}.", game_time))
+                    agent_name = self.players_names[int(last_el)]
+                    # If agent attacked the agent did not move
+                    if agent_moved or agent_turned:
+                        observations.append((f"{agent_name} was attacked at position {el_pos}.", game_time))
+                    else:
+                        if agent_local_position[0] >= 3 and curr_m[agent_local_position[0]-3,agent_local_position[1]] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]-1] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]+1] == 'B':
+                            observations.append((f"I successfully attacked {agent_name} at position {el_pos}.", game_time))
+                        else:
+                            observations.append((f"{agent_name} was attacked at position {el_pos}.", game_time))
+                # Ignore this observation for now to avoid generating multiple observations about the position where the ray beam hit
+                # elif curr_el == 'B':
+                #     # If agent attacked the agent did not move
+                #     if original_shape == curr_m.shape and agent_local_position[0] >= 3 and curr_m[agent_local_position[0]-3,agent_local_position[1]] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]-1] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]+1] == 'B':
+                #         pass
+                #     else:
+                #         el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                #         observations.append((f"Observed a ray beam from an attack at position {el_pos}.", game_time))
                 elif last_el == 'B':
                     pass
                 # If an apple was taken
-                elif last_el == 'A':
-                    agent_id = int(curr_el)
-                    agent_name = self.players_names[agent_id]
+                elif last_el == 'A' and curr_el != 'B':
                     el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                    observations.append((f"Observed that agent {agent_name} took an apple from position {el_pos}.", game_time))
+                    if (curr_el == self.self_symbol):
+                        observations.append((f"I took an apple from position {el_pos}.", game_time))
+                    else:
+                        agent_id = int(curr_el)
+                        agent_name = self.players_names[agent_id]
+                        observations.append((f"Observed that agent {agent_name} took an apple from position {el_pos}.", game_time))
                 # If grass desappeared
                 elif last_el == 'G' and curr_el == 'F':
                     el_pos = self.get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)

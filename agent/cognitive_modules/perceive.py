@@ -3,7 +3,7 @@ from llm import LLMModels
 from utils.llm import extract_answers
 from agent.memory_structures.short_term_memory import ShortTermMemory
 
-def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str], changes_in_state: list[str], game_time: str, agent_bio: str = "", prompts_folder = "base_prompts_v0" ) -> tuple[bool, str]:
+def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str], changes_in_state: list[str], curr_position: tuple, agent_bio: str = "", prompts_folder = "base_prompts_v0" ) -> tuple[bool, str]:
     """Decides if the agent should react to the observation.
 
     Args:
@@ -13,7 +13,7 @@ def should_react(name: str, world_context: str, observations: list[str], current
         current_plan (str): Current plan of the agent.
         actions_queue (list[str]): List of actions to be executed by the agent.
         changes_in_state (list[str]): List of changes in the state of the environment.
-        game_time (str): Current game time.
+        curr_position (tuple): Current position of the agent.
         agent_bio (str, optional): Agent bio, defines personality that can be given for agent. Defaults to "".
         prompts_folder (str, optional): Folder where the prompts are stored. Defaults to "base_prompts_v0".
 
@@ -31,7 +31,7 @@ def should_react(name: str, world_context: str, observations: list[str], current
     if changes_in_state:
         changes_in_state = f'The following changes in the environment were observed:\n{changes_in_state}'
     actions_queue = ', '.join([f'{i+1}.{action}' for i, action in enumerate(actions_queue)]) if len(actions_queue) > 0 else 'None'
-    response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, actions_queue, changes_in_state, game_time, agent_bio])
+    response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, actions_queue, changes_in_state, curr_position, agent_bio])
     answers = extract_answers(response)
     answer = answers.get('Answer', False)
     reasoning = answers.get('Reasoning', '')

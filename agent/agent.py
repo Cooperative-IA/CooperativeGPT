@@ -26,7 +26,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 30, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None ) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None ) -> None:
         """Initializes the agent.
 
         Args:
@@ -86,7 +86,7 @@ class Agent:
             agent_is_out (bool, optional): True if the agent is out of the scenario (was taken), False otherwise. Defaults to False.
 
         Returns:
-            Queue: Steps sequence for the current action.
+            action to execute: Low level action to execute.
         """
         if self.mode == 'cooperative':
             return self.move_cooperative(observations, agent_current_scene, changes_in_state, game_time, agent_reward, agent_is_out)
@@ -94,8 +94,7 @@ class Agent:
         # If the agent is out of the game, it does not take any action
         if agent_is_out:
             self.logger.info(f'{self.name} is out of the game, skipping its turn.')
-            step_actions = Queue()
-            return step_actions
+            return None
 
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
@@ -109,9 +108,9 @@ class Agent:
         
         self.reflect(filtered_observations)
         
-        step_actions = self.get_actions_to_execute()
+        step_action = self.get_actions_to_execute()
             
-        return step_actions
+        return step_action
     
     def move_cooperative(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, reward: float, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence (including the cooperative modules) of the agent to decide an action to take
@@ -167,7 +166,7 @@ class Agent:
         Returns:
             tuple[bool, list[str], list[str]]: Tuple with True if the agent should react to the observation, False otherwise, the filtered observations and the changes in the state of the environment.
         """
-        action_executed = self.stm.get_memory('current_action')
+        action_executed = self.stm.get_memory('step_to_take')
         if is_agent_out:
             memory = create_memory(self.name, game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name(), True)
             self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
@@ -214,7 +213,10 @@ class Agent:
         world_context = self.stm.get_memory('world_context')
         agent_bio_str = self.stm.get_memory('bio_str')
         actions_sequence = list_from_queue(copy.copy(self.stm.get_memory('actions_sequence')))
-        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, game_time, agent_bio_str, self.prompts_folder)
+        current_action = self.stm.get_memory('current_action')
+        if current_action and not self.stm.get_memory('current_steps_sequence').empty():
+            actions_sequence.insert(0, current_action)
+        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, position, agent_bio_str, self.prompts_folder)
         self.stm.add_memory(reasoning, 'reason_to_react')
         self.logger.info(f'{self.name} should react to the observation: {react}')
         return react, observations, changes
@@ -338,7 +340,7 @@ class Agent:
         If the current gameloop is empty, it generates a new one.
             
         Returns:
-            Queue: Steps sequence for the current action.
+            Step to take: low level action to execute.
         """
 
         if self.stm.get_memory('current_steps_sequence').empty():
@@ -361,7 +363,7 @@ class Agent:
         # We check if after the previous step the gameloop is still empty, if it is, we generate a new one,
         # all the process above is repeated until we get a gameloop that is not empty
         # If actions sequence were all invalid, we send an explore sequence
-        while self.stm.get_memory('current_steps_sequence').empty() and self.stm.get_memory('current_action') != 'stay put':
+        while self.stm.get_memory('current_steps_sequence').empty():
             if self.stm.get_memory('actions_sequence').empty():
                 self.logger.warn(f'{self.name} current gameloop is empty and there are no more actions to execute, agent will explore')
                 steps_sequence = self.spatial_memory.generate_explore_sequence()
@@ -375,10 +377,11 @@ class Agent:
             self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
     
         agent_steps = self.stm.get_memory('current_steps_sequence')
-        
         self.logger.info(f'{self.name} is executing the action: {self.stm.get_memory("current_action")} with the steps sequence {agent_steps.queue}')
+        step_to_take = agent_steps.get()
+        self.stm.add_memory(step_to_take, 'step_to_take')
 
-        return agent_steps
+        return step_to_take
     
     def understand(self, observations: list[str], state_changes: list[str]):
         """
