@@ -1,4 +1,4 @@
-from llm.openai import GPT35, Ada, GPT35_16K, GPT4, GPT4o
+from llm.openai import GPT4oMini, GPT4o, Embedding
 from llm.base_llm import BaseLLM
 
 class LLMModels():
@@ -10,16 +10,14 @@ class LLMModels():
         if not hasattr(self, 'instance'):
             self.instance = super(LLMModels, self).__new__(self)
             self.instance.llm_models: dict[str, BaseLLM] = {
-            "gpt-3.5": GPT35(),
-            "gpt-3.5-16k": GPT35_16K(),
-            "gpt-4": GPT4(),
-            "gpt-4o": GPT4o(), # GPT-4o 
-            "ada": Ada()
+            "gpt-4o-mini": GPT4oMini(),
+            "gpt-4o": GPT4o(),
+            "embedding": Embedding()
             }
-            self.instance.main_model = "gpt-3.5"
-            self.instance.best_model = "gpt-3.5" # Avoid using gpt-4 for now
-            self.instance.longer_context_fallback = "gpt-3.5-16k"
-            self.instance.embedding_model = "ada"
+            self.instance.main_model = "gpt-4o-mini"
+            self.instance.best_model = "gpt-4o"
+            self.instance.longer_context_fallback = "gpt-4o-mini"
+            self.instance.embedding_model = "embedding"
         return self.instance
 
     def get_main_model(self) -> BaseLLM:
@@ -28,35 +26,35 @@ class LLMModels():
             BaseLLM: Main model
         """
         return self.llm_models[self.main_model]
-    
+
     def get_embedding_model(self) -> BaseLLM:
         """Get the embedding model
         Returns:
             BaseLLM: Embedding model
         """
         return self.llm_models[self.embedding_model]
-    
+
     def get_longer_context_fallback(self) -> BaseLLM:
         """Get the longer context fallback model
         Returns:
             BaseLLM: Longer context fallback model
         """
         return self.llm_models[self.longer_context_fallback]
-    
+
     def get_best_model(self) -> BaseLLM:
         """Get the best model
         Returns:
             BaseLLM: Best model
         """
         return self.llm_models[self.best_model]
-    
+
     def get_gpt_4o_model(self) -> BaseLLM:
         """Get the GPT-4 model
         Returns:
             BaseLLM: GPT-4 model
         """
         return self.llm_models["gpt-4o"]
-    
+
     def get_costs(self) -> dict:
         """Get the costs of the models
         Returns:
@@ -72,7 +70,7 @@ class LLMModels():
         costs['total'] = total_cost
 
         return costs
-    
+
     def get_tokens(self) -> dict:
         """Get the tokens used by the models
         Returns:

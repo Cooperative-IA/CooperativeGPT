@@ -36,23 +36,19 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 8
-    bots_steps_per_agent_move = 2
+    rounds_count, steps_count, max_rounds = 0, 0, 1000
 
     # Get the initial observations and environment information
     env.step(actions)
     actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
     env.step(actions)
-    
+
     while rounds_count < max_rounds and not condition_to_end_game(substrate_name, env.get_current_global_map()):
         # Reset the actions for each agent
         actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
-        # Execute an action for each agent on each step
+        # Execute an action for every agent in one step
         for agent in agents:
-            # Helps to define the dynamic number of bot steps per action as acumulated number
-            accumulated_steps = 0
-
-            #Updates the observations for the current agent
+            # Updates the observations for the current agent
             all_observations =  env.get_observations_by_player(agent.name)
             observations = all_observations['curr_state']
             scene_description = all_observations['scene_description']
@@ -65,51 +61,41 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             agent_reward = env.score[agent.name]
             if check_agent_out_of_game(observations):
                 logger.info('Agent %s was taken out of the game', agent.name)
-                agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
-                step_actions = new_empty_queue()
+                step_action = agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
             else:
-                step_actions = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
+                step_action = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
 
 
-            while not step_actions.empty():
-                step_action = step_actions.get()
-                # Update the actions map for the agent
-                actions[agent.name] = generate_agent_actions_map(step_action, default_agent_actions_map())
-                logger.info('Agent %s action map: %s', agent.name, actions[agent.name] )
+            # Update the actions map for the agent
+            actions[agent.name] = generate_agent_actions_map(step_action, default_agent_actions_map())
+            logger.info('Agent %s action map: %s', agent.name, actions[agent.name] )
 
-                # Execute a move for the bots
-                if env.bots:
-                    for bot in env.bots:
-                        bot_observations =  env.get_observations_by_player(bot.name)
-                        bot_observations = bot_observations['curr_state']
-                        if check_agent_out_of_game(bot_observations):
-                            logger.info(f'Bot {bot.name} was taken out of the game. Skipping bot move.')
-                            actions[bot.name] = default_agent_actions_map()
-                        if env.get_current_step_number() % bots_steps_per_agent_move == 0:
-                            bot_action = bot.move(env.timestep)
-                            actions[bot.name] = bot_action
-                        else:
-                            actions[bot.name] = default_agent_actions_map()
+        # Execute a move for the bots
+        if env.bots:
+            for bot in env.bots:
+                bot_observations =  env.get_observations_by_player(bot.name)
+                bot_observations = bot_observations['curr_state']
+                if check_agent_out_of_game(bot_observations):
+                    logger.info(f'Bot {bot.name} was taken out of the game. Skipping bot move.')
+                    actions[bot.name] = default_agent_actions_map()
+                else:
+                    bot_action = bot.move(env.timestep)
+                    actions[bot.name] = bot_action
 
-                # Execute each step one by one until the agent has executed all the steps for the high level action
-                try:
-                    env.step(actions)
-                    steps_count += 1
-                    accumulated_steps += 1
-                except:
-                    logger.exception("Error executing action %s", step_action)
-                    step_actions = new_empty_queue()
+        # Execute the step with all the actions per agent at the same time
+        try:
+            env.step(actions)
+            steps_count += 1
+        except:
+            logger.exception("Error executing actions %s", actions)
 
-            # Reset actions for the agent until its next turn
-            actions[agent.name] = default_agent_actions_map()
-            
-            # Persist the short term memories of the agents
-            if persist_memories:
-                memories = {agent.name: agent.stm.get_memories().copy() for agent in agents}
-                persist_short_term_memories(memories, rounds_count, steps_count, logger_timestamp)
+        # Persist the short term memories of the agents
+        if persist_memories:
+            memories = {agent.name: agent.stm.get_memories().copy() for agent in agents}
+            persist_short_term_memories(memories, rounds_count, steps_count, logger_timestamp)
 
         rounds_count += 1
-        logger.info('Round %s completed. Executed all the high level actions for each agent.', rounds_count)
+        logger.info('Round %s completed. Every agent executed an action.', rounds_count)
         env.update_history_file(logger_timestamp, rounds_count, steps_count)
         time.sleep(0.01)
 
@@ -121,35 +107,35 @@ if __name__ == "__main__":
 
     # Define the simulation mode
     mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
-    
+
     global substrate_utils
     substrate_utils = import_module(f'game_environment.substrates.utilities.{args.substrate}.substrate_utils')
-    
+
     # If the experiment is "personalized", prepare a start_variables.txt file on config path
-    # It will be copied from args.scene_path, file is called variables.txt 
+    # It will be copied from args.scene_path, file is called variables.txt
     scene_path = None
     if args.start_from_scene :
-        scene_path = f"data/scenes/{args.start_from_scene}" 
+        scene_path = f"data/scenes/{args.start_from_scene}"
         os.system(f"cp {scene_path}/variables.txt config/start_variables.txt")
-        
+
     # Define players
     experiment_path = os.path.join("data", "defined_experiments", args.substrate)
     agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
     game_scenario = args.scenario if args.scenario != "default" else None
     players_context = get_players_contexts(agents_bio_dir)
     players = extract_players(players_context)
-    
+
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
 
     # Load the scenario map, the valid actions and the scenario obstacles
     scenario_info = substrate_utils.load_scenario_info(players_context)
-    
+
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
     # Create agents
     agents = [Agent(name=player, data_folder=data_folder, agent_context_file=player_context,
                     world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path) 
+                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path)
               for player, player_context in zip(players, players_context)]
 
     # Start the game server
@@ -173,7 +159,7 @@ if __name__ == "__main__":
     # Persisting agents memories to the logs folder
     if args.persist_memories:
         os.system(f"cp -r {data_folder}/ltm_database logs/{logger_timestamp}")
-    
+
 
     # LLm total cost
     costs = llm.get_costs()
@@ -184,8 +170,7 @@ if __name__ == "__main__":
     logger.info("Execution time: %.2f minutes", (end_time - start_time)/60)
 
     logger.info("Program finished")
-    
+
     # If there's a simulation_id, we will change the logs/{logger_timestamp} name to logs/{logger_timestamp}__{simulation_id}
     if args.simulation_id:
         os.system(f"mv logs/{logger_timestamp} logs/{logger_timestamp}__{args.simulation_id}")
-        

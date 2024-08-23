@@ -3,7 +3,7 @@ from llm import LLMModels
 from utils.llm import extract_answers
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from importlib import import_module
-def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str], changes_in_state: list[str], game_time: str, agent_bio: str = "", prompts_folder = "base_prompts_v0" ) -> tuple[bool, str]:
+def should_react(name: str, world_context: str, observations: list[str], current_plan: str, actions_queue: list[str], changes_in_state: list[str], curr_position: tuple, agent_bio: str = "", prompts_folder = "base_prompts_v0" ) -> tuple[bool, str]:
     """Decides if the agent should react to the observation.
 
     Args:
@@ -13,7 +13,7 @@ def should_react(name: str, world_context: str, observations: list[str], current
         current_plan (str): Current plan of the agent.
         actions_queue (list[str]): List of actions to be executed by the agent.
         changes_in_state (list[str]): List of changes in the state of the environment.
-        game_time (str): Current game time.
+        curr_position (tuple): Current position of the agent.
         agent_bio (str, optional): Agent bio, defines personality that can be given for agent. Defaults to "".
         prompts_folder (str, optional): Folder where the prompts are stored. Defaults to "base_prompts_v0".
 
@@ -23,7 +23,7 @@ def should_react(name: str, world_context: str, observations: list[str], current
 
     if current_plan is None:
         return True, 'There is no plan to follow.'
-    
+
     llm = LLMModels().get_main_model()
     prompt_path = os.path.join(prompts_folder, 'react.txt')
     observation = '\n'.join(observations)
@@ -31,7 +31,7 @@ def should_react(name: str, world_context: str, observations: list[str], current
     if changes_in_state:
         changes_in_state = f'The following changes in the environment were observed:\n{changes_in_state}'
     actions_queue = ', '.join([f'{i+1}.{action}' for i, action in enumerate(actions_queue)]) if len(actions_queue) > 0 else 'None'
-    response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, actions_queue, changes_in_state, game_time, agent_bio])
+    response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, actions_queue, changes_in_state, curr_position, agent_bio])
     answers = extract_answers(response)
     answer = answers.get('Answer', False)
     reasoning = answers.get('Reasoning', '')
@@ -54,7 +54,7 @@ def update_known_agents(observations: list[str], stm: ShortTermMemory):
             agent_name = observation.split(' ')[2] # agent name is the third word of the observation
             if agent_name not in known_agents:
                 known_agents.append(agent_name)
-    
+
     known_agents = set(known_agents)
     stm.set_known_agents(known_agents)
 
@@ -71,7 +71,7 @@ def update_known_objects(observations: list[str], stm: ShortTermMemory, substrat
     """
     substrate_utils_module =  import_module(f'game_environment.substrates.utilities.{substrate_name}.substrate_utils')
     substrate_utils_module.update_known_objects(observations, stm)
-        
+
 
 def create_memory(agent_name: str, curr_time: str, action: str|None, state_changes: list[str], reward: float, curr_observations: list[str], position: list[int], orientation: str) -> str:
     """Creates a memory from the action, state changes, reward and observations.
@@ -102,5 +102,5 @@ def create_memory(agent_name: str, curr_time: str, action: str|None, state_chang
         memory += f'\nI can currently observe the following:\n{curr_observations}'
     else:
         memory += f'\nI can\'t currently observe anything.'
-    
+
     return memory

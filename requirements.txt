@@ -115,6 +115,7 @@ psutil==5.9.6
 ptyprocess==0.7.0
 pulsar-client==3.3.0
 pure-eval==0.2.2
+pyarrow==17.0.0
 pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pycnite==2023.9.18
@@ -159,7 +160,7 @@ tensorflow-estimator==2.13.0
 tensorflow-io-gcs-filesystem==0.34.0
 termcolor==2.3.0
 tifffile==2023.9.18
-tiktoken==0.5.1
+tiktoken==0.7.0
 tokenizers==0.14.0
 toml==0.10.2
 tomli==2.0.1

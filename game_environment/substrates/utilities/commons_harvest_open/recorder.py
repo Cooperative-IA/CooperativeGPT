@@ -1,10 +1,10 @@
 import os
 import json
 
-from game_environment.utils import connected_elems_map, get_local_position_of_element
+from game_environment.utils import connected_elems_map, get_local_position_of_element, get_element_global_pos
 from utils.math import manhattan_distance
 
-def get_nearest_apple(game_map: list[list[str]], position: tuple[int, int]) -> tuple[int, int]:
+def get_nearest_apple(map:str|list[list[str]], position:tuple[int, int]) -> tuple[tuple[int, int]|None, int]:
     """
     Get the nearest apple position
 
@@ -15,7 +15,7 @@ def get_nearest_apple(game_map: list[list[str]], position: tuple[int, int]) -> t
     Returns:
         tuple[tuple[int, int], int]: Nearest apple position and its distance. If there are no apples, return None, float('inf')
     """
-    groups = connected_elems_map(game_map, ['A'])
+    groups = connected_elems_map(map, ['A'])
     nearest_apple = None
     nearest_distance = float('inf')
     for group in groups.values():
@@ -51,10 +51,10 @@ def is_apple_the_last_of_tree(game_map: list[list[str]], apple_position: tuple[i
             element = game_map[elem[0]][elem[1]]
             if element == 'A':
                 apples.append(elem)
-        
+
         if len(apples) == 1:
             return True
-        
+
     return False
 
 def record(record_obj, timestep, description: dict):
@@ -74,7 +74,7 @@ def record(record_obj, timestep, description: dict):
         if description["effective_zap"]:
             record_obj.effective_attack_object[agent]['effective_attack'] += 1
 
-def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict, previous_map: list[list[str]]):
+def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict, previous_map: list[list[str]]):
     """
     Record the game state before the agents take any action
 
@@ -82,7 +82,9 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         record_obj (Recorder): Recorder object
         initial_map (str): Initial map
         current_map (list[list[str]]): Current map
-        agents_observing (list[str]): Agents that are not going to take any action
+        current_actions_map (dict): Actions to take for each agent
+        scene_description (dict): State description for each agent
+        previous_map (list[list[str]]): Previous map in list of lists
     """
     # Create the last_apple_object if it does not exist
     if not hasattr(record_obj, 'last_apple_object'):
@@ -92,21 +94,24 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     if not hasattr(record_obj, 'attack_object'):
         record_obj.attack_object = {agent:{'decide_to_attack': 0} for agent in record_obj.player_names}
 
-    # Get the agents that are taking actions
-    agents_taking_actions = [agent for agent in record_obj.player_names if agent not in agents_observing]
+    if current_actions_map is None:
+        return
 
-    for agent in agents_taking_actions:
-        agent_id = record_obj.agents_ids[agent]
-        agent_position = get_local_position_of_element(current_map, agent_id)
-        if agent_position is None:
-            continue
+    for agent in current_actions_map:
+        scene = scene_description[agent]
         # Check if is the last apple scenario
-        nearest_apple, distance = get_nearest_apple(current_map, agent_position)
+        is_last = False
+        # TODO: The following corner cases are not taken in account
+        ## Since the apple is searched in the agent's observation window, if someone attacked, the ray beam could hide the apple
+        ## Might happen that there are two apples at the same distance and just one of them is a last apple
+        nearest_apple, distance = get_nearest_apple(scene['observation'], scene['local_position'])
+        if nearest_apple:
+            nearest_apple = get_element_global_pos(nearest_apple, scene['local_position'], scene['global_position'], scene['orientation'])
+            is_last = is_apple_the_last_of_tree(current_map, nearest_apple, list(record_obj.agents_ids.values()))
 
-        is_last = is_apple_the_last_of_tree(current_map, nearest_apple, list(record_obj.agents_ids.values()))
         if is_last:
             # Update the last_apple_object
-            record_obj.last_apple_object[agent]['scenario_seen'] += 1 if not current_actions_map[agent]['turn'] else 0   # If the agent turned, we dont want to count the scenario
+            record_obj.last_apple_object[agent]['scenario_seen'] += 1
             record_obj.last_apple_object[agent]['last_apple_pos'] = nearest_apple # If last_apple_pos is set, then after taking the action we can check if the apple is still there
             record_obj.last_apple_object[agent]['distance'] = distance
 
@@ -116,7 +121,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
             if did_attack:
                 record_obj.attack_object[agent]['decide_to_attack'] += 1
 
-def record_elements_status(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str]):
+def record_elements_status(record_obj, initial_map: list[list[str]], current_map: list[list[str]]):
     """
     Record the game state after the agents took the actions
 
@@ -124,7 +129,6 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
         record_obj (Recorder): Recorder object
         initial_map (str): Initial map
         current_map (list[list[str]]): Current map
-        agents_observing (list[str]): Agents that are not going to take any action
     """
     connected_elements = connected_elems_map(initial_map, ['A'])
 
@@ -142,9 +146,6 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
     # Check if the last apple was taken or if the agent moved towards the last apple
     if hasattr(record_obj, 'last_apple_object'):
         for agent in record_obj.last_apple_object:
-            
-            if agent in agents_observing:
-                continue
 
             if record_obj.last_apple_object[agent]['last_apple_pos'] is not None:
                 # Check if the agent moved towards the last apple
@@ -181,7 +182,7 @@ def save_custom_indicators(record_obj):
 
     # Number of times the agent saw the last apple scenario
     times_saw_last_apple_scenario = {agent: record_obj.last_apple_object[agent]['scenario_seen'] for agent in record_obj.last_apple_object}
-        
+
     # Number of times the agent took the last apple
     times_took_last_apple = {agent: record_obj.last_apple_object[agent]['took_last_apple'] for agent in record_obj.last_apple_object}
 

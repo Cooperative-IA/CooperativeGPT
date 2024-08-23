@@ -445,13 +445,9 @@ class Game:
         # Get the raw observations from the environment
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
         prev_global_map = self.prev_global_map.copy() if hasattr(self, 'prev_global_map') else None
-        # Get the agents that are observing and didn't move
-        agents_observing = []
-        if current_actions_map:
-            agents_observing = [agent_name for agent_name, action_map in current_actions_map.items() if action_map == default_agent_actions_map(self.substrate_name)]
 
         if self.record:
-            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, agents_observing, current_actions_map, prev_global_map)
+            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description)
 
         if self.first_move_done :
             # Get the next action map
@@ -516,7 +512,7 @@ class Game:
             # Update the time: One hour per step
             self.time += datetime.timedelta(hours=1)
         self.prev_global_map = curr_global_map
-        
+
         # Get the raw observations from the environment after the actions are executed
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
 
@@ -524,19 +520,16 @@ class Game:
         if self.record:
             self.game_recorder.record(self.timestep, description)
             self.game_recorder.record_rewards(rewards)
-            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map, agents_observing)
+            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
             self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
             self.record_counter += 1
 
         # Update the observations generator
         game_time = self.get_time()
-        self.observationsGenerator.update_state_changes(description, agents_observing, game_time)
+        self.observationsGenerator.update_state_changes(description, game_time)
 
         self.curr_scene_description = description
         self.curr_global_map = curr_global_map
-        
-        # Return the observations of each player and the descriptions
-        # return self.observationsGenerator.get_all_observations_descriptions(str(description).strip(), agents_observing), description
 
     def get_observations_by_player(self, player_prefix: str) -> dict:
         """Returns the observations of the given player.

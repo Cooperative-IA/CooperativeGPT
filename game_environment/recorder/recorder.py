@@ -72,17 +72,16 @@ class Recorder:
             scene_dict = {'step':self.step,  'memory_time': str(time), 'current_map': matrix_to_string(current_map), 'agents_status': agents_status}
             f.write(f"{scene_dict}\n")
 
-    def record_elements_status(self, initial_map, current_map, agents_observing: list[str]):
+    def record_elements_status(self, initial_map, current_map):
         """
         Record some elements status of the map
 
         Args:
             initial_map (str): Initial map
             current_map (list[list[str]]): Current map
-            agents_observing (list[str]): Agent names of the agents that are not going to take any action
         """
         if self._record_elements_status:
-            self._record_elements_status(self, initial_map, current_map, agents_observing)
+            self._record_elements_status(self, initial_map, current_map)
         elif self.substrate_name == 'clean_up':
             apples = 0
             dirt = 0
@@ -93,21 +92,22 @@ class Recorder:
                         apples += 1
                     elif elem == 'D':
                         dirt += 1
-            
+
             with open(os.path.join(self.log_path, "apples_history.txt"), "a") as f:
                 f.write(f"{self.step}: A_{apples} - D_{dirt}\n ")
 
-    def record_game_state_before_actions(self, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict, previous_map: list[list[str]]):
+    def record_game_state_before_actions(self, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict, previous_map: list[list[str]]):
         """
         Record the game state before the agents take any action
 
         Args:
             initial_map (list[list[str]]): Initial map
             current_map (list[list[str]]): Current map
-            agents_observing (list[str]): Agents that are not going to take any action
+            current_actions_map (dict): Actions that the agents are going to take
+            scene_description (dict): Current state of the game before any actions are taken
         """
         if self._record_game_state_before_actions:
-            self._record_game_state_before_actions(self, initial_map, current_map, agents_observing, current_actions_map, previous_map)
+            self._record_game_state_before_actions(self, initial_map, current_map, current_actions_map, scene_description, previous_map)
 
     def save_log(self):
         recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)
@@ -118,7 +118,7 @@ class Recorder:
     def save_image(image, path):
         io.imsave(path, image)
 
-        
+
     def add_description(self, description):
         canvas = np.ones((600, 600, 3), dtype=np.uint8) * 255
         sub_str = "You were attacked by agent "
