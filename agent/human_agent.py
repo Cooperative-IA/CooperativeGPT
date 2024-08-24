@@ -58,12 +58,7 @@ class HumanAgent(Agent):
                                                     agent_current_scene['observation'])
         self.perceive(observations, changes_in_state, game_time, agent_reward)
         
-
-        if not agent_is_out:
-            self.generate_new_actions(changes_in_state, gui)
-            step_actions = self.get_actions_to_execute()
-        else :
-            step_actions = Queue()
+        step_actions = self.get_actions_to_execute()
             
         return step_actions
 

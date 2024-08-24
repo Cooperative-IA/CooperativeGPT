@@ -25,10 +25,10 @@ def record(record_obj, timestep, description: dict):
         if description["effective_zap"]:
             record_obj.effective_attack_object[agent]['effective_attack'] += 1
         
+    #TODO ADJUST THIS FILE IF NECESSARY 
         
         
-
-def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], agents_observing: list[str], current_actions_map: dict, previous_map: list[list[str]]):
+def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict, previous_map: list[list[str]]):
     """
     Record the game state before the agents take any action
 
@@ -36,7 +36,9 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         record_obj (Recorder): Recorder object
         initial_map (str): Initial map
         current_map (list[list[str]]): Current map
-        agents_observing (list[str]): Agents that are not going to take any action
+        current_actions_map (dict): Actions to take for each agent
+        scene_description (dict): State description for each agent
+        previous_map (list[list[str]]): Previous map in list of lists
     """
     
     # Create the attack_object if it does not exist
@@ -46,10 +48,13 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     #if not hasattr(record_obj, 'collected_coins_object'):
     #    record_obj.collected_coins_object = {agent:{'red_coins':0,  'yellow_coins':0} for agent in record_obj.player_names}
         
-    # Get the agents that are taking actions
-    agents_taking_actions = [agent for agent in record_obj.player_names if agent not in agents_observing]
+    # Get the agents 
 
-    for agent in agents_taking_actions:
+    if current_actions_map is None:
+        return
+
+    for agent in current_actions_map:
+        #TODO ADJUST THIS FILE IF NECESSARY 
         agent_id = record_obj.agents_ids[agent]
         agent_position = get_local_position_of_element(current_map, agent_id)
         if agent_position is None or previous_map is None:

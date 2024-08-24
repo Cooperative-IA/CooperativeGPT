@@ -1,6 +1,6 @@
 import json
 from agent.memory_structures.short_term_memory import ShortTermMemory
-from game_environment.utils import connected_elems_map, get_element_global_pos, check_agent_out_of_game, get_matrix
+from game_environment.utils import connected_elems_map, get_element_global_pos, check_agent_out_of_game, get_matrix, process_observed_matrices
 import numpy as np
 from game_environment.server import get_scenario_map
 
@@ -167,20 +167,27 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
 
 
 
-def get_observed_changes(observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, players_names: dict, agent_name:str) -> list[tuple[str, str]]:
-    """Create a list of observations of the changes in the environment
-    
+def get_observed_changes( observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_last_global_position: tuple, agent_orientation: int, agent_last_orientation: int, game_time: str, players_names:dict, agent_name: str, self_symbol:str) -> list[tuple[str, str]]:
+    """
+    Create a list of observations of the changes in the environment by comparing the current and last observed maps.
+
     Args:
-        observed_map (str): Map observed by the agent
-        last_observed_map (str | None): Last map observed by the agent
-        agent_local_position (tuple): Position of the agent on the observed map
-        agent_global_position (tuple): Global position of the agent
-        agent_orientation (int): Orientation of the agent
-        game_time (str): Current game time
+        observed_map (str): Map observed by the agent.
+        last_observed_map (str | None): Last map observed by the agent.
+        agent_local_position (tuple): Position of the agent on the observed map.
+        agent_global_position (tuple): Global position of the agent.
+        agent_last_global_position (tuple): Last global position of the agent.
+        agent_orientation (int): Orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+        agent_last_orientation (int): Last orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+        game_time (str): Current game time.
+        player_names (dict): Dictionary with the names of the players.
+        agent_name (str): Name of the agent.
+        self_symbol (str): Symbol of the agent.
 
     Returns:
-        list[tuple[str, str]]: List of tuples with the changes in the environment, and the game time
+        list[tuple[str, str]]: List of tuples with the changes in the environment and the game time.
     """
+    pad_token = '<' # This token cannot be used in any of the games
     if check_agent_out_of_game([observed_map]):
         return [(observed_map, game_time)]
     
@@ -190,6 +197,18 @@ def get_observed_changes(observed_map: str, last_observed_map: str | None, agent
     
     curr_m = get_matrix(observed_map)
     last_m = get_matrix(last_observed_map)
+    
+    curr_m, last_m, agent_local_position, agent_moved, agent_turned = process_observed_matrices(
+            curr_m,
+            last_m,
+            agent_local_position,
+            agent_global_position,
+            agent_last_global_position,
+            agent_orientation,
+            agent_last_orientation,
+            self_symbol,
+            pad_token
+        )
 
     for index in np.ndindex(curr_m.shape):
         curr_el = curr_m[index]
