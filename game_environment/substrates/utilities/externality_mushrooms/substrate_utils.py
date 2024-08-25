@@ -1,13 +1,24 @@
 from agent.memory_structures.short_term_memory import ShortTermMemory
-from game_environment.utils import connected_elems_map, get_element_global_pos, check_agent_out_of_game, get_matrix
+from game_environment.utils import connected_elems_map, get_element_global_pos, check_agent_out_of_game, get_matrix, process_observed_matrices
 import numpy as np
 from game_environment.server import get_scenario_map
 
 substrate_name = "externality_mushrooms"
-scenario_obstacles = ["W", "$"]
+scenario_obstacles = ["W", "$", "n","S"]
 
-def load_scenario_info(players_context: list[str] = None):
-    return {'scenario_map': get_scenario_map(game_name=substrate_name), 
+def load_scenario_info(players_context: list[str]):
+    """
+    Description: Load the scenario information for the substrate
+    And set the agents context given from the main file
+    Args:
+        players_context (dict): Dictionary with the players context
+    Returns:
+        dict: Dictionary with the scenario information
+    """
+    global agents_context
+    agents_context = players_context
+    
+    return {'scenario_map': get_scenario_map(substrate_name), 
             'valid_actions': get_defined_valid_actions(), 
             'scenario_obstacles': scenario_obstacles}
 
@@ -97,11 +108,13 @@ def get_connected_elements(global_map: str):
     
     
     
+    
+    
 def get_specific_substrate_obs(local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int, connected_elements:dict, symbols:dict):
         
     """
-    Description: Returns a list with the descriptions of the objects observed by the agent
-
+    Description: Returns a list with the descriptions of the mushrooms observed by the agent
+    NOTE: This function is specific for the substrate
     Args:
         local_map (str): Local map in ascci format
         local_position (tuple): Local position of the agent
@@ -109,36 +122,48 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
         agent_orientation (int): Orientation of the agent
         
     Returns:
-        list: List with the descriptions of the objects observed by the agent
+        list: List with the descriptions of the mushrooms observed by the agent
     """
-    
-    items_observed = []
-    # Get apples (A) and dirt (D) observed descriptions
+    mushroom_symbols = {
+    'F': 'purple',
+    'H': 'green',
+    'Z': 'blue',
+    'N': 'orange'
+    }
+    observations = []
     for i, row in enumerate(local_map.split('\n')):
         for j, char in enumerate(row):
-            if char == 'A':
-                apple_global_pos = get_element_global_pos((i,j), local_position, global_position, agent_orientation)
-                items_observed.append("Observed an apple at position {}".format(apple_global_pos))
+            if char in mushroom_symbols:
+                # Fetching the description from the symbols dictionary
+                mushroom_desc = mushroom_symbols[char]
+                mushroom_global_pos = get_element_global_pos((i, j), local_position, global_position, agent_orientation)
+                observations.append(f"Observed a {mushroom_desc} mushroom at position {mushroom_global_pos}")
+                
+    return observations    
 
-    return items_observed
-    
 
 
+def get_observed_changes( observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_last_global_position: tuple, agent_orientation: int, agent_last_orientation: int, game_time: str, players_names:dict, agent_name: str, self_symbol:str) -> list[tuple[str, str]]:
+    """
+    Create a list of observations of the changes in the environment by comparing the current and last observed maps.
 
-def get_observed_changes(observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_orientation: int, game_time: str, players_names: dict, agent_name:str) -> list[tuple[str, str]]:
-    """Create a list of observations of the changes in the environment
-    
     Args:
-        observed_map (str): Map observed by the agent
-        last_observed_map (str | None): Last map observed by the agent
-        agent_local_position (tuple): Position of the agent on the observed map
-        agent_global_position (tuple): Global position of the agent
-        agent_orientation (int): Orientation of the agent
-        game_time (str): Current game time
+        observed_map (str): Map observed by the agent.
+        last_observed_map (str | None): Last map observed by the agent.
+        agent_local_position (tuple): Position of the agent on the observed map.
+        agent_global_position (tuple): Global position of the agent.
+        agent_last_global_position (tuple): Last global position of the agent.
+        agent_orientation (int): Orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+        agent_last_orientation (int): Last orientation of the agent. 0: North, 1: East, 2: South, 3: West.
+        game_time (str): Current game time.
+        player_names (dict): Dictionary with the names of the players.
+        agent_name (str): Name of the agent.
+        self_symbol (str): Symbol of the agent.
 
     Returns:
-        list[tuple[str, str]]: List of tuples with the changes in the environment, and the game time
+        list[tuple[str, str]]: List of tuples with the changes in the environment and the game time.
     """
+    pad_token = '<' # This token cannot be used in any of the games
     if check_agent_out_of_game([observed_map]):
         return [(observed_map, game_time)]
     
@@ -148,18 +173,65 @@ def get_observed_changes(observed_map: str, last_observed_map: str | None, agent
     
     curr_m = get_matrix(observed_map)
     last_m = get_matrix(last_observed_map)
-    for index in np.ndindex(curr_m.shape):
-        curr_el = curr_m[index]
-        last_el = last_m[index]
-        if curr_el != last_el:
-            # If someone attacked nearby
-            if last_el.isnumeric() and curr_el == 'B':
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Someone was attacked at position {el_pos}.", game_time))
-            elif curr_el == 'B':
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Observed a ray beam from an attack at position {el_pos}.", game_time))
-            elif last_el == 'B':
-                pass
+    
+        
+    curr_m, last_m, agent_local_position, agent_moved, agent_turned = process_observed_matrices(
+            curr_m,
+            last_m,
+            agent_local_position,
+            agent_global_position,
+            agent_last_global_position,
+            agent_orientation,
+            agent_last_orientation,
+            self_symbol,
+            pad_token
+        )
+    
+    mushroom_type = {'F': 'purple', 'H': 'green', 'Z': 'blue', 'N': 'orange'}
 
+    curr_m = list(observed_map)
+    last_m = list(last_observed_map)
+
+    for index, (curr_el, last_el) in enumerate(zip(curr_m, last_m)):
+        # Skip if the elements are the same
+        if curr_el == last_el:
+            continue
+    
+        # If someone attacked nearby
+        if curr_el == pad_token or last_el == pad_token:
+            pass
+        elif last_el.isnumeric() and curr_el == 'B':
+            el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+            agent_name = players_names[int(last_el)]
+            # If agent attacked the agent did not move
+            if agent_moved or agent_turned:
+                observations.append((f"{agent_name} was attacked at position {el_pos}.", game_time))
+            else:
+                if agent_local_position[0] >= 3 and curr_m[agent_local_position[0]-3,agent_local_position[1]] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]-1] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]+1] == 'B':
+                    observations.append((f"I successfully attacked {agent_name} at position {el_pos}.", game_time))
+                else:
+                    observations.append((f"{agent_name} was attacked at position {el_pos}.", game_time))
+                    
+        elif last_el == 'B':
+            pass
+        # If an apple was taken
+        elif last_el in mushroom_type and curr_el != "B":
+            el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+            if (curr_el == self_symbol):
+                pre = "an" if mushroom_type[last_el][0].lower() in "aeiou" else "a"
+                element_taken = f"{pre} {mushroom_type[last_el]} mushroom"
+                observations.append((f"I took {element_taken} from position {el_pos}.", game_time))
+            elif curr_el.isdigit():
+                agent_id = int(curr_el)
+                agent_name = players_names[agent_id]
+                observations.append((f"Observed that agent {agent_name} took {element_taken} from position {el_pos}.", game_time))
+            else:
+                # If no player took it, it disappeared
+                observations.append((f"Observed that {mushroom_type[last_el]} mushroom disappeared from position {el_pos}.", game_time))
+        # If a mushroom appeared
+        elif last_el == 'D' and curr_el in mushroom_type:
+            el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+            pre = "an" if mushroom_type[last_el][0].lower() in "aeiou" else "a"
+            element_appeared = f"{pre} {mushroom_type[curr_el]} mushroom"
+            observations.append((f"Observed {element_appeared} appear at position {el_pos}.", game_time))
     return observations

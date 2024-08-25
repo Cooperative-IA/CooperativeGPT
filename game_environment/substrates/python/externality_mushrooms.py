@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 PrefabConfig = game_object_utils.PrefabConfig
 
 ASCII_MAP = """
-/_____________________+
+(_____________________)
 '#####################`
 !                     |
 ! R             G     |

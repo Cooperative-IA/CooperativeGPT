@@ -58,6 +58,7 @@ class HumanAgent(Agent):
                                                     agent_current_scene['observation'])
         self.perceive(observations, changes_in_state, game_time, agent_reward)
         
+        self.generate_new_actions(changes_in_state, gui)
         step_actions = self.get_actions_to_execute()
             
         return step_actions

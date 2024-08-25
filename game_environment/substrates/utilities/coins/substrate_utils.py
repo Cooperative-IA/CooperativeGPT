@@ -156,8 +156,12 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
                         other_agent_id = int(char)
                         other_agent_team = 'yellow' if other_agent_id%2 == 0  else 'red'
                         other_agent_name = agents_context[other_agent_id]['name']
-                        other_agent_pos = get_element_global_pos((i,j), local_position, global_position, agent_orientation)
-                        obaservations.append(f"Observed agent {other_agent_name} from {other_agent_team} team at position {other_agent_pos}")
+                        #other_agent_pos = get_element_global_pos((i,j), local_position, global_position, agent_orientation)
+                        #obaservations.append(f"Observed agent {other_agent_name} from {other_agent_team} team at position {other_agent_pos}")
+                        #Observation above is omited because the global function says the same thing but without team info.
+                        
+                        #Add observation saying that observes agent is from team red or yellow
+                        obaservations.append(f"Observed agent {other_agent_name} is from team {other_agent_team}")
                     except:
                         pass
                     
@@ -210,36 +214,46 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
             pad_token
         )
 
-    for index in np.ndindex(curr_m.shape):
-        curr_el = curr_m[index]
-        last_el = last_m[index]
-        if curr_el != last_el:
-            # If someone attacked nearby
-            if last_el.isnumeric() and curr_el == 'B':
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Someone was attacked at position {el_pos}.", game_time))
-            elif curr_el == 'B':
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Observed a ray beam from an attack at position {el_pos}.", game_time))
-            elif last_el == 'B':
-                pass
-            # If an apple was taken
-            elif last_el == 'y' or last_el == 'r':
-                color_coin = 'red' if last_el == 'r' else 'yellow'
-                agent_team = get_agent_team_by_name(agent_name)
-                other_agent_id = int(curr_el)
-                other_agent_name = players_names[other_agent_id]
-                other_agent_team = get_agent_team_by_name(other_agent_name)
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                if other_agent_team == agent_team:
-                    observations.append((f"Observed that teammate {other_agent_name} took a {color_coin} coin at position {el_pos}.", game_time))
+    for index, (curr_el, last_el) in enumerate(zip(curr_m, last_m)):
+        # Skip if the elements are the same
+        if curr_el == last_el:
+            continue
+    
+        # If someone attacked nearby
+        if curr_el == pad_token or last_el == pad_token:
+            pass
+        elif last_el.isnumeric() and curr_el == 'B':
+            el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+            agent_name = players_names[int(last_el)]
+            # If agent attacked the agent did not move
+            if agent_moved or agent_turned:
+                observations.append((f"{agent_name} was attacked at position {el_pos}.", game_time))
+            else:
+                if agent_local_position[0] >= 3 and curr_m[agent_local_position[0]-3,agent_local_position[1]] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]-1] == 'B' and curr_m[agent_local_position[0],agent_local_position[1]+1] == 'B':
+                    observations.append((f"I successfully attacked {agent_name} at position {el_pos}.", game_time))
                 else:
-                    observations.append((f"Observed that agent {other_agent_name} from team {other_agent_team} took a {color_coin} coin at position {el_pos}.", game_time))
-            # If apple appeared
-            elif last_el == ' ' and (curr_el == 'r' or curr_el == 'y'):
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                color_coin = 'red' if curr_el == 'r' else 'yellow'
-                observations.append((f"Observed a {color_coin} coin appeared at position {el_pos}.", game_time))
+                    observations.append((f"{agent_name} was attacked at position {el_pos}.", game_time))
+                    
+        elif last_el == 'B':
+            pass
+        
+        # If an apple was taken
+        elif last_el == 'y' or last_el == 'r':
+            color_coin = 'red' if last_el == 'r' else 'yellow'
+            agent_team = get_agent_team_by_name(agent_name)
+            other_agent_id = int(curr_el)
+            other_agent_name = players_names[other_agent_id]
+            other_agent_team = get_agent_team_by_name(other_agent_name)
+            el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+            if other_agent_team == agent_team:
+                observations.append((f"Observed that teammate {other_agent_name} took a {color_coin} coin at position {el_pos}.", game_time))
+            else:
+                observations.append((f"Observed that agent {other_agent_name} from team {other_agent_team} took a {color_coin} coin at position {el_pos}.", game_time))
+        # If apple appeared
+        elif last_el == ' ' and (curr_el == 'r' or curr_el == 'y'):
+            el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+            color_coin = 'red' if curr_el == 'r' else 'yellow'
+            observations.append((f"Observed a {color_coin} coin appeared at position {el_pos}.", game_time))
 
     return observations
 
