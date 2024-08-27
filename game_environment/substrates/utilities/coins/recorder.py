@@ -53,6 +53,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     if current_actions_map is None:
         return
 
+    
     for agent in current_actions_map:
         #TODO ADJUST THIS FILE IF NECESSARY 
         agent_id = record_obj.agents_ids[agent]
@@ -60,6 +61,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         if agent_position is None or previous_map is None:
             continue
         
+        # Here we check events related to coins
         # Check if the agent collected a coin
         if previous_map[agent_position[0]][agent_position[1]] == 'y':
             record_obj.collected_coins_object[agent]['yellow_coins'] += 1
@@ -73,6 +75,21 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
             did_attack = current_actions_map[agent]['fireZap'] # This is a boolean (1 or 0)
             if did_attack:
                 record_obj.attack_object[agent]['decide_to_attack'] += 1
+
+
+
+def record_elements_status(record_obj, initial_map: list[list[str]], current_map: list[list[str]]):
+    """
+    Record the game state after the agents took the actions
+
+    Args:
+        record_obj (Recorder): Recorder object
+        initial_map (str): Initial map, it means the map before the agents took any action
+        current_map (list[list[str]]): Current map, it means the map after the agents took the actions
+    """
+    # This function can not allow yet the recording of the mushrooms due to the arguments it does not receives, that record_before_actions does receive 
+    # TODO: Add parameters to this function (thus to all other recorder.py files) that allow to record those specific elements
+    pass
 
 
 def save_custom_indicators(record_obj):

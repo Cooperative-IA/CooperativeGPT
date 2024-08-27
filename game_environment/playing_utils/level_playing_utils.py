@@ -241,7 +241,6 @@ class Game:
             player_prefixes: Optional[Sequence[str]] = None,
             default_observation: str = 'WORLD.RGB',
             reset_env_when_done: bool = False,
-            record: bool = False,
             bots: Optional[list[Bot]] = None,
             substrate_name: str = 'commons_harvest_open'
             ):
@@ -299,7 +298,6 @@ class Game:
         reset_env_when_done: if True, reset the environment once the episode has
             terminated; useful for playing multiple episodes in a row. Note this
             will cause this function to loop infinitely.
-        record: Whether to record the game.
         bots: A list of Bot objects. This bots have a predefined policy.
         substrate_name: The name of the substrate to use. By default it is 'commons_harvest_open'.
         """
@@ -362,18 +360,13 @@ class Game:
             clock = pygame.time.Clock()
 
         # Create the game recorder
-        if record:
-            game_recorder = Recorder("logs", init_timestamp, full_config, substrate_name, player_prefixes)
-            record_counter = 0
+        game_recorder = Recorder("logs", init_timestamp, full_config, substrate_name, player_prefixes)
+        record_counter = 0
 
         self.env = env
         self.pygame = pygame
-        if record:
-            self.game_recorder = game_recorder
-            self.record_counter = record_counter
-        else:
-            self.game_recorder = None
-            self.record_counter = None
+        self.game_recorder = game_recorder
+        self.record_counter = record_counter
 
         self.first_move_done = False
         self.interactive = interactive
@@ -400,7 +393,6 @@ class Game:
         self.fps = fps
         self.game_display = game_display
         self.clock = clock
-        self.record = record
         self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes, substrate_name)
         self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         self.dateFormat = load_config()['date_format']
@@ -416,8 +408,7 @@ class Game:
         self.env = None
         self.pygame.quit()
         self.pygame = None
-        if self.record:
-            self.game_recorder.save_log()
+        self.game_recorder.save_log()
 
         for prefix in self.player_prefixes:
             logger.info('Player %s: score is %g' % (prefix, self.score[prefix]))
@@ -445,9 +436,8 @@ class Game:
         # Get the raw observations from the environment
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
         prev_global_map = self.prev_global_map.copy() if hasattr(self, 'prev_global_map') else None
-
-        if self.record:
-            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description, prev_global_map)
+        
+        self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description, prev_global_map)
 
         if self.first_move_done :
             # Get the next action map
@@ -517,12 +507,11 @@ class Game:
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
 
         # Record the game
-        if self.record:
-            self.game_recorder.record(self.timestep, description)
-            self.game_recorder.record_rewards(rewards)
-            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
-            self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
-            self.record_counter += 1
+        self.game_recorder.record(self.timestep, description)
+        self.game_recorder.record_rewards(rewards)
+        self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
+        self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
+        self.record_counter += 1
 
         # Update the observations generator
         game_time = self.get_time()

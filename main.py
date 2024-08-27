@@ -139,7 +139,7 @@ if __name__ == "__main__":
               for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=(not args.not_record), game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
+    env = start_server(players, init_timestamp=logger_timestamp, game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
     logger = CustomAdapter(logger, game_env=env)
     # We are setting args.prompts_source as a global variable to be used in the LLMModels class
     llm = LLMModels()

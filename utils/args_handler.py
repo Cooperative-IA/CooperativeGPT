@@ -51,13 +51,6 @@ def get_args():
     )
 
     parser.add_argument(
-        "--not_record",
-        default=False,
-        action='store_true', # If the flag is present, the value is True.
-        help="Whether to record the game. Pass this flag to not record the game"
-    )
-
-    parser.add_argument(
         "--llm_model",
         type=str,
         default='gpt-3.5',

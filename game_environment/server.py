@@ -93,11 +93,10 @@ _ACTION_MAP = {
 def verbose_fn(unused_timestep, unused_player_index: int) -> None:
     pass
 
-def run_episode(game_name: str, record: bool, players: list[str], init_timestamp:str, scenario: str = None, kind_experiment: str = ""):
+def run_episode(game_name: str, players: list[str], init_timestamp:str, scenario: str = None, kind_experiment: str = ""):
     """Create the simulation environment and run an episode of the game
     Args:
         game_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
-        record: Whether to record the game.
         players: List with the player names to run the game with
         scenario: Name of the scenario to run, the must be one of the predefined scenarios for the chosen game
         kind_experiment: The kind of experiment that will bi run, valid options are: '' for no experiment, 'adversarial_event' for the adversarial event experiment, 'personalized' pre-loaded experiments
@@ -147,19 +146,17 @@ def run_episode(game_name: str, record: bool, players: list[str], init_timestamp
         init_timestamp=init_timestamp,
         verbose_fn=verbose_fn if verbose else None,
         print_events=print_events,
-        record=record,
         bots=bots,
         substrate_name=game_name,
         )
     return game_env
 
 
-def start_server(players: list[str],init_timestamp: str,  game_name: str = "commons_harvest_open", record: bool = False, scenario: str = None, kind_experiment: str = ""):
+def start_server(players: list[str],init_timestamp: str,  game_name: str = "commons_harvest_open", scenario: str = None, kind_experiment: str = ""):
     """Start the game simulation server
     Args:
         players: List with the player names to run the game with
         game_name: Name of the game to run, the name must match a folder in game_environment/substrates/python
-        record: Whether to record the game
         scenario: Name of the scenario to run, the must be one of the predefined scenarios for the chosen game
         kind_experiment: The kind of experiment that will bi run, valid options are: '' for no experiment, 'adversarial_event' for the adversarial event experiment, 'personalized' pre-loaded experiments
     Returns:
@@ -173,7 +170,7 @@ def start_server(players: list[str],init_timestamp: str,  game_name: str = "comm
     game = import_game(game_name, kind_experiment)
     substrate_utils =  import_module(f'game_environment.substrates.utilities.{game_name}.substrate_utils')
 
-    return run_episode(game_name, record, players, init_timestamp, scenario, kind_experiment)
+    return run_episode(game_name, players, init_timestamp, scenario, kind_experiment)
 
 def get_scenario_map  (game_name:str)-> str:
     """Get the scenario map from the game environment

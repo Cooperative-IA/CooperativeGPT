@@ -102,7 +102,6 @@ def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int
 
 
 
-@staticmethod
 def create_directory_if_not_exists(directory_path:str):
     """
     Creates a directory if it doesn't exist.

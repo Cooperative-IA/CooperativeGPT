@@ -73,7 +73,7 @@ W AAA  Q        Q  AAA W
 WAAAAA            AAAAAW
 W AAA              AAA W
 W  A                A  W
-W          Q           W
+W                      W
 W                      W
 W                      W
 W  PPPPPPPPPPPPPPPPPP  W

@@ -123,7 +123,6 @@ class SceneDescriptor:
         self.parse_zaps(zaps)
         self.compute_partial_observations(map, self.last_map)
         self.last_map = map
-        print(zaps)
         result = {}
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"Avatar {avatar_id} is in position {avatar.position}")

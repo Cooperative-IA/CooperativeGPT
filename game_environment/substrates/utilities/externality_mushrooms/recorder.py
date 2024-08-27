@@ -71,6 +71,18 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
             if did_attack:
                 record_obj.attack_object[agent]['decide_to_attack'] += 1
 
+def record_elements_status(record_obj, initial_map: list[list[str]], current_map: list[list[str]]):
+    """
+    Record the game state after the agents took the actions
+
+    Args:
+        record_obj (Recorder): Recorder object
+        initial_map (str): Initial map, it means the map before the agents took any action
+        current_map (list[list[str]]): Current map, it means the map after the agents took the actions
+    """
+    # This function can not allow yet the recording of the mushrooms due to the arguments it does not receives, that record_before_actions does receive 
+    # TODO: Add parameters to this function (thus to all other recorder.py files) that allow to record the mushrooms
+    pass  
 
 def save_custom_indicators(record_obj):
     """
