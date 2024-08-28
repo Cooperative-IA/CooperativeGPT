@@ -14,12 +14,12 @@ class CoTAgent:
     """Agent class.
     """
 
-    def __init__(self, name: str, agent_context_file: str, world_context_file: str, scenario_info:dict) -> None:
+    def __init__(self, name: str, agent_context: dict, world_context_file: str, scenario_info:dict) -> None:
         """Initializes the agent.
 
         Args:
             name (str): Name of the agent.
-            agent_context_file (str): Path to the json agent context file. Initial info about the agent.
+            agent_context (dict): Initial info about the agent.
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to.
             scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
             substrate_name (str, optional): Name of the substrate. Defaults to "commons_harvest_open".
@@ -28,7 +28,7 @@ class CoTAgent:
         self.logger = CustomAdapter(self.logger)
 
         self.name = name
-        self.stm = ShortTermMemory( agent_context_file=agent_context_file, world_context_file=world_context_file)
+        self.stm = ShortTermMemory( agent_context=agent_context, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.prompts_folder = 'cot_agent_prompts'
         self.stm.add_memory(memory = self.name, key = 'name')

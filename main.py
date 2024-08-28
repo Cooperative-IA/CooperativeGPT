@@ -135,11 +135,11 @@ if __name__ == "__main__":
     create_directory_if_not_exists (data_folder)
     # Create agents
     if args.cot_agent:
-        agents = [CoTAgent(name=player, agent_context_file=player_context,
+        agents = [CoTAgent(name=player, agent_context=player_context,
                     world_context_file=world_context_path, scenario_info=scenario_info) 
               for player, player_context in zip(players, players_context)]
     else:
-        agents = [Agent(name=player, data_folder=data_folder, agent_context_file=player_context,
+        agents = [Agent(name=player, data_folder=data_folder, agent_context=player_context,
                         world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
                         prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path) 
                 for player, player_context in zip(players, players_context)]
