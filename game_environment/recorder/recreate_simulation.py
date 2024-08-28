@@ -40,13 +40,15 @@ def read_rewards_from_file(file_path:str)-> tuple[dict, dict, list[str]]:
     players_index = rewards_per_step['1'].keys()
     
     individual_rewards = {'1': rewards_per_step['1']}
-    for step in range(2, len(rewards_per_step)):
+    
+    max_step = max([int(step) for step in rewards_per_step.keys()])
+    for step in range(2, max_step):
         # Suma del anterior con el actual
-        individual_rewards[str(step)] = {key: individual_rewards[str(step-1)][key] + rewards_per_step[str(step)][key] for key in players_index}
+        individual_rewards[str(step)] = {key: individual_rewards[str(step-1)][key] + rewards_per_step.get(str(step), {}).get(key,0) for key in players_index}
 
 
     total_rewards = {'1': sum(rewards_per_step['1'].values())}
-    for step in range(2, len(rewards_per_step)):
+    for step in range(2, len(individual_rewards)):
         # Suma del anterior con el actual
         total_rewards[str(step)] = sum(individual_rewards[str(step)].values())
     

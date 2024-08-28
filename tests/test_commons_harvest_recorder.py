@@ -1,5 +1,5 @@
 from game_environment.recorder.recorder import Recorder
-from game_environment.substrates.commons_harvest_open_utilities.recorder import get_nearest_apple, is_apple_the_last_of_tree, record_game_state_before_actions, record_elements_status
+from game_environment.substrates.utilities.commons_harvest_open.recorder import get_nearest_apple, is_apple_the_last_of_tree, record_game_state_before_actions, record_elements_status
 
 def test_get_nearest_apple():
     # Test 1: Find the only apple in the map
@@ -144,7 +144,7 @@ def test_record_game_state_before_actions():
         ['F', 'F', '1', 'A', 'G']
     ]
 
-    record_game_state_before_actions(record_obj, None, current_map, action_map, scene_description)
+    record_game_state_before_actions(record_obj, None, current_map, action_map, scene_description, current_map)
     # The record object should have the last_apple_object attribute
     assert hasattr(record_obj, 'last_apple_object'), "The record object should have the last_apple_object attribute"
     # The record object should have the last_apple_object attribute with the right values for each agent

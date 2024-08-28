@@ -614,10 +614,11 @@ local allComponents = {
     DirtCleaning = DirtCleaning,
     Edible = Edible,
 
-    -- Avatar components.
+    -- Track components.
     AvatarsStateObserver = AvatarsStateObserver,
     GlobalStateTracker = GlobalStateTracker,
     
+    -- Avatar components.
     Cleaner = Cleaner,
     Taste = Taste,
     AllNonselfCumulants = AllNonselfCumulants,

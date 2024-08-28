@@ -51,10 +51,10 @@ def is_apple_the_last_of_tree(game_map: list[list[str]], apple_position: tuple[i
             element = game_map[elem[0]][elem[1]]
             if element == 'A':
                 apples.append(elem)
-        
+
         if len(apples) == 1:
             return True
-        
+
     return False
 
 def record(record_obj, timestep, description: dict):
@@ -74,7 +74,7 @@ def record(record_obj, timestep, description: dict):
         if description["effective_zap"]:
             record_obj.effective_attack_object[agent]['effective_attack'] += 1
 
-def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict):
+def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict, previous_map: list[list[str]]):
     """
     Record the game state before the agents take any action
 
@@ -84,6 +84,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
         current_map (list[list[str]]): Current map
         current_actions_map (dict): Actions to take for each agent
         scene_description (dict): State description for each agent
+        previous_map (list[list[str]]): Previous map in list of lists
     """
     # Create the last_apple_object if it does not exist
     if not hasattr(record_obj, 'last_apple_object'):
@@ -181,7 +182,7 @@ def save_custom_indicators(record_obj):
 
     # Number of times the agent saw the last apple scenario
     times_saw_last_apple_scenario = {agent: record_obj.last_apple_object[agent]['scenario_seen'] for agent in record_obj.last_apple_object}
-        
+
     # Number of times the agent took the last apple
     times_took_last_apple = {agent: record_obj.last_apple_object[agent]['took_last_apple'] for agent in record_obj.last_apple_object}
 

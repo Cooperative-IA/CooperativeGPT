@@ -1,4 +1,5 @@
 from datetime import datetime
+from importlib import import_module
 import logging
 import os
 from dotenv import load_dotenv
@@ -11,7 +12,7 @@ from game_environment.server import start_server, get_scenario_map,  default_age
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
-from utils.files import extract_players, persist_short_term_memories, create_directory_if_not_exists
+from utils.files import extract_players, get_players_contexts, persist_short_term_memories, create_directory_if_not_exists
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -41,7 +42,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     env.step(actions)
     actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
     env.step(actions)
-    
+
     while rounds_count < max_rounds and not condition_to_end_game(substrate_name, env.get_current_global_map()):
         # Reset the actions for each agent
         actions = {player_name: default_agent_actions_map() for player_name in env.player_prefixes}
@@ -87,7 +88,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             steps_count += 1
         except:
             logger.exception("Error executing actions %s", actions)
-            
+
         # Persist the short term memories of the agents
         if persist_memories:
             memories = {agent.name: agent.stm.get_memories().copy() for agent in agents}
@@ -106,36 +107,39 @@ if __name__ == "__main__":
 
     # Define the simulation mode
     mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
-    
+
+    global substrate_utils
+    substrate_utils = import_module(f'game_environment.substrates.utilities.{args.substrate}.substrate_utils')
+
     # If the experiment is "personalized", prepare a start_variables.txt file on config path
-    # It will be copied from args.scene_path, file is called variables.txt 
+    # It will be copied from args.scene_path, file is called variables.txt
     scene_path = None
     if args.start_from_scene :
-        scene_path = f"data/scenes/{args.start_from_scene}" 
+        scene_path = f"data/scenes/{args.start_from_scene}"
         os.system(f"cp {scene_path}/variables.txt config/start_variables.txt")
-        
+
     # Define players
     experiment_path = os.path.join("data", "defined_experiments", args.substrate)
     agents_bio_dir =  os.path.join( experiment_path, "agents_context", args.agents_bio_config)
     game_scenario = args.scenario if args.scenario != "default" else None
-    players_context = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
-
+    players_context = get_players_contexts(agents_bio_dir)
     players = extract_players(players_context)
-    
+
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
-    valid_actions = get_defined_valid_actions(game_name= args.substrate)
-    scenario_obstacles  = ['W', '$'] # TODO : Change this. This should be also loaded from the scenario file
-    scenario_info = {'scenario_map': get_scenario_map(game_name=args.substrate), 'valid_actions': valid_actions, 'scenario_obstacles': scenario_obstacles} ## TODO: ALL THIS HAVE TO BE LOADED USING SUBSTRATE NAME
+
+    # Load the scenario map, the valid actions and the scenario obstacles
+    scenario_info = substrate_utils.load_scenario_info(players_context)
+
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
     # Create agents
     agents = [Agent(name=player, data_folder=data_folder, agent_context_file=player_context,
                     world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path) 
+                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path)
               for player, player_context in zip(players, players_context)]
 
     # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, record=args.record, game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
+    env = start_server(players, init_timestamp=logger_timestamp, game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
     logger = CustomAdapter(logger, game_env=env)
     # We are setting args.prompts_source as a global variable to be used in the LLMModels class
     llm = LLMModels()
@@ -155,7 +159,7 @@ if __name__ == "__main__":
     # Persisting agents memories to the logs folder
     if args.persist_memories:
         os.system(f"cp -r {data_folder}/ltm_database logs/{logger_timestamp}")
-    
+
 
     # LLm total cost
     costs = llm.get_costs()
@@ -166,8 +170,7 @@ if __name__ == "__main__":
     logger.info("Execution time: %.2f minutes", (end_time - start_time)/60)
 
     logger.info("Program finished")
-    
+
     # If there's a simulation_id, we will change the logs/{logger_timestamp} name to logs/{logger_timestamp}__{simulation_id}
     if args.simulation_id:
         os.system(f"mv logs/{logger_timestamp} logs/{logger_timestamp}__{args.simulation_id}")
-        
