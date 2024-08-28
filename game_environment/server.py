@@ -204,11 +204,16 @@ def change_avatars_appearance(lab2d_settings: Dict[str, Any],is_focal_player: li
     new_color =  (0, 0, 0, 255)  # Example new color
     game_objects = lab2d_settings['simulation']['gameObjects']
 
-    for i in range(len(is_focal_player)):
+    i = -1
+    for game_obj in game_objects:
+        if game_obj['name'] == 'avatar':
+            i += 1
+        else:
+            continue
+
         if not is_focal_player[i]:
 
-
-            components = game_objects[i]['components']
+            components = game_obj['components']
             # Find the Appearance component
             for j, component in enumerate(components):
                 if component.get('component') == 'Appearance':
@@ -219,7 +224,7 @@ def change_avatars_appearance(lab2d_settings: Dict[str, Any],is_focal_player: li
                     component['kwargs']['palettes'][0]['&'] = new_color
                     components[j] = component
                     break
-            game_objects[i]['components'] = components
+            game_obj['components'] = components
 
     overrided_configs = {'simulation':lab2d_settings['simulation']}
     overrided_configs['simulation']['gameObjects'] = game_objects
