@@ -1,3 +1,4 @@
+from importlib import import_module
 import re
 import numpy as np
 import logging
@@ -6,6 +7,7 @@ from utils.logging import CustomAdapter
 
 logger = logging.getLogger(__name__)
 logger = CustomAdapter(logger)
+substrate_utils = None
 
 class Avatar:
     def __init__(self, name:str, avatar_config):
@@ -17,6 +19,7 @@ class Avatar:
             avatar_config (dict): Avatar configuration
         """
         self.name = name
+        
         self.avatar_component = list(filter(lambda component: component["component"] == "Avatar",
                                             avatar_config["components"]))[0]
         self.avatar_view = self.avatar_component["kwargs"]["view"]
@@ -90,23 +93,27 @@ class Avatar:
                 f"state={self.avatar_state})")
 
 
-        
-
-
 class SceneDescriptor:
 
-    def __init__(self, substrate_config):
+    def __init__(self, substrate_config, substrate_name):
         self.substrate_config = substrate_config
         self.n_players = substrate_config.lab2d_settings.numPlayers
         self.avatars = self.get_avatars(substrate_config.player_names)
         self.last_map = None # Map of the inmediately last step
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"{avatar.name} is player {avatar_id}")
+        global substrate_utils 
+        substrate_utils = import_module(f'game_environment.substrates.utilities.{substrate_name}.substrate_utils')
         
-
+        
     def get_avatars(self, names):
         avatars = {}
-        for i, config in enumerate(self.substrate_config.lab2d_settings.simulation.gameObjects):
+        # Avatar objects have the value related to the key 'name' equals to 'avatar'. 
+        # We look in the self.substrate_config.lab2d_settings.simulation.gameObjects list the ones that have those
+        
+        avatar_regex = re.compile(r'^avatar\d*$')
+        avatar_objects = [game_object for game_object in self.substrate_config.lab2d_settings.simulation.gameObjects if avatar_regex.match(game_object['name'])]
+        for i, config in enumerate(avatar_objects):
             avatars[i] = Avatar(names[i], config)
         return avatars
 
@@ -115,9 +122,7 @@ class SceneDescriptor:
         map, zaps = self.parse_timestep(timestep)
         self.parse_zaps(zaps)
         self.compute_partial_observations(map, self.last_map)
-
         self.last_map = map
-
         result = {}
         for avatar_id, avatar in self.avatars.items():
             logger.info(f"Avatar {avatar_id} is in position {avatar.position}")
@@ -223,8 +228,10 @@ class SceneDescriptor:
         
         map = timestep.observation["GLOBAL.TEXT"].item().decode("utf-8")
         map = parse_string_to_matrix(map)
+        # Execute the modify_map_with_rgb function if it exists
+        map = substrate_utils.modify_map_with_rgb(map, timestep.observation["WORLD.RGB"]) if hasattr(substrate_utils, 'modify_map_with_rgb') else map
+        
         zaps = timestep.observation["WORLD.WHO_ZAPPED_WHO"]
-
         states = timestep.observation["WORLD.AVATAR_STATES"]
         for avatar_id, avatar in self.avatars.items():
             _id = avatar_id + 1

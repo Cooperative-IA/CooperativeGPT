@@ -24,7 +24,7 @@ def get_args():
         "--scenario",
         type=str,
         default="",
-        help="Name of the scenario to run, it must be one of the predefined scenarios for the chosen game"
+        help="Name of the scenario to run. The scenarios available for the substrate are defined in meltingpot/configs/scenarios/__init__.py"
     )
 
     parser.add_argument(
@@ -33,9 +33,9 @@ def get_args():
         default="",
         help="What kind of experiment to run, valid options are: '' for no experiment,"\
               +  " 'adversarial_event' for the adversarial event experiment,"\
-               +   "'personalized' pre-loaded experiments" 
+               +   "'personalized' pre-loaded experiments"
     )
-    
+
     parser.add_argument(
         "--world_context",
         type=str,
@@ -51,40 +51,33 @@ def get_args():
     )
 
     parser.add_argument(
-        "--record",
-        type=bool,
-        default=True,
-        help="Whether to record the game. True/False"
-    )
-
-    parser.add_argument(
         "--llm_model",
         type=str,
         default='gpt-3.5',
-        help="Which LLM model to use. Valid options are: gpt-3.5, gpt-3.5-16k, gpt-4" 
+        help="Which LLM model to use. Valid options are: gpt-3.5, gpt-3.5-16k, gpt-4"
     )
-    
+
     parser.add_argument(
         "--prompts_source",
         type=str,
         default='base_prompts_v1',
         help="Path to the prompts folder, some valid options are: base_prompts_v0, base_prompts_v1"
     )
-    
+
     parser.add_argument(
         "--persist_memories",
         type=bool,
         default=False,
         help="Whether to persist the memories of the agents. True/False. Long term memories databases and short term memories will be saved"
     )
-    
+
     parser.add_argument(
         "--start_from_scene",
         type=str,
         default=None,
         help="The scene to start from, scenes are on data/scene"
     )
-    
+
     parser.add_argument(
         "--simulation_id",
         type=str,
@@ -101,4 +94,3 @@ def get_args():
     
     args = parser.parse_args()
     return args
-

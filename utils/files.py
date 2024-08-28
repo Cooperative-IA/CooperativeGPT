@@ -2,19 +2,6 @@ import json
 import os
 
 
-def load_agent_context(agent_context_file: str) -> dict:
-    """Loads the agent context from a json file.
-
-    Args:
-        agent_context_file (str): Path to the json agent context file.
-
-    Returns:
-        dict: Dictionary with the agent context.
-    """
-    with open(agent_context_file, "r") as file:
-        agent_context = json.load(file)
-    return agent_context
-
 def load_world_context(world_context_file: str) -> str:
     """Loads the world context from a text file.
 
@@ -34,11 +21,33 @@ def load_config() -> dict:
     Returns:
         dict: Dictionary with the config file.
     """
-    
+
     with open("config/config.json") as json_file:
         config_file = json.load(json_file)
     return config_file
 
+def get_players_contexts(agents_bio_dir: str) -> list[str]:
+    """
+    Get the paths of the players context files from the agents bio directory.
+    The players context files are the .json files that contain the players context.
+    
+    Args:
+        agents_bio_dir (str): Path to the agents bio directory.
+        
+    Returns:
+        list[str]: List with the paths of the players context files. 
+    """
+    
+    paths_list = [os.path.abspath(os.path.join(agents_bio_dir, player_file)) for player_file in os.listdir(agents_bio_dir)]
+    
+    # Sort the list by the player's id, ids is in string, "agent_1", "agent_2", etc. This list only contain .jsons files names. Data shoud be evaluated to sort.
+    evaluated_data = [json.load(open(player_context)) for player_context in paths_list]
+    
+    # Now sort the list by the player's id
+    sorted_evaluated_data = sorted(evaluated_data, key=lambda x: x["id"])
+    
+    return sorted_evaluated_data
+    
 
 def extract_players(players_context:list[str]) -> list[str]:
     """Extracts the players names from the players context list.
@@ -50,7 +59,11 @@ def extract_players(players_context:list[str]) -> list[str]:
     Returns:
         list[str]: List with the players names.
     """
-    return [json.load(open(player_context))['name'] for player_context in players_context]
+    #list_of_players = [json.load(open(player_context)) for player_context in players_context]
+    # Sort the list by the player's id, ids is in string, "agent_1", "agent_2", etc
+    #list_of_players.sort(key=lambda x: x["id"])
+    # Return the names of the players
+    return  [player["name"] for player in players_context]
 
 
 def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int, log_timestamp:str):
@@ -59,22 +72,22 @@ def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int
     First creates the file if it doesn't exist, then appends the memories to the file.
     By appending a line with {"rounds_count": rounds_count, "steps_count": steps_count, "memories": memories} to the file.
     Memories dict is a dict with the agent name as key and the agent short term memories as value.
-    
+
     Args:
         memories (dict): Dictionary with the short term memories of the agents.
         rounds_count (int): Number of rounds.
         steps_count (int): Number of steps.
     """
-    
+
     log_folder = f"logs/{log_timestamp}"
     file_path = f"{log_folder}/short_term_memories.txt"
 
     os.makedirs(log_folder, exist_ok=True)
-    
+
     for agent_name in memories.keys():
         memories[agent_name]['current_steps_sequence'] = ""
         memories[agent_name]['actions_sequence'] = ""
-        
+
     # Open the file in append+read mode
     with open(file_path, "a+") as file:
         # Move the file pointer to the beginning of the file to read its content
@@ -86,14 +99,13 @@ def persist_short_term_memories(memories:dict, rounds_count:int, steps_count:int
             file.write("\n")
         # Write (or append) the new dictionary to the file
         file.write(str(dict_to_write))
-            
-    
 
-@staticmethod 
+
+
 def create_directory_if_not_exists(directory_path:str):
     """
     Creates a directory if it doesn't exist.
-    
+
     Args:
         directory_path (str): Path to the directory.
     """

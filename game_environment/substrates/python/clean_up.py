@@ -397,7 +397,7 @@ POTENTIAL_APPLE = {
         {
             "component": "AppleGrow",
             "kwargs": {
-                "maxAppleGrowthRate": 0.05,
+                "maxAppleGrowthRate": 0.005,
                 "thresholdDepletion": 0.4,
                 "thresholdRestoration": 0.0,
             }
@@ -690,6 +690,12 @@ def create_avatar_object(player_idx: int,
           },
           {
               "component": "Transform",
+          },
+          {
+              "component": "ReadyToShootObservation",
+              "kwargs": {
+                  "zapperComponent": "MineBeam",
+              },
           },
           {
               "component": "Appearance",

@@ -1,26 +1,26 @@
 import logging
 import os
 
-from utils.files import load_agent_context, load_world_context
+from utils.files import load_world_context
 from utils.logging import CustomAdapter
 
 class ShortTermMemory:
     """Class for yhe short term memory. Memories are stored in a dictionary.
     """
 
-    def __init__(self, agent_context_file: str = None, world_context_file: str = None) ->  None:
+    def __init__(self, agent_context: dict = None, world_context_file: str = None) ->  None:
         """Initializes the short term memory.
 
         Args:
-            agent_context_file (str, optional): Path to the json agent context file. Initial info about the agent. All the keys in the json file will be added to the short term memory.
+            agent_context_file (dict, optional): Json agent context file. Initial info about the agent. All the keys in the json file will be added to the short term memory.
             world_context_file (str, optional): Path to the text world context file. Info about the world that the agent have access to. The world context will be added to the short term memory with the key 'world_context'.
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
         self.memory = {}
 
-        if agent_context_file is not None:
-            self.memory = load_agent_context(agent_context_file)
+        if agent_context is not None:
+            self.memory = agent_context
 
         if world_context_file is not None:
             self.memory['world_context'] = load_world_context(world_context_file)

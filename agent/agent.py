@@ -1,3 +1,4 @@
+from importlib import import_module
 import logging
 from datetime import datetime
 import os
@@ -21,6 +22,7 @@ from utils.time import str_to_timestamp
 
 # Define a custom type to determine the congnitive modules to use
 Mode = Union[Literal['normal'], Literal['cooperative']]
+substrate_utils = None
 
 class Agent:
     """Agent class.
@@ -45,7 +47,10 @@ class Agent:
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
-
+        self.substrate_name = substrate_name
+        global substrate_utils
+        substrate_utils = import_module(f'game_environment.substrates.utilities.{self.substrate_name}.substrate_utils')
+        
         self.name = name
         self.mode = mode
         self.att_bandwidth = att_bandwidth
@@ -53,14 +58,13 @@ class Agent:
         self.observations_poignancy = observations_poignancy
         ltm_folder = os.path.join(data_folder, 'ltm_database')
         self.ltm = LongTermMemory(agent_name=name, data_folder=ltm_folder)
-        self.stm = ShortTermMemory( agent_context_file=agent_context_file, world_context_file=world_context_file)
+        self.stm = ShortTermMemory( agent_context=agent_context_file, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.att_bandwidth = att_bandwidth
         self.understanding_umbral = understanding_umbral
         self.prompts_folder = prompts_folder
         self.stm.add_memory(memory = self.name, key = 'name')
-        self.substrate_name = substrate_name
-        
+
         # Initialize steps sequence in empty queue
         self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
         self.stm.add_memory(memory=scenario_info['valid_actions'], key='valid_actions')
@@ -318,14 +322,14 @@ class Agent:
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
         current_position = self.spatial_memory.position
-        known_trees = self.stm.get_memory('known_trees')
-        known_trees = "These are the known trees: "+' '.join([f"tree {tree[0]} with center at {tree[1]}" for tree in known_trees]) if known_trees else "There are no known trees yet"
+        known_objects = substrate_utils.get_textually_known_objects(stm=self.stm)
+
         percentage_explored = self.spatial_memory.get_percentage_explored()
         
         # Generate new actions sequence and add it to the short term memory
         actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
                                                   current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
-                                                  known_trees, percentage_explored, self.stm)
+                                                  known_objects, percentage_explored, self.stm)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
         
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')

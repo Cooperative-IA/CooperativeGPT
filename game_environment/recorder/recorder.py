@@ -27,7 +27,7 @@ class Recorder:
         # Import custom recorder functions for the substrate
         # Try to import the custom recorder functions for the substrate
         try:
-            custom_recorder_module = importlib.import_module(f"game_environment.substrates.{substrate_name}_utilities.recorder")
+            custom_recorder_module = importlib.import_module(f"game_environment.substrates.utilities.{substrate_name}.recorder")
             self._record = custom_recorder_module.record if hasattr(custom_recorder_module, 'record') else None
             self._record_game_state_before_actions = custom_recorder_module.record_game_state_before_actions if hasattr(custom_recorder_module, 'record_game_state_before_actions') else None
             self._record_elements_status = custom_recorder_module.record_elements_status if hasattr(custom_recorder_module, 'record_elements_status') else None
@@ -92,11 +92,11 @@ class Recorder:
                         apples += 1
                     elif elem == 'D':
                         dirt += 1
-            
+
             with open(os.path.join(self.log_path, "apples_history.txt"), "a") as f:
                 f.write(f"{self.step}: A_{apples} - D_{dirt}\n ")
 
-    def record_game_state_before_actions(self, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict):
+    def record_game_state_before_actions(self, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict, previous_map: list[list[str]]):
         """
         Record the game state before the agents take any action
 
@@ -107,7 +107,7 @@ class Recorder:
             scene_description (dict): Current state of the game before any actions are taken
         """
         if self._record_game_state_before_actions:
-            self._record_game_state_before_actions(self, initial_map, current_map, current_actions_map, scene_description)
+            self._record_game_state_before_actions(self, initial_map, current_map, current_actions_map, scene_description, previous_map)
 
     def save_log(self):
         recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)
@@ -118,7 +118,7 @@ class Recorder:
     def save_image(image, path):
         io.imsave(path, image)
 
-        
+
     def add_description(self, description):
         canvas = np.ones((600, 600, 3), dtype=np.uint8) * 255
         sub_str = "You were attacked by agent "

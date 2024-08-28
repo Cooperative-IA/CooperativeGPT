@@ -205,14 +205,14 @@ class ActionReader(object):
             new_action_map: A dictionary with the actions of each player. Keys are player prefixes
             player_prefixes: A list with the player prefixes
         Returns:
-            A dictionary with the actions of each player. Keys are combination of player indices starting from 1 and action names        
+            A dictionary with the actions of each player. Keys are combination of player indices starting from 1 and action names
         """
         actions = {action_key: 0 for action_key in self._action_spec.keys()}
         for i, player_prefix in enumerate(player_prefixes):
             for action_name in self._action_names:
                 actions[f'{i+1}.{action_name}'] = new_action_map[player_prefix][ action_name]
         return actions
-    
+
 logger = logging.getLogger(__name__)
 logger = CustomAdapter(logger)
 
@@ -241,7 +241,6 @@ class Game:
             player_prefixes: Optional[Sequence[str]] = None,
             default_observation: str = 'WORLD.RGB',
             reset_env_when_done: bool = False,
-            record: bool = False,
             bots: Optional[list[Bot]] = None,
             substrate_name: str = 'commons_harvest_open'
             ):
@@ -299,14 +298,13 @@ class Game:
         reset_env_when_done: if True, reset the environment once the episode has
             terminated; useful for playing multiple episodes in a row. Note this
             will cause this function to loop infinitely.
-        record: Whether to record the game.
         bots: A list of Bot objects. This bots have a predefined policy.
         substrate_name: The name of the substrate to use. By default it is 'commons_harvest_open'.
         """
         # Update the config with the overrides.
         full_config.lab2d_settings.update(config_overrides)
         # Create a descriptor to get the raw observations from the game environment
-        descriptor = SceneDescriptor(full_config)
+        descriptor = SceneDescriptor(full_config, substrate_name)
 
         # Define the player ids
         if player_prefixes is None:
@@ -316,7 +314,7 @@ class Game:
         else:
             player_count = len(player_prefixes)
         logger.info(f'Running an episode with {player_count} players: {player_prefixes}.')
-        
+
         # Create the game environment
         env = env_builder(**full_config)
 
@@ -325,7 +323,7 @@ class Game:
             logger.error('Player prefixes, when specified, must be of the same length as the number of players.')
             raise ValueError('Player prefixes, when specified, must be of the same '
                                 'length as the number of players.')
-        
+
         # Reset the game environment
         timestep = env.reset()
 
@@ -362,18 +360,13 @@ class Game:
             clock = pygame.time.Clock()
 
         # Create the game recorder
-        if record:
-            game_recorder = Recorder("logs", init_timestamp, full_config, substrate_name, player_prefixes)
-            record_counter = 0
+        game_recorder = Recorder("logs", init_timestamp, full_config, substrate_name, player_prefixes)
+        record_counter = 0
 
         self.env = env
         self.pygame = pygame
-        if record:
-            self.game_recorder = game_recorder
-            self.record_counter = record_counter
-        else:
-            self.game_recorder = None
-            self.record_counter = None
+        self.game_recorder = game_recorder
+        self.record_counter = record_counter
 
         self.first_move_done = False
         self.interactive = interactive
@@ -400,7 +393,6 @@ class Game:
         self.fps = fps
         self.game_display = game_display
         self.clock = clock
-        self.record = record
         self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes, substrate_name)
         self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         self.dateFormat = load_config()['date_format']
@@ -416,15 +408,14 @@ class Game:
         self.env = None
         self.pygame.quit()
         self.pygame = None
-        if self.record:
-            self.game_recorder.save_log()
+        self.game_recorder.save_log()
 
         for prefix in self.player_prefixes:
             logger.info('Player %s: score is %g' % (prefix, self.score[prefix]))
 
     def step(self, current_actions_map:dict) -> dict[int, list[str]] | None:
         """Run one step of the game.
-        
+
         Args:
             actions: A dictionary of actions for each player.
         Returns:
@@ -439,16 +430,15 @@ class Game:
 
         if stop:
             return None, None
-        
-        self.game_steps += 1
 
+        self.game_steps += 1
         action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
-
-        if self.record:
-            self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description)
+        prev_global_map = self.prev_global_map.copy() if hasattr(self, 'prev_global_map') else None
         
+        self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description, prev_global_map)
+
         if self.first_move_done :
             # Get the next action map
             game_actions = action_reader.various_agents_step(current_actions_map, self.player_prefixes)
@@ -511,25 +501,25 @@ class Game:
 
             # Update the time: One hour per step
             self.time += datetime.timedelta(hours=1)
+        self.prev_global_map = curr_global_map
 
         # Get the raw observations from the environment after the actions are executed
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
 
         # Record the game
-        if self.record:
-            self.game_recorder.record(self.timestep, description)
-            self.game_recorder.record_rewards(rewards)
-            self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
-            self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
-            self.record_counter += 1
-        
+        self.game_recorder.record(self.timestep, description)
+        self.game_recorder.record_rewards(rewards)
+        self.game_recorder.record_elements_status(self.game_ascii_map, curr_global_map)
+        self.game_recorder.record_scene_tracking(self.time, curr_global_map, description)
+        self.record_counter += 1
+
         # Update the observations generator
         game_time = self.get_time()
         self.observationsGenerator.update_state_changes(description, game_time)
 
         self.curr_scene_description = description
         self.curr_global_map = curr_global_map
-    
+
     def get_observations_by_player(self, player_prefix: str) -> dict:
         """Returns the observations of the given player.
         Args:
@@ -549,11 +539,28 @@ class Game:
             'scene_description': scene_description,
             'state_changes': state_changes
         }
-    
+
     def get_time(self) -> str:
         """Returns the current time of the game. The time will be formatted as specified in the config file."""
         return self.time.strftime(self.dateFormat)
-    
+
+    def get_agents_view_imgs(self) -> dict:
+        """Returns the images of the agents' views."""
+        agents_view_imgs = {}
+
+        for player_id, player_name in enumerate(self.player_prefixes):
+            agent_observation = self.timestep.observation[f"{player_id + 1}.RGB"]
+            agents_view_imgs[player_name] = agent_observation
+
+        return agents_view_imgs
+    def get_agents_orientations (self) -> dict:
+        """Returns the orientations of the agents."""
+        orientations = {}
+
+        for player_id, player_name in enumerate(self.player_prefixes):
+            orientation = self.curr_scene_description[player_name]['orientation']
+            orientations[player_name] = orientation
+        return orientations
     def get_current_step_number(self) -> int:
         """Returns the current step number of the game."""
         return self.game_steps
@@ -566,11 +573,11 @@ class Game:
             steps_count: The current steps count
         """
         #Creates the history file if it doesn't exist
-        
+
         with open(f'logs/{logger_timestamp}/steps_history.txt', 'a') as file:
             # Write round_number and actions_count in the history file
             file.write(f'{round_count} {steps_count}\n')
-    
+
     def get_current_global_map(self) -> dict:
         """Returns the current scene description."""
         return self.curr_global_map
