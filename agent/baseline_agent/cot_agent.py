@@ -67,6 +67,10 @@ class CoTAgent:
         for change, obs_time in changes_in_state:
             changes.append(f'{change} At {obs_time}')
         self.stm.add_memory(changes, 'changes_in_state')
+
+        if not agent_current_scene['is_movement_allowed']:
+            self.logger.info(f'{self.name} is frozen and cannot move.')
+            return None
         
         step_action = self.get_actions_to_execute()
             

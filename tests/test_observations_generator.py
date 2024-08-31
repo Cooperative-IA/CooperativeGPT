@@ -484,3 +484,21 @@ def test_get_observed_changes_while_moving():
     expected_output = [('Observed that the grass at position [10, 15] disappeared.', game_time)]
     observed_changes = obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, last_global_position, agent_orientation, last_agent_orientation, game_time, "Juan")
     assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."
+
+class TestsExternalityMushroomsObservations:
+    players = ['agent1', 'agent2', 'agent3']
+    obs_gen = ObservationsGenerator(ASCII_MAP, players, 'externality_mushrooms')
+
+    def test_get_observed_changes_mushrooms(self):
+        # Detect changes while moving
+        game_time = '2021-09-30 12:00:00'
+        observed_map = 'DDDDDDDDDDW\nDDDDHDDDDDW\nDDDDDDDDDDW\nDDDDD1DDDDW\nHD4DDDDDDDW\nDDDDDDDDDDW\nDDDDDDDZDDW\nDDDDDDDDDDW\nDDDDDDDFDDW\nDDHDD#DDDDW\nDDDHDDDDDDW'
+        last_observed_map = 'DDDDDDDDDW-\nDDDHDDDDDW-\nDDDD1DDDDW-\nDDDDDDDDDW-\nD4DDDDDDDW-\nDDDDDDDDDW-\nDDDDDDZDDW-\nDDDDDDDDDW-\nDDDDDDDDDW-\nDHDDD#DDDW-\nDDDDDDDDDW-'
+        agent_orientation = 0
+        last_orientation = 0
+        local_position = (9,5)
+        global_position = (11, 17)
+        last_position = (11, 18)
+        expected_output = [('Observed that a red mushroom grew at position [10, 19].', '2021-09-30 12:00:00'), ('Observed that a green mushroom grew at position [12, 15].', '2021-09-30 12:00:00')]
+        observed_changes = self.obs_gen.get_observed_changes(observed_map, last_observed_map, local_position, global_position, last_position, agent_orientation, last_orientation, game_time, "Juan")
+        assert sorted(observed_changes) == sorted(expected_output), f"Expected {expected_output}, got {observed_changes}."

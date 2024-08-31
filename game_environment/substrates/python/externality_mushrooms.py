@@ -771,6 +771,14 @@ def create_scene(num_players):
               "kwargs": {"numPlayers": num_players}
           },
           {
+              "component": "AvatarsMovementStateObserver",
+              "kwargs": {}
+          },
+          {
+              "component": "GlobalMovementStateTracker",
+              "kwargs": {"numPlayers": num_players}
+          },
+          {
               "component": "Transform",
           },
           {
@@ -836,7 +844,12 @@ def create_scene(num_players):
                        "type": "tensor.Int32Tensor",
                        "shape": (num_players,),
                        "component": "GlobalStateTracker",
-                       "variable": "states"}
+                       "variable": "states"},
+                       {"name": "AVATAR_MOVEMENT_STATES",
+                       "type": "tensor.Int32Tensor",
+                       "shape": (num_players,),
+                       "component": "GlobalMovementStateTracker",
+                       "variable": "movementStates"}
                   ]
               }
           },

@@ -36,6 +36,7 @@ class Avatar:
         self.avatar_state = 1
         self.just_died = False
         self.just_revived = False
+        self.is_movement_allowed = True
 
 
     def set_agents_in_observation(self, agents):
@@ -53,6 +54,9 @@ class Avatar:
             self.just_died = False
             self.just_revived = False
         self.avatar_state = avatar_state
+    
+    def set_is_movement_allowed(self, is_movement_allowed):
+        self.is_movement_allowed = is_movement_allowed
 
     def set_murder(self, murder):
         self.murder = murder
@@ -135,6 +139,7 @@ class SceneDescriptor:
                                  "last_orientation": int(avatar.last_orientation) if avatar.last_orientation is not None else None,
                                  "last_observation": avatar.last_partial_observation,
                                  "effective_zap": avatar.name in [a.murder for a in self.avatars.values() if a.just_died],
+                                 "is_movement_allowed": avatar.is_movement_allowed
                                 }
         return result, map
 
@@ -233,6 +238,7 @@ class SceneDescriptor:
         
         zaps = timestep.observation["WORLD.WHO_ZAPPED_WHO"]
         states = timestep.observation["WORLD.AVATAR_STATES"]
+        movement_states = timestep.observation["WORLD.AVATAR_MOVEMENT_STATES"] if "WORLD.AVATAR_MOVEMENT_STATES" in timestep.observation else None
         for avatar_id, avatar in self.avatars.items():
             _id = avatar_id + 1
             position = timestep.observation[f"{_id}.POSITION"]
@@ -242,6 +248,8 @@ class SceneDescriptor:
             avatar.set_orientation(timestep.observation[f"{_id}.ORIENTATION"])
             avatar.set_reward(timestep.observation[f"{_id}.REWARD"])
             avatar.set_state(states[avatar_id])
+            if movement_states is not None:
+                avatar.set_is_movement_allowed(movement_states[avatar_id])
 
         return map, zaps
     

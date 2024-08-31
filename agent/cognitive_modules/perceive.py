@@ -96,7 +96,7 @@ def create_memory(agent_name: str, curr_time: str, action: str|None, state_chang
     if state_changes:
         state_changes = '\n'.join(state_changes)
         memory += f'Since then, the following changes in the environment have been observed:\n{state_changes}\n'
-    memory += f'Now it\'s {curr_time} and the reward obtained by me is {reward}. I am at the position {position} looking to the {orientation}.'
+    memory += f'Now it\'s {curr_time} and the reward obtained by me is {round(reward, 2)}. I am at the position {position} looking to the {orientation}.'
     if curr_observations:
         curr_observations = '\n'.join(curr_observations)
         memory += f'\nI can currently observe the following:\n{curr_observations}'

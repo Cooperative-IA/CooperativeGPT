@@ -431,7 +431,6 @@ class Game:
         if stop:
             return None, None
 
-        self.game_steps += 1
         action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
@@ -440,6 +439,7 @@ class Game:
         self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description, prev_global_map)
 
         if self.first_move_done :
+            self.game_steps += 1
             # Get the next action map
             game_actions = action_reader.various_agents_step(current_actions_map, self.player_prefixes)
             self.timestep = self.env.step(game_actions)

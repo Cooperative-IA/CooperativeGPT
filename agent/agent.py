@@ -105,7 +105,11 @@ class Agent:
                                                     agent_current_scene['observation'])
         react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward)
 
-        
+        if not agent_current_scene['is_movement_allowed']:
+            self.logger.info(f'{self.name} is frozen and cannot move.')
+            self.reflect(filtered_observations)
+            return None
+
         if react:
             self.plan()
             self.generate_new_actions()
@@ -146,6 +150,11 @@ class Agent:
         react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward)
 
         self.understand(filtered_observations, state_changes)
+
+        if not agent_current_scene['is_movement_allowed']:
+            self.logger.info(f'{self.name} is frozen and cannot move.')
+            self.reflect(filtered_observations)
+            return None
 
         if react:
             self.plan()

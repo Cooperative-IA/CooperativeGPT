@@ -45,8 +45,7 @@ def get_defined_valid_actions():
     """
     map_dimensions = get_scenario_map(substrate_name).split('\n')[1:-1]
     height, width = len(map_dimensions) -1 , len(map_dimensions[0]) -1
-    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
-                'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
+    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is a mushroom in the position it would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
                 'stay put: This action keep the agent in the same position.',
                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
                 ]
@@ -110,7 +109,7 @@ def get_connected_elements(global_map: str):
     
     
     
-def get_specific_substrate_obs(local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int, connected_elements:dict, symbols:dict):
+def get_specific_substrate_obs(local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int, connected_elements:dict, symbols:dict, scene_description: dict):
         
     """
     Description: Returns a list with the descriptions of the mushrooms observed by the agent
@@ -120,6 +119,7 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
         local_position (tuple): Local position of the agent
         global_position (tuple): Global position of the agent
         agent_orientation (int): Orientation of the agent
+        scene_description (dict): The complete scene description
         
     Returns:
         list: List with the descriptions of the mushrooms observed by the agent
@@ -131,6 +131,10 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
     'N': 'orange'
     }
     observations = []
+
+    if not scene_description['is_movement_allowed']:
+        observations.append("I am frozen and can't move while digesting a mushroom I ate")
+
     for i, row in enumerate(local_map.split('\n')):
         for j, char in enumerate(row):
             if char in mushroom_symbols:
@@ -187,12 +191,12 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
             pad_token
         )
     
-    mushroom_type = {'F': 'purple', 'H': 'green', 'Z': 'blue', 'N': 'orange'}
+    mushroom_type = {'F': 'red', 'H': 'green', 'Z': 'blue', 'N': 'orange'}
 
-    curr_m = list(observed_map)
-    last_m = list(last_observed_map)
+    for index in np.ndindex(curr_m.shape):
+        curr_el = curr_m[index]
+        last_el = last_m[index]
 
-    for index, (curr_el, last_el) in enumerate(zip(curr_m, last_m)):
         # Skip if the elements are the same
         if curr_el == last_el:
             continue
@@ -214,12 +218,13 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
                     
         elif last_el == 'B':
             pass
-        # If an apple was taken
+        # If a mushroom was taken
         elif last_el in mushroom_type and curr_el != "B":
             el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+            mushroom_taken = mushroom_type[last_el]
+            pre = "an" if mushroom_taken[0].lower() in "aeiou" else "a"
+            element_taken = f"{pre} {mushroom_taken} mushroom"
             if (curr_el == self_symbol):
-                pre = "an" if mushroom_type[last_el][0].lower() in "aeiou" else "a"
-                element_taken = f"{pre} {mushroom_type[last_el]} mushroom"
                 observations.append((f"I took {element_taken} from position {el_pos}.", game_time))
             elif curr_el.isdigit():
                 agent_id = int(curr_el)
@@ -227,11 +232,12 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
                 observations.append((f"Observed that agent {agent_name} took {element_taken} from position {el_pos}.", game_time))
             else:
                 # If no player took it, it disappeared
-                observations.append((f"Observed that {mushroom_type[last_el]} mushroom disappeared from position {el_pos}.", game_time))
+                observations.append((f"Observed that {mushroom_type[last_el]} mushroom spoiled and disappeared from position {el_pos}.", game_time))
         # If a mushroom appeared
         elif last_el == 'D' and curr_el in mushroom_type:
             el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-            pre = "an" if mushroom_type[last_el][0].lower() in "aeiou" else "a"
-            element_appeared = f"{pre} {mushroom_type[curr_el]} mushroom"
-            observations.append((f"Observed {element_appeared} appear at position {el_pos}.", game_time))
+            mushroom = mushroom_type[curr_el]
+            pre = "an" if mushroom[0].lower() in "aeiou" else "a"
+            element_appeared = f"{pre} {mushroom} mushroom"
+            observations.append((f"Observed that {element_appeared} grew at position {el_pos}.", game_time))
     return observations
