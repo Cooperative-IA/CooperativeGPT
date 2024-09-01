@@ -133,19 +133,21 @@ if __name__ == "__main__":
 
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
+
+    # Start the game server
+    env = start_server(players, init_timestamp=logger_timestamp, game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
+
     # Create agents
     if args.cot_agent:
         agents = [CoTAgent(name=player, agent_context=player_context,
-                    world_context_file=world_context_path, scenario_info=scenario_info) 
+                    world_context_file=world_context_path, scenario_info=scenario_info, recorder_obj=env.game_recorder)
               for player, player_context in zip(players, players_context)]
     else:
         agents = [Agent(name=player, data_folder=data_folder, agent_context=player_context,
                         world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path) 
+                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, recorder_obj=env.game_recorder) 
                 for player, player_context in zip(players, players_context)]
-
-    # Start the game server
-    env = start_server(players, init_timestamp=logger_timestamp, game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
+        
     logger = CustomAdapter(logger, game_env=env)
     # We are setting args.prompts_source as a global variable to be used in the LLMModels class
     llm = LLMModels()

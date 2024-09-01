@@ -534,6 +534,7 @@ class Game:
         else:
             # When the agent is out, do not get the state changes to accumulate them until the agent is revived
             state_changes = self.observationsGenerator.get_observed_changes_per_agent(player_prefix)
+        self.game_recorder.record_observations(player=player_prefix, observations=curr_state, changes=state_changes)
         return {
             'curr_state': curr_state,
             'scene_description': scene_description,

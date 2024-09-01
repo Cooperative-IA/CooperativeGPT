@@ -87,7 +87,11 @@ def condition_to_end_game( current_map:list[str]):
     Returns:
         A boolean indicating if the game has ended if condition for the specific substrate is met
     """
-    # For Clean Up we dont have a condition to end the game
+    # If there is no more mushrooms (F, H, Z, or N) in the map the game ends
+    for row in current_map:
+        for char in row:
+            if char in ['F', 'H', 'Z', 'N']:
+                return False
     return False
 
 
@@ -125,7 +129,7 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
         list: List with the descriptions of the mushrooms observed by the agent
     """
     mushroom_symbols = {
-    'F': 'purple',
+    'F': 'red',
     'H': 'green',
     'Z': 'blue',
     'N': 'orange'
