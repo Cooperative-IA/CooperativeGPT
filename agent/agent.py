@@ -28,13 +28,13 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None ) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None ) -> None:
         """Initializes the agent.
 
         Args:
             name (str): Name of the agent.
             data_folder (str): Path to the data folder.
-            agent_context_file (str): Path to the json agent context file. Initial info about the agent.
+            agent_context (dict): Initial info about the agent.
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to.
             scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
             att_bandwidth (int, optional): Attention bandwidth. The attention bandwidth is the number of observations that the agent can attend to at the same time. Defaults to 10.
@@ -58,7 +58,7 @@ class Agent:
         self.observations_poignancy = observations_poignancy
         ltm_folder = os.path.join(data_folder, 'ltm_database')
         self.ltm = LongTermMemory(agent_name=name, data_folder=ltm_folder)
-        self.stm = ShortTermMemory( agent_context=agent_context_file, world_context_file=world_context_file)
+        self.stm = ShortTermMemory( agent_context=agent_context, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
         self.att_bandwidth = att_bandwidth
         self.understanding_umbral = understanding_umbral

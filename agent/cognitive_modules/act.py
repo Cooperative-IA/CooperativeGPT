@@ -39,7 +39,8 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
     actions_seq_queue= Queue()
 
     previous_actions = stm.get_memory('previous_actions')
-    previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}"
+    if previous_actions is not None:
+        previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}" 
     changes_in_state = stm.get_memory('changes_in_state')
     changes_in_state = '\n'.join(changes_in_state) if changes_in_state else None
     # Actions have to be generated

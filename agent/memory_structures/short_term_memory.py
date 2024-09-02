@@ -12,7 +12,7 @@ class ShortTermMemory:
         """Initializes the short term memory.
 
         Args:
-            agent_context_file (dict, optional): Json agent context file. Initial info about the agent. All the keys in the json file will be added to the short term memory.
+            agent_context (dict, optional): Initial info about the agent. All the keys in the dictionary will be added to the short term memory.
             world_context_file (str, optional): Path to the text world context file. Info about the world that the agent have access to. The world context will be added to the short term memory with the key 'world_context'.
         """
         self.logger = logging.getLogger(__name__)
