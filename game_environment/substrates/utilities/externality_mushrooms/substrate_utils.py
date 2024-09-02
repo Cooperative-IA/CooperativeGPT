@@ -90,9 +90,9 @@ def condition_to_end_game( current_map:list[str]):
     # If there is no more mushrooms (F, H, Z, or N) in the map the game ends
     for row in current_map:
         for char in row:
-            if char in ['F', 'H', 'Z', 'N']:
+            if char in ['F', 'H', 'Z']: # Do not take into account the orange mushroom (N) because it always regrows if eaten and never spoils
                 return False
-    return False
+    return True
 
 
 def get_connected_elements(global_map: str):
