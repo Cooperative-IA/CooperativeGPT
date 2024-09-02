@@ -8,8 +8,7 @@ Observed changes in the game state:
 You are currently viewing a portion of the map, and from your position at <input6> you observe the following:
 <input5>
 
-Define what should be the nex action for Laura get closer to achieve its goals following the current plan.
-Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
+Define what should be the nex action for <input1>.
 Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
 
 Valid actions:
@@ -17,7 +16,7 @@ Valid actions:
 
 Remember that going to positions near the edge of the portion of the map you are seeing will allow you to get new observations.
 
-The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were Laura:
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
 ```json
 {
     "Reasoning: string \\ The reasoning about what is the best action to take
