@@ -4,7 +4,7 @@ from game_environment.utils import connected_elems_map, get_element_global_pos, 
 import numpy as np
 from game_environment.server import get_scenario_map
 
-substrate_name = "coins"
+substrate_name = "coins_original"
 scenario_obstacles = ["W", "$"]
 
 
@@ -63,7 +63,6 @@ def get_defined_valid_actions():
     map_dimensions = get_scenario_map(substrate_name).split('\n')[1:-1]
     height, width = len(map_dimensions) -1 , len(map_dimensions[0]) -1
     return  [f'go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
-                'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
                 'stay put: This action keep the agent in the same position.',
                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
                 ]
@@ -161,7 +160,7 @@ def get_specific_substrate_obs(local_map:str, local_position:tuple, global_posit
                         #Observation above is omited because the global function says the same thing but without team info.
                         
                         #Add observation saying that observes agent is from team red or yellow
-                        obaservations.append(f"Observed agent {other_agent_name} is from team {other_agent_team}")
+                        obaservations.append(f"Observed agent {other_agent_name} is from {other_agent_team} team ")
                     except:
                         pass
                     
@@ -214,11 +213,9 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
             pad_token
         )
 
-
     for index in np.ndindex(curr_m.shape):
         curr_el = curr_m[index]
         last_el = last_m[index]
-        
         # Skip if the elements are the same
         if curr_el == last_el:
             continue
@@ -245,26 +242,24 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
         elif last_el in ['r', 'y']:
             color_coin = 'red' if last_el == 'r' else 'yellow'
             agent_team = get_agent_team_by_name(agent_name)
-            if curr_el.isnumeric():
+            if curr_el == 'F':
+                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                observations.append((f"Observed that {color_coin} coin disappeared at position {el_pos}.", game_time))
+            elif curr_el == self_symbol:
+                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
+                observations.append((f"I took a {color_coin} coin at position {el_pos}.", game_time))            
+            elif curr_el.isnumeric(): 
                 other_agent_id = int(curr_el)
                 other_agent_name = players_names[other_agent_id]
                 other_agent_team = get_agent_team_by_name(other_agent_name)
                 el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                if other_agent_team == agent_team:
-                    observations.append((f"Observed that teammate {other_agent_name} took a {color_coin} coin at position {el_pos}.", game_time))
-                else:
-                    observations.append((f"Observed that agent {other_agent_name} from team {other_agent_team} took a {color_coin} coin at position {el_pos}.", game_time))
-            elif curr_el == 'F':
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Observed that an apple dissapeared at position {el_pos}.", game_time))
-            elif curr_el == self_symbol:
-                el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"I took a {color_coin} coin at position {el_pos}.", game_time))
+                observations.append((f"Observed that agent {other_agent_name} from {other_agent_team} team took a {color_coin} coin from position {el_pos}.", game_time))
+
         # If apple appeared
-        elif last_el in [' ', 'F'] and (curr_el == 'r' or curr_el == 'y'):
+        elif last_el == 'F' and (curr_el == 'r' or curr_el == 'y'):
             el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
             color_coin = 'red' if curr_el == 'r' else 'yellow'
-            observations.append((f"Observed a {color_coin} coin appeared at position {el_pos}.", game_time))
+            observations.append((f"Observed that {color_coin} coin appeared at position {el_pos}.", game_time))
 
     return observations
 

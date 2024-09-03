@@ -31,7 +31,7 @@ PrefabConfig = game_object_utils.PrefabConfig
 # Warning: setting `_ENABLE_DEBUG_OBSERVATIONS = True` may cause slowdown.
 _ENABLE_DEBUG_OBSERVATIONS = False
 
-MANDATED_NUM_PLAYERS = 4  # TODO
+MANDATED_NUM_PLAYERS = 2  # TODO
 
 COIN_PALETTES = {
     "coin_red": shapes.get_palette((238, 102, 119)),    # Red.
@@ -39,6 +39,35 @@ COIN_PALETTES = {
     "coin_yellow": shapes.get_palette((204, 187, 68)),  # Yellow.
     #"coin_green": shapes.get_palette((34, 136, 51)),    # Green.
     #"coin_purple": shapes.get_palette((170, 51, 119))   # Purple.
+}
+
+FLOOR = {
+    "name": "floor",
+    "components": [
+        {
+            "component": "StateManager",
+            "kwargs": {
+                "initialState": "floor",
+                "stateConfigs": [{
+                    "state": "floor",
+                    "layer": "background",
+                    "sprite": "Floor",
+                }],
+            }
+        },
+        {"component": "Transform",},
+        {
+            "component": "Appearance",
+            "kwargs": {
+                "renderMode": "ascii_shape",
+                "spriteNames": ["Floor"],
+                "spriteShapes": [shapes.GRAINY_FLOOR],
+                "palettes": [{"*": (0, 0, 0, 255),
+                              "+": (30, 30, 30, 255),}],
+                "noRotates": [False]
+            }
+        },
+    ]
 }
 
 def get_ascii_map(
@@ -62,11 +91,9 @@ def get_ascii_map(
     if row == 1:
       # Add top-right spawn point.
       ascii_map[-3] = "_"
-      ascii_map[width+3] = "_"
     elif row == height - 2:
-      # Add bottom-right spawn point.
-      ascii_map[-width - 4] = "_"
-      ascii_map[-2* width -3 ] = "_"
+      # Add bottom-left spawn point.
+      ascii_map[-width] = "_"
 
     # Pad to max width.
     ascii_map += [" "] * (max_width - width)
@@ -80,18 +107,19 @@ def get_ascii_map(
 
   # Join list of strings into single string.
   ascii_map = "".join(ascii_map)
-  
-  # Add a blank line at the beginning and end of the map. All maps are formatted this way.
+
+  # Append \n at the beginning and at the end of the string
   ascii_map = "\n" + ascii_map + "\n"
-  
+
   return ascii_map
 
 # `prefab` determines which prefab game object to use for each `char` in the
 # ascii map.
 CHAR_PREFAB_MAP = {
-    "_": "spawn_point",
+    "_": {"type": "all", "list": ["floor", "spawn_point"]},
     "W": "wall",
-    "C": "coin",
+    "C": {"type": "all", "list": ["floor", "coin"]},
+    
 }
 
 _COMPASS = ["N", "E", "S", "W"]
@@ -503,7 +531,7 @@ def get_prefabs(
                   reward_self_for_mismatch=reward_self_for_mismatch,
                   reward_other_for_match=reward_other_for_match,
                   reward_other_for_mismatch=reward_other_for_mismatch)
-  return {"wall": WALL, "spawn_point": SPAWN_POINT, "coin": coin}
+  return {"wall": WALL, "spawn_point": SPAWN_POINT, "coin": coin, "floor": FLOOR}
 
 
 # `player_color_palettes` is a list with each entry specifying the color to use
@@ -632,7 +660,7 @@ def build(
 
   # Build the substrate definition.
   substrate_definition = dict(
-      levelName="coins",
+      levelName="coins_original",
       levelDirectory="meltingpot/lua/levels",
       numPlayers=num_players,
       # Define upper bound of episode length since episodes end stochastically.

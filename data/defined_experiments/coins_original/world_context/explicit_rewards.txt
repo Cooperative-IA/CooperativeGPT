@@ -1,0 +1,6 @@
+Two teams, each with one player, navigate a room to collect colored coins (red and yellow).
+These coins appear randomly throughout the room at regular intervals.
+When a player collects a coin of its team's color, he earns a reward of 1.
+However, if a player collects a coin matching the color of the other team, his team receives a reward of 1
+and the other player team receives a penalty of -2.
+Each player is assigned a color team.

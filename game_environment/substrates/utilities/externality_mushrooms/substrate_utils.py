@@ -174,7 +174,6 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
     curr_m = get_matrix(observed_map)
     last_m = get_matrix(last_observed_map)
     
-        
     curr_m, last_m, agent_local_position, agent_moved, agent_turned = process_observed_matrices(
             curr_m,
             last_m,
@@ -186,7 +185,6 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
             self_symbol,
             pad_token
         )
-    
     mushroom_type = {'F': 'purple', 'H': 'green', 'Z': 'blue', 'N': 'orange'}
 
     curr_m = list(observed_map)
