@@ -28,7 +28,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None ) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None, recorder_obj = None) -> None:
         """Initializes the agent.
 
         Args:
@@ -44,12 +44,14 @@ class Agent:
             observations_poignancy (int, optional): Poignancy of the observations. Defaults to 10.
             prompts_folder (str, optional): Folder where the prompts are stored. Defaults to "base_prompts_v0".
             substrate_name (str, optional): Name of the substrate. Defaults to "commons_harvest_open".
+            recorder_obj (Recorder, optional): Recorder object to record indicators of the game. Defaults to None.
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
         self.substrate_name = substrate_name
         global substrate_utils
         substrate_utils = import_module(f'game_environment.substrates.utilities.{self.substrate_name}.substrate_utils')
+        self.recorder = recorder_obj
         
         self.name = name
         self.mode = mode
@@ -105,7 +107,11 @@ class Agent:
                                                     agent_current_scene['observation'])
         react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward)
 
-        
+        if not agent_current_scene['is_movement_allowed']:
+            self.logger.info(f'{self.name} is frozen and cannot move.')
+            self.reflect(filtered_observations)
+            return None
+
         if react:
             self.plan()
             self.generate_new_actions()
@@ -146,6 +152,11 @@ class Agent:
         react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward)
 
         self.understand(filtered_observations, state_changes)
+
+        if not agent_current_scene['is_movement_allowed']:
+            self.logger.info(f'{self.name} is frozen and cannot move.')
+            self.reflect(filtered_observations)
+            return None
 
         if react:
             self.plan()
@@ -357,6 +368,8 @@ class Agent:
             # We get next action from the actions sequence
             current_action = self.stm.get_memory('actions_sequence').get()
             self.stm.add_memory(current_action, 'current_action')
+            if self.recorder:
+                self.recorder.record_action(player=self.name, curr_action=current_action)
             
             # Now defines a gameloop for the current action
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
@@ -376,6 +389,8 @@ class Agent:
             self.logger.warn(f'{self.name} current gameloop is empty, getting the next action')
             current_action = self.stm.get_memory('actions_sequence').get()
             self.stm.add_memory(current_action, 'current_action')
+            if self.recorder:
+                self.recorder.record_action(player=self.name, curr_action=current_action)
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
             self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')

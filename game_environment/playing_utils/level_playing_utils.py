@@ -431,7 +431,6 @@ class Game:
         if stop:
             return None, None
 
-        self.game_steps += 1
         action_reader = ActionReader(self.env, self.action_map)
         # Get the raw observations from the environment
         description, curr_global_map = self.descriptor.describe_scene(self.timestep)
@@ -440,6 +439,7 @@ class Game:
         self.game_recorder.record_game_state_before_actions(self.game_ascii_map, curr_global_map, current_actions_map, description, prev_global_map)
 
         if self.first_move_done :
+            self.game_steps += 1
             # Get the next action map
             game_actions = action_reader.various_agents_step(current_actions_map, self.player_prefixes)
             self.timestep = self.env.step(game_actions)
@@ -534,6 +534,7 @@ class Game:
         else:
             # When the agent is out, do not get the state changes to accumulate them until the agent is revived
             state_changes = self.observationsGenerator.get_observed_changes_per_agent(player_prefix)
+        self.game_recorder.record_observations(player=player_prefix, observations=curr_state, changes=state_changes)
         return {
             'curr_state': curr_state,
             'scene_description': scene_description,

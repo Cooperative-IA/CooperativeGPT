@@ -14,7 +14,7 @@ class CoTAgent:
     """Agent class.
     """
 
-    def __init__(self, name: str, agent_context: dict, world_context_file: str, scenario_info:dict) -> None:
+    def __init__(self, name: str, agent_context: dict, world_context_file: str, scenario_info:dict, recorder_obj = None) -> None:
         """Initializes the agent.
 
         Args:
@@ -23,9 +23,11 @@ class CoTAgent:
             world_context_file (str): Path to the text world context file. Info about the world that the agent have access to.
             scenario_info (dict): Dictionary with the scenario info. Contains the scenario map and the scenario obstacles.
             substrate_name (str, optional): Name of the substrate. Defaults to "commons_harvest_open".
+            recorder_obj (Recorder, optional): Recorder object to record indicators of the game. Defaults to None.
         """
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
+        self.recorder = recorder_obj
 
         self.name = name
         self.stm = ShortTermMemory( agent_context=agent_context, world_context_file=world_context_file)
@@ -67,6 +69,10 @@ class CoTAgent:
         for change, obs_time in changes_in_state:
             changes.append(f'{change} At {obs_time}')
         self.stm.add_memory(changes, 'changes_in_state')
+
+        if not agent_current_scene['is_movement_allowed']:
+            self.logger.info(f'{self.name} is frozen and cannot move.')
+            return None
         
         step_action = self.get_actions_to_execute()
             
@@ -110,6 +116,8 @@ class CoTAgent:
             # We get next action from the actions sequence
             current_action = self.stm.get_memory('actions_sequence').get()
             self.stm.add_memory(current_action, 'current_action')
+            if self.recorder:
+                self.recorder.record_action(player=self.name, curr_action=current_action)
             
             # Now defines a gameloop for the current action
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
@@ -127,6 +135,8 @@ class CoTAgent:
             self.logger.warn(f'{self.name} current gameloop is empty, getting the next action')
             current_action = self.stm.get_memory('actions_sequence').get()
             self.stm.add_memory(current_action, 'current_action')
+            if self.recorder:
+                self.recorder.record_action(player=self.name, curr_action=current_action)
             steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
             self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')

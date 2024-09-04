@@ -32,6 +32,8 @@ class Recorder:
             self._record_game_state_before_actions = custom_recorder_module.record_game_state_before_actions if hasattr(custom_recorder_module, 'record_game_state_before_actions') else None
             self._record_elements_status = custom_recorder_module.record_elements_status if hasattr(custom_recorder_module, 'record_elements_status') else None
             self._save_custom_indicators = custom_recorder_module.save_custom_indicators if hasattr(custom_recorder_module, 'save_custom_indicators') else None
+            self._record_observations = custom_recorder_module.record_observations if hasattr(custom_recorder_module, 'record_observations') else None
+            self._record_action = custom_recorder_module.record_action if hasattr(custom_recorder_module, 'record_action') else None
         except ModuleNotFoundError:
             pass
 
@@ -108,6 +110,14 @@ class Recorder:
         """
         if self._record_game_state_before_actions:
             self._record_game_state_before_actions(self, initial_map, current_map, current_actions_map, scene_description, previous_map)
+
+    def record_observations(self, **kwargs):
+        if self._record_observations:
+            self._record_observations(self, **kwargs)
+
+    def record_action(self, **kwargs):
+        if self._record_action:
+            self._record_action(self, **kwargs)
 
     def save_log(self):
         recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)

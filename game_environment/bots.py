@@ -30,7 +30,7 @@ def get_bots_for_scenario(scenario: str) -> list[str]:
     bots_names = []
 
     for i, role in enumerate(bots_roles):
-        index = i % len(bots_roles)
+        index = i % len(list(scenario_config.bots_by_role[role]))
         available_names = sorted(list(scenario_config.bots_by_role[role]))
         try:
             bots_names.append(available_names[index])
