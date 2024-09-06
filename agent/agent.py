@@ -250,7 +250,7 @@ class Agent:
         changes_in_state = '\n'.join(changes_in_state) if changes_in_state else None
         reason_to_react = self.stm.get_memory('reason_to_react')
         game_time = self.stm.get_memory('game_time')
-        curr_timestamp = str_to_timestamp(game_time, self.ltm.date_format)
+        curr_timestamp = str_to_timestamp(game_time)
         past_observations = self.ltm.get_memories(limit=10, reversed_order=True, filter={'$and': [{'type': 'perception'}, {'timestamp': {'$lt': curr_timestamp}}]})['documents']
         past_observations = '\n'.join(past_observations) if len(past_observations) > 0 else None
         last_step_executed = self.stm.get_memory('step_to_take')
@@ -290,7 +290,7 @@ class Agent:
 
         # Get observations to reflect on
         last_reflection = self.stm.get_memory('last_reflection')
-        filter = {'$and': [{'type': 'perception'}, {'timestamp': {'$gt': str_to_timestamp(last_reflection, self.ltm.date_format)}}]}
+        filter = {'$and': [{'type': 'perception'}, {'timestamp': {'$gt': str_to_timestamp(last_reflection)}}]}
         if last_reflection is None:
             filter = {'type': 'perception'}
         filtered_observations = self.ltm.get_memories(filter=filter)
@@ -340,7 +340,7 @@ class Agent:
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
         game_time = self.stm.get_memory('game_time')
-        curr_timestamp = str_to_timestamp(game_time, self.ltm.date_format)
+        curr_timestamp = str_to_timestamp(game_time)
         past_observations = self.ltm.get_memories(limit=10, reversed_order=True, filter={'$and': [{'type': 'perception'}, {'timestamp': {'$lt': curr_timestamp}}]})['documents']
         past_observations = '\n'.join(past_observations) if len(past_observations) > 0 else None
         current_position = self.spatial_memory.position

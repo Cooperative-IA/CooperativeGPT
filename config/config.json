@@ -1,6 +1,5 @@
 {
   "SYSTEM_CONTEXT_PATH":"data/formats/current_game_data",
   "GENERIC_DATA":"data/formats/generic_data",
-  "game_folder": "game_environment",
-  "date_format": "%Y-%m-%d %H:%M:%S"
+  "game_folder": "game_environment"
 }
