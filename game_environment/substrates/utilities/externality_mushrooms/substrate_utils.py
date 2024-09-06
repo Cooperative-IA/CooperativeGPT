@@ -185,7 +185,8 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
             self_symbol,
             pad_token
         )
-    mushroom_type = {'F': 'purple', 'H': 'green', 'Z': 'blue', 'N': 'orange'}
+    
+    mushroom_type = {'F': 'red', 'H': 'green', 'Z': 'blue', 'N': 'orange'}
 
     curr_m = list(observed_map)
     last_m = list(last_observed_map)
