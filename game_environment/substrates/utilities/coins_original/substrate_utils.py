@@ -62,7 +62,7 @@ def get_defined_valid_actions():
     """
     map_dimensions = get_scenario_map(substrate_name).split('\n')[1:-1]
     height, width = len(map_dimensions) -1 , len(map_dimensions[0]) -1
-    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
+    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is a coin in the position the coin would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
                 'stay put: This action keep the agent in the same position.',
                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
                 ]
@@ -238,7 +238,7 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
         elif last_el == 'B':
             pass
         
-        # If an apple was taken
+        # If an coin was taken
         elif last_el in ['r', 'y']:
             color_coin = 'red' if last_el == 'r' else 'yellow'
             agent_team = get_agent_team_by_name(agent_name)
@@ -255,7 +255,7 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
                 el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
                 observations.append((f"Observed that agent {other_agent_name} from {other_agent_team} team took a {color_coin} coin from position {el_pos}.", game_time))
 
-        # If apple appeared
+        # If coin appeared
         elif last_el == 'F' and (curr_el == 'r' or curr_el == 'y'):
             el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
             color_coin = 'red' if curr_el == 'r' else 'yellow'

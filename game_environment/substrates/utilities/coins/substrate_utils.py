@@ -62,7 +62,7 @@ def get_defined_valid_actions():
     """
     map_dimensions = get_scenario_map(substrate_name).split('\n')[1:-1]
     height, width = len(map_dimensions) -1 , len(map_dimensions[0]) -1
-    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is an apple in the position the apple would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
+    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is an coin in the position the coin would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
                 'immobilize player (player_name) at (x,y): This action takes the agent near the specified position and uses the light beam pointed to the specified position. If there is another agent in that position, the agent would be attacked and will be inactive for a few rounds, then it would be reinstanted on the game on another position.',
                 'stay put: This action keep the agent in the same position.',
                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
@@ -241,7 +241,7 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
         elif last_el == 'B':
             pass
         
-        # If an apple was taken
+        # If an coin was taken
         elif last_el in ['r', 'y']:
             color_coin = 'red' if last_el == 'r' else 'yellow'
             agent_team = get_agent_team_by_name(agent_name)
@@ -256,11 +256,11 @@ def get_observed_changes( observed_map: str, last_observed_map: str | None, agen
                     observations.append((f"Observed that agent {other_agent_name} from team {other_agent_team} took a {color_coin} coin at position {el_pos}.", game_time))
             elif curr_el == 'F':
                 el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
-                observations.append((f"Observed that an apple dissapeared at position {el_pos}.", game_time))
+                observations.append((f"Observed that an coin dissapeared at position {el_pos}.", game_time))
             elif curr_el == self_symbol:
                 el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
                 observations.append((f"I took a {color_coin} coin at position {el_pos}.", game_time))
-        # If apple appeared
+        # If coin appeared
         elif last_el in [' ', 'F'] and (curr_el == 'r' or curr_el == 'y'):
             el_pos = get_element_global_pos(index, agent_local_position, agent_global_position, agent_orientation)
             color_coin = 'red' if curr_el == 'r' else 'yellow'
