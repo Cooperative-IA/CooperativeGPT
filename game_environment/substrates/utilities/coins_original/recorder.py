@@ -1,5 +1,6 @@
 import os
 import json
+import numpy as np
 
 from game_environment.utils import connected_elems_map, get_local_position_of_element
 from utils.math import manhattan_distance
@@ -24,7 +25,7 @@ def record(record_obj, timestep, description: dict):
     for agent, description in description.items():
         if description["effective_zap"]:
             record_obj.effective_attack_object[agent]['effective_attack'] += 1
-                
+        
         
 def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict, previous_map: list[list[str]]):
     """
@@ -43,15 +44,9 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     if not hasattr(record_obj, 'attack_object'):
         record_obj.attack_object = {agent:{'decide_to_attack': 0} for agent in record_obj.player_names}
 
-    #if not hasattr(record_obj, 'collected_coins_object'):
-    #    record_obj.collected_coins_object = {agent:{'red_coins':0,  'yellow_coins':0} for agent in record_obj.player_names}
-        
-    # Get the agents 
-
     if current_actions_map is None:
         return
 
-    
     for agent in current_actions_map:
         #TODO ADJUST THIS FILE IF NECESSARY 
         agent_id = record_obj.agents_ids[agent]
@@ -65,8 +60,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
             if did_attack:
                 record_obj.attack_object[agent]['decide_to_attack'] += 1
 
-    record_obj.previous_map = current_map
-
+    record_obj.previous_map = previous_map
 
 def record_elements_status(record_obj, initial_map: list[list[str]], current_map: list[list[str]]):
     """
@@ -91,6 +85,7 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
             
         elif previous_map[agent_position[0]][agent_position[1]] == 'r':
             record_obj.collected_coins_object[agent]['red_coins'] += 1
+
 
 
 def save_custom_indicators(record_obj):
