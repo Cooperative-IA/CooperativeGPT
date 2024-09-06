@@ -2,7 +2,7 @@ from llm import LLMModels
 from utils.llm import extract_answers
 import os
 
-def plan(name: str, world_context: str, observation: str, current_plan: str, reflections: str, reason_to_react: str, agent_bio: str = "", prompts_folder = "base_prompts_v0", changes_in_state: str = None) -> tuple[str, str]:
+def plan(name: str, world_context: str, observation: str, current_plan: str, reflections: str, reason_to_react: str, agent_bio: str = "", prompts_folder = "base_prompts_v0", changes_in_state: str = None, past_observations: str = None, last_step_executed: str = None, position: str = None, orientation: str = None) -> tuple[str, str]:
     """Creates a plan for the agent and its goals.
 
     Args:
@@ -14,6 +14,10 @@ def plan(name: str, world_context: str, observation: str, current_plan: str, ref
         reason_to_react (str): Reason to react and create a new plan.
         agent_bio (str, optional): Agent bio. Defines personality that can be given for agent. Defaults to "".
         prompts_folder (str, optional): Folder where the prompts are stored. Defaults to "base_prompts_v0".
+        past_observations (str): Past observations.
+        last_step_executed (str): Last low level action executed.
+        position (str): Global position of the agent.
+        orientation (str): Orientation of the agent.
 
     Returns:
         tuple[str, str]: New plan and new goals for the agent.
@@ -21,7 +25,11 @@ def plan(name: str, world_context: str, observation: str, current_plan: str, ref
     llm = LLMModels().get_main_model()
     
     prompt_path = os.path.join(prompts_folder, 'plan.txt')
-    response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, reflections, reason_to_react, agent_bio, changes_in_state], system_prompt='plan_system_prompt.txt')
+    if last_step_executed:
+        action_str = f' after taking action "{last_step_executed}"'
+    else:
+        action_str = ''
+    response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, reflections, reason_to_react, agent_bio, changes_in_state, past_observations, action_str, position, orientation], system_prompt='plan_system_prompt.txt')
     answers = extract_answers(response)
 
     plan = answers.get('Plan', None)

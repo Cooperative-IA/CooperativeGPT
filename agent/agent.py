@@ -249,9 +249,16 @@ class Agent:
         changes_in_state = self.stm.get_memory('changes_in_state')
         changes_in_state = '\n'.join(changes_in_state) if changes_in_state else None
         reason_to_react = self.stm.get_memory('reason_to_react')
+        game_time = self.stm.get_memory('game_time')
+        curr_timestamp = str_to_timestamp(game_time, self.ltm.date_format)
+        past_observations = self.ltm.get_memories(limit=10, reversed_order=True, filter={'$and': [{'type': 'perception'}, {'timestamp': {'$lt': curr_timestamp}}]})['documents']
+        past_observations = '\n'.join(past_observations) if len(past_observations) > 0 else None
+        last_step_executed = self.stm.get_memory('step_to_take')
+        current_position = str(self.spatial_memory.position)
+        curr_orientation = self.stm.get_memory('current_orientation')
         assert reason_to_react is not None, 'Reason to react is None. This should not happen because the agent only plans if it should react to the observation'
 
-        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str, self.prompts_folder, changes_in_state=changes_in_state)
+        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str, self.prompts_folder, changes_in_state=changes_in_state, past_observations=past_observations, last_step_executed=last_step_executed, position=current_position, orientation=curr_orientation)
         self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
         if new_plan is None or new_goals is None:
             self.logger.warn(f'{self.name} could not generate a new plan or new goals')
@@ -332,15 +339,21 @@ class Agent:
         current_goals = self.stm.get_memory('current_goals')
         reflections = self.ltm.get_memories(limit=10, filter={'type': 'reflection'})['documents']
         reflections = '\n'.join(reflections) if len(reflections) > 0 else 'None'
+        game_time = self.stm.get_memory('game_time')
+        curr_timestamp = str_to_timestamp(game_time, self.ltm.date_format)
+        past_observations = self.ltm.get_memories(limit=10, reversed_order=True, filter={'$and': [{'type': 'perception'}, {'timestamp': {'$lt': curr_timestamp}}]})['documents']
+        past_observations = '\n'.join(past_observations) if len(past_observations) > 0 else None
         current_position = self.spatial_memory.position
         known_objects = substrate_utils.get_textually_known_objects(stm=self.stm)
+        last_step_executed = self.stm.get_memory('step_to_take')
+        curr_orientation = self.stm.get_memory('current_orientation')
 
         percentage_explored = self.spatial_memory.get_percentage_explored()
         
         # Generate new actions sequence and add it to the short term memory
         actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
                                                   current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
-                                                  known_objects, percentage_explored, self.stm)
+                                                  known_objects, percentage_explored, self.stm, past_observations=past_observations, last_step_executed=last_step_executed, curr_orientation=curr_orientation)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
         
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')

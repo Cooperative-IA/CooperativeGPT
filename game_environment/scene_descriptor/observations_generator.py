@@ -65,8 +65,6 @@ class ObservationsGenerator (object):
         for agent_name, agent_dict in agents_observations.items():
             observations_description_per_agent[agent_name] = self.get_observations_per_agent(agent_dict, agent_name, True)
 
-
-        logger.info(f' Observations descriptions for all agents: {observations_description_per_agent} \n')
         return observations_description_per_agent
 
 
