@@ -240,7 +240,7 @@ class Agent:
         """Plans the next actions of the agent and its main goals.
         """
 
-        current_observation = self.stm.get_memory('current_observation') or 'None'
+        current_observation = self.stm.get_memory('current_observation')
         current_plan = self.stm.get_memory('current_plan')
         world_context = self.stm.get_memory('world_context')
         agent_bio_str = self.stm.get_memory('bio_str')

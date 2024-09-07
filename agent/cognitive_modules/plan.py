@@ -29,6 +29,8 @@ def plan(name: str, world_context: str, observation: str, current_plan: str, ref
         action_str = f' after taking action "{last_step_executed}"'
     else:
         action_str = ''
+    if not observation:
+        observation = "You couldn't observe anything interesting."
     response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, reflections, reason_to_react, agent_bio, changes_in_state, past_observations, action_str, position, orientation], system_prompt='plan_system_prompt.txt')
     answers = extract_answers(response)
 

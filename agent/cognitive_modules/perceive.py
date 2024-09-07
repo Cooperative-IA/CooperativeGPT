@@ -31,6 +31,8 @@ def should_react(name: str, world_context: str, observations: list[str], current
     if changes_in_state:
         changes_in_state = f'The following changes in the environment were observed:\n{changes_in_state}'
     actions_queue = ', '.join([f'{i+1}.{action}' for i, action in enumerate(actions_queue)]) if len(actions_queue) > 0 else 'None'
+    if not observation:
+        observation = "You couldn't observe anything interesting."
     response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, actions_queue, changes_in_state, curr_position, agent_bio])
     answers = extract_answers(response)
     answer = answers.get('Answer', False)
