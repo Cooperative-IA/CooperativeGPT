@@ -145,7 +145,7 @@ if __name__ == "__main__":
     else:
         agents = [Agent(name=player, data_folder=data_folder, agent_context=player_context,
                         world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, recorder_obj=env.game_recorder) 
+                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, recorder_obj=env.game_recorder, curr_game_id=int(datetime.strptime(logger_timestamp,"%Y-%m-%d--%H-%M-%S").timestamp())) 
                 for player, player_context in zip(players, players_context)]
         
     logger = CustomAdapter(logger, game_env=env)

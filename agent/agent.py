@@ -28,7 +28,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None, recorder_obj = None) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None, recorder_obj = None, curr_game_id=None) -> None:
         """Initializes the agent.
 
         Args:
@@ -66,6 +66,7 @@ class Agent:
         self.understanding_umbral = understanding_umbral
         self.prompts_folder = prompts_folder
         self.stm.add_memory(memory = self.name, key = 'name')
+        self.curr_game_id = curr_game_id
 
         # Initialize steps sequence in empty queue
         self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
@@ -184,7 +185,7 @@ class Agent:
         action_executed = self.stm.get_memory('step_to_take')
         if is_agent_out:
             memory = create_memory(self.name, game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name(), True)
-            self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+            self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception', 'game_id': self.curr_game_id})
             current_observation = '\n'.join(observations)
             self.stm.add_memory(current_observation, 'current_observation')
             return False, observations, changes_in_state
@@ -209,7 +210,7 @@ class Agent:
         position = self.spatial_memory.position
         orientation = self.spatial_memory.get_orientation_name()
         memory = create_memory(self.name, game_time, action_executed, changes, reward, observations, position, orientation)
-        self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+        self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception', 'game_id': self.curr_game_id})
 
         current_observation = '\n'.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
@@ -251,7 +252,7 @@ class Agent:
         reason_to_react = self.stm.get_memory('reason_to_react')
         game_time = self.stm.get_memory('game_time')
         curr_timestamp = str_to_timestamp(game_time)
-        past_observations = self.ltm.get_memories(limit=10, reversed_order=True, filter={'$and': [{'type': 'perception'}, {'timestamp': {'$lt': curr_timestamp}}]})['documents']
+        past_observations = self.ltm.get_memories(limit=10, reversed_order=True, filter={'$and': [{'type': 'perception'}, {'timestamp': {'$lt': curr_timestamp}}, {'game_id': self.curr_game_id}]})['documents']
         past_observations = '\n'.join(past_observations) if len(past_observations) > 0 else None
         last_step_executed = self.stm.get_memory('step_to_take')
         current_position = str(self.spatial_memory.position)
@@ -290,9 +291,9 @@ class Agent:
 
         # Get observations to reflect on
         last_reflection = self.stm.get_memory('last_reflection')
-        filter = {'$and': [{'type': 'perception'}, {'timestamp': {'$gt': str_to_timestamp(last_reflection)}}]}
+        filter = {'$and': [{'type': 'perception'}, {'timestamp': {'$gt': str_to_timestamp(last_reflection)}}, {'game_id': self.curr_game_id}]}
         if last_reflection is None:
-            filter = {'type': 'perception'}
+            filter = {'$and': [{'type': 'perception'}, {'game_id': self.curr_game_id}]}
         filtered_observations = self.ltm.get_memories(filter=filter)
 
         observations_str = '\n'.join(filtered_observations['documents'])
@@ -319,7 +320,7 @@ class Agent:
         # Add the reflections to the long term memory, checks if the reflection  is not empty
         for reflection in reflections:
             if reflection:
-                self.ltm.add_memory(f'{reflection} Reflection made at {game_time}.', game_time, self.observations_poignancy, {'type': 'reflection'})
+                self.ltm.add_memory(reflection, game_time, self.observations_poignancy*10, {'type': 'reflection', 'game_id': self.curr_game_id})
         
         # Add the last reflection to the short term memory
         self.stm.add_memory(game_time, 'last_reflection')

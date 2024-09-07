@@ -27,7 +27,7 @@ def retrieve_relevant_memories(agent, query: str, max_memories: int = 10, metada
         list[str]: A list of memories.
     """
 
-    # Weights for the rececny, poignancy and similarity factors
+    # Weights for the recency, poignancy and similarity factors
     factor_weights = [1, 1, 1]
 
     # Get the memories from the database

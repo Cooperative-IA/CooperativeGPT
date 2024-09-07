@@ -28,12 +28,13 @@ class LongTermMemory:
 
         # Delete collection if it already exists
         if agent_name in [c.name for c in self.chroma_client.list_collections()]:
-            self.chroma_client.delete_collection(agent_name)
+            # self.chroma_client.delete_collection(agent_name)
+            pass
 
         # Use a custom model to create the embeddings
         openai_ef = CustomEmbeddingFunction()
 
-        self.collection = self.chroma_client.create_collection(agent_name, embedding_function=openai_ef)
+        self.collection = self.chroma_client.create_collection(agent_name, embedding_function=openai_ef, get_or_create=True)
 
     def add_memory(self, memory: str | list[str], created_at: str | list[str], poignancy: int | list[int], additional_metadata: dict | list[dict] = None):
         """Adds a memory to the long term memory.
