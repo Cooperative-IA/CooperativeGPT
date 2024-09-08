@@ -165,7 +165,6 @@ class SpatialMemory:
         Returns:
             Queue(str): Steps sequence for the current action.
         """
-
         sequence_steps = new_empty_queue()
 
         if current_action.startswith(('grab ')) or current_action.startswith(('consume ')) or "go to " in current_action:
@@ -202,7 +201,7 @@ class SpatialMemory:
             explore_pos = self.get_position_from_action(current_action)
             if not self.is_position_valid(explore_pos):
                 explore_pos = None
-            sequence_steps = self.generate_explore_sequence(explore_pos)
+            sequence_steps = self.generate_explore_sequence(current_global_map, explore_pos)
             
         elif current_action.startswith('avoid consuming') or current_action.startswith('stay put'):
             sequence_steps.put('stay put')
