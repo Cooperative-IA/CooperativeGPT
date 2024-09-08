@@ -1,5 +1,6 @@
 import os
 import json
+import re
 
 from game_environment.utils import connected_elems_map, get_local_position_of_element
 from utils.math import manhattan_distance
@@ -47,24 +48,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
     if current_actions_map is None:
         return
     
-    mushrooms_dict = {
-        'F': 'purple_mushrooms',
-        'H': 'green_mushrooms',
-        'Z': 'blue_mushrooms',
-        'N': 'orange_mushrooms'
-    }
     for agent in current_actions_map:
-        #TODO ADJUST THIS FILE IF NECESSARY 
-        agent_id = record_obj.agents_ids[agent]
-        agent_position = get_local_position_of_element(current_map, agent_id)
-        if agent_position is None or previous_map is None:
-            continue
-        
-        # Check if agent collected mushrooms
-        prev_el = previous_map[agent_position[0]][agent_position[1]]
-        if prev_el in mushrooms_dict:
-            record_obj.collected_mushrooms_object[agent][mushrooms_dict[prev_el]] += 1
-        
         # Check if the agent decided to attack
         if current_actions_map:
             did_attack = current_actions_map[agent]['fireZap'] # This is a boolean (1 or 0)
@@ -82,7 +66,50 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
     """
     # This function can not allow yet the recording of the mushrooms due to the arguments it does not receives, that record_before_actions does receive 
     # TODO: Add parameters to this function (thus to all other recorder.py files) that allow to record the mushrooms
-    pass  
+    pass
+
+def record_observations(record_obj, **kwargs):
+    """
+    Record the observations of the agents
+
+    Args:
+        record_obj (Recorder): Recorder object
+    """
+    player= kwargs['player']
+    observations = kwargs['observations']
+    changes = kwargs['changes']
+
+    # Create mushroom_consumption object if it does not exist
+    if not hasattr(record_obj, 'mushroom_consumption'):
+        record_obj.mushroom_consumption = {agent:{'red':0,  'blue':0,  'green':0,  'orange':0, } for agent in record_obj.player_names}
+
+    # Check if the agent consumed a mushroom
+    # The changes are in the form of 'I took a/an <mushroom_type>'
+    pattern = re.compile(r'I took a(n)? (\w+)')
+    for change, timestamp in changes:
+        match = pattern.match(change)
+        if match:
+            mushroom_type = match.group(2)
+            record_obj.mushroom_consumption[player][mushroom_type] += 1
+
+def record_action(record_obj, **kwargs):
+    """
+    Record the actions of the agents
+
+    Args:
+        record_obj (Recorder): Recorder object
+    """
+    player = kwargs['player']
+    curr_action = kwargs['curr_action']
+
+    # Create the actions_taken object if it does not exist
+    if not hasattr(record_obj, 'actions_taken'):
+        record_obj.actions_taken = {agent: {} for agent in record_obj.player_names}
+
+    # Parse the action
+    if 'go to position' in curr_action:
+        curr_action = 'go to'
+    record_obj.actions_taken[player][curr_action] = record_obj.actions_taken[player].get(curr_action, 0) + 1
 
 def save_custom_indicators(record_obj):
     """
@@ -100,12 +127,23 @@ def save_custom_indicators(record_obj):
     # Number of times the agent effectively attacked
     effective_attack = {agent: record_obj.effective_attack_object[agent]['effective_attack'] for agent in record_obj.effective_attack_object}
 
-    collected_mushrooms = {agent: record_obj.collected_mushrooms_object[agent] for agent in record_obj.collected_mushrooms_object}
+    mushrooms_consumption = record_obj.mushroom_consumption
+
+    # Calculate time spent digesting mushrooms
+    digesting_time_by_mushroom = {
+        'red': 0,
+        'blue': 15,
+        'green': 10,
+        'orange': 15
+    }
+    digesting_time = {agent: sum([mushrooms_consumption[agent][mushroom] * digesting_time_by_mushroom[mushroom] for mushroom in mushrooms_consumption[agent]]) for agent in mushrooms_consumption}
 
     custom_indicators = {
         'times_decide_to_attack': times_decide_to_attack,
         'effective_attack': effective_attack,
-        'collected_mushrooms': collected_mushrooms
+        'mushrooms_consumption': mushrooms_consumption,
+        'digesting_spent_time': digesting_time,
+        'actions_taken': record_obj.actions_taken
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:

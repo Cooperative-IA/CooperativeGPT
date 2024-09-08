@@ -4,13 +4,16 @@ You have this information about an agent called <input1>:
 
 <input1>'s world understanding: <input2>
 
+Past observations:
+<input9>
+
 Recent analysis of past observations:
 <input5>
 
 Observed changes in the game state:
 <input8>
 
-Current observations: 
+Now,<input10> you are positioned at <input11> facing <input12> from where you observe the following:
 <input3>
 
 Current plan: <input4>

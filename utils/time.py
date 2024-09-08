@@ -1,15 +1,14 @@
 from datetime import datetime
 
-def str_to_timestamp(date: str, date_format: str) -> int:
+def str_to_timestamp(date: str|None) -> int:
     """Converts a string date to a timestamp.
 
     Args:
-        date (str): Date in string format.
-        dateformat (str): Date format.
+        date (str|None): Date in string format.
 
     Returns:
         int: Timestamp.
     """
     if date is None:
         return 0
-    return int(datetime.strptime(date, date_format).timestamp())
+    return int(date.split()[1])

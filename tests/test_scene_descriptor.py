@@ -1,26 +1,26 @@
 
 from game_environment.scene_descriptor.scene_descriptor import SceneDescriptor
 
-def test_describe_scene(mocker):
+def test_describe_scene_commons_harvest(mocker):
     # Test that an agent who zapped another agent is detected
     substrate_config = mocker.MagicMock()
     substrate_config.lab2d_settings.numPlayers = 3
     substrate_config.player_names = ['player1', 'player2', 'player3']
-    substrate_config.lab2d_settings.simulation.gameObjects = [{"components": [
+    substrate_config.lab2d_settings.simulation.gameObjects = [{"name": "avatar", "components": [
         {
             "component": "Avatar",
             "kwargs": {
                 "view": {'left': 5, 'right': 5, 'forward': 9, 'backward': 1, 'centered': False},
             }
         }
-    ]}, {"components": [
+    ]}, {"name": "avatar", "components": [
         {
             "component": "Avatar",
             "kwargs": {
                 "view": {'left': 5, 'right': 5, 'forward': 9, 'backward': 1, 'centered': False},
             }
         }
-    ]}, {"components": [
+    ]}, {"name": "avatar", "components": [
         {
             "component": "Avatar",
             "kwargs": {
@@ -28,7 +28,7 @@ def test_describe_scene(mocker):
             }
         }
     ]}]
-    scene_descriptor = SceneDescriptor(substrate_config)
+    scene_descriptor = SceneDescriptor(substrate_config, 'commons_harvest_open')
 
     # First set that there is a murderer
     timestep = mocker.MagicMock()

@@ -85,5 +85,12 @@ def get_args():
         help="The id of the simulation when running multiple simulations"
     )
 
+    parser.add_argument(
+        "--cot_agent",
+        type=bool,
+        default=False,
+        help="Whether to use the simple CoT agent. True/False."
+    )
+    
     args = parser.parse_args()
     return args

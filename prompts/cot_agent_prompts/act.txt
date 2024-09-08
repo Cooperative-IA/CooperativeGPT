@@ -1,0 +1,24 @@
+You have this information about an agent called <input1>:
+
+<input1>'s world understanding: <input2>
+
+Observed changes in the game state:
+<input14>
+
+You are currently viewing a portion of the map, and from your position at <input6> you observe the following:
+<input5>
+
+Define what should be the nex action for <input1>.
+Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
+
+Valid actions:
+<input8>
+
+Remember that going to positions near the edge of the portion of the map you are seeing will allow you to get new observations.
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
+```json
+{
+    "Reasoning: string \\ The reasoning about what is the best action to take
+    "Answer": string \\ Must be one of the valid actions with the position replaced
+}```

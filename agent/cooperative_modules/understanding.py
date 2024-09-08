@@ -16,7 +16,7 @@ def update_understanding(current_observations: list[str], agent, game_time: str,
     # Decide if the understanding should be updated
     world_understanding = agent.stm.get_memory('world_context')
     last_understanding_update = agent.stm.get_memory('understanding_updated_on')
-    last_timestamp = str_to_timestamp(last_understanding_update, agent.ltm.date_format)
+    last_timestamp = str_to_timestamp(last_understanding_update)
     recent_reflections = agent.ltm.get_memories(filter={'$and': [{'type': 'reflection'}, {'timestamp': {'$gt': last_timestamp}}]})
     accumulated_poignancy = sum([reflection['poignancy'] for reflection in recent_reflections['metadatas']])
     if world_understanding is not None and accumulated_poignancy < understanding_umbral:

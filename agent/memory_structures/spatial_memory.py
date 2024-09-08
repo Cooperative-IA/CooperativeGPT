@@ -240,12 +240,13 @@ class SpatialMemory:
 
 
 
-    def get_position_from_action(self, action: str) -> tuple:
+    def get_position_from_action(self, action: str, fall_back_pos = (-1, -1)) -> tuple:
         """
         Returns the position of the object in the action.
 
         Args:
             action (str): Action of the agent.
+            fall_back_pos (tuple, optional): Fallback position. Defaults to (-1, -1).
 
         Returns:
             tuple: Position of the object in the action.
@@ -259,8 +260,8 @@ class SpatialMemory:
             
             return  (int(x), int(y))
         except :
-            self.logger.error(f'Action {action} does not contain a position')
-            return (-1,-1)
+            self.logger.warn(f'Action {action} does not contain a position')
+            return fall_back_pos
         
     
     def sort_observations_by_distance(self, observations: list[str]) -> list[str]:
@@ -274,7 +275,7 @@ class SpatialMemory:
             list[str]: Sorted list of observations.
         """
 
-        observations_positions = [self.get_position_from_action(observation) for observation in observations]
+        observations_positions = [self.get_position_from_action(observation, self.position) for observation in observations]
         observations_distances = [manhattan_distance(self.position, position) for position in observations_positions]
 
         return sorted(observations, key=lambda x: observations_distances[observations.index(x)])

@@ -65,8 +65,6 @@ class ObservationsGenerator (object):
         for agent_name, agent_dict in agents_observations.items():
             observations_description_per_agent[agent_name] = self.get_observations_per_agent(agent_dict, agent_name, True)
 
-
-        logger.info(f' Observations descriptions for all agents: {observations_description_per_agent} \n')
         return observations_description_per_agent
 
 
@@ -97,7 +95,7 @@ class ObservationsGenerator (object):
             agent_orientation = agent_dict['orientation']
             symbols = {'self_symbol': self.self_symbol, 'other_players_symbols': self.other_players_symbols }
 
-            substrate_items_descriptions = self.get_specific_substrate_observations(local_observation_map, local_map_position, global_position, agent_orientation, self.connected_elments, symbols)
+            substrate_items_descriptions = self.get_specific_substrate_observations(local_observation_map, local_map_position, global_position, agent_orientation, self.connected_elments, symbols, scene_description=agent_dict)
             list_of_observations.extend(substrate_items_descriptions)
 
             # Get agents observed descriptions for structured elements in the substrate map
@@ -171,7 +169,7 @@ class ObservationsGenerator (object):
         return agents_observed
 
 
-    def get_specific_substrate_observations (self, local_observation_map: str, local_map_position: tuple, global_position: tuple, agent_orientation: int, connected_elments: dict, symbols: dict) -> list[str]:
+    def get_specific_substrate_observations (self, local_observation_map: str, local_map_position: tuple, global_position: tuple, agent_orientation: int, connected_elments: dict, symbols: dict, **kwargs) -> list[str]:
         """
         Calls the specific substrate observation function of the substrate utilities module
 
@@ -187,7 +185,7 @@ class ObservationsGenerator (object):
             list[str]: List with the descriptions of the specific substrate observations
         """
 
-        return self.substrate_utils_module.get_specific_substrate_obs(local_observation_map, local_map_position, global_position, agent_orientation, connected_elments, symbols)
+        return self.substrate_utils_module.get_specific_substrate_obs(local_observation_map, local_map_position, global_position, agent_orientation, connected_elments, symbols, **kwargs)
 
     def get_observed_changes(self, observed_map: str, last_observed_map: str | None, agent_local_position: tuple, agent_global_position: tuple, agent_last_global_position: tuple, agent_orientation: int, agent_last_orientation: int, game_time: str, agent_name:str) -> list[tuple[str, str]]:
         """Calls the specific substrate observation function of the substrate utilities module

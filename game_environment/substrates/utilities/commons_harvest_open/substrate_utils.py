@@ -115,7 +115,7 @@ def get_connected_elements(global_map: str):
     
     
     
-def get_specific_substrate_obs(local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int, connected_elements:dict, symbols:dict):
+def get_specific_substrate_obs(local_map:str, local_position:tuple, global_position:tuple, agent_orientation:int, connected_elements:dict, symbols:dict, **kwargs):
         
         """
         Description: Returns a list with the descriptions of the trees observed by the agent

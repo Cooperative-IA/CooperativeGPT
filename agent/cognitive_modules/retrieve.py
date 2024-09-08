@@ -6,6 +6,7 @@ import numpy as np
 from utils.files import load_config
 from utils.math import normalize_values, cosine_similarity
 from utils.logging import CustomAdapter
+from utils.time import str_to_timestamp
 
 logger = logging.getLogger(__name__)
 logger = CustomAdapter(logger)
@@ -40,13 +41,12 @@ def retrieve_relevant_memories(agent, query: str, max_memories: int = 10, metada
         logger.error('Each memory should have a created_at and poignancy metadata. Error traceback: %s', traceback.format_exc())
 
     # Sort the memories by created_at
-    date_format = load_config()['date_format']
-    memories.sort(key=lambda x: datetime.strptime(x[1], date_format), reverse=True)
+    memories.sort(key=lambda x: str_to_timestamp(x[1]), reverse=True)
 
     memories_text = [m[0] for m in memories]
 
     # Calculate the recency factor
-    recency_scores = get_recency_scores(memories, date_format)
+    recency_scores = get_recency_scores(memories)
     # Calculate the poignancy factor
     poignancy_scores = get_poignancy_scores(memories)
     # Calculate the similarity factor
@@ -61,13 +61,12 @@ def retrieve_relevant_memories(agent, query: str, max_memories: int = 10, metada
     return memories_text[:max_memories]
 
 
-def get_recency_scores(memories: list[list], date_format: str) -> list[float]:
+def get_recency_scores(memories: list[list]) -> list[float]:
     """Calculate the recency score for each memory. The recency score is calculated with the following formula:
     recency_score = 0.99 ^ (hours since last memory)
 
     Args:
         memories (list[list]): List of memories with the following structure: (memory, recency, poignancy, similarity) ordered by recency.
-        date_format (str): Format of the date in the memories.
 
     Returns:
         list[float]: List of recency scores.
@@ -75,11 +74,11 @@ def get_recency_scores(memories: list[list], date_format: str) -> list[float]:
     # Get the created_at date of each memory
     mem_dates = [m[1] for m in memories]
     # Get last memory date
-    last_date = datetime.strptime(mem_dates[0], date_format)
-    # Calculate the hours since the last memory
-    hours_since_last_memory = [int((last_date - datetime.strptime(mem_date, date_format)).total_seconds() / 3600) for mem_date in mem_dates]
+    last_date = str_to_timestamp(mem_dates[0])
+    # Calculate the days since the last memory
+    days_since_last_memory = [int(last_date - str_to_timestamp(mem_date)) for mem_date in mem_dates]
     # Calculate the recency score for each memory
-    recency_scores = [0.99 ** h for h in hours_since_last_memory]
+    recency_scores = [0.99 ** d for d in days_since_last_memory]
 
     return recency_scores
 

@@ -8,6 +8,7 @@ import traceback
 from utils.logging import setup_logging, CustomAdapter
 from game_environment.utils import generate_agent_actions_map, check_agent_out_of_game, get_defined_valid_actions
 from agent.agent import Agent
+from agent.baseline_agent.cot_agent import CoTAgent
 from game_environment.server import start_server, get_scenario_map,  default_agent_actions_map, condition_to_end_game
 from llm import LLMModels
 from utils.queue_utils import new_empty_queue
@@ -132,14 +133,21 @@ if __name__ == "__main__":
 
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)
-    # Create agents
-    agents = [Agent(name=player, data_folder=data_folder, agent_context_file=player_context,
-                    world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                    prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, agent_id=player_context["id"][-1])
-              for player, player_context in zip(players, players_context)]
 
     # Start the game server
     env = start_server(players, init_timestamp=logger_timestamp, game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
+
+    # Create agents
+    if args.cot_agent:
+        agents = [CoTAgent(name=player, agent_context=player_context,
+                    world_context_file=world_context_path, scenario_info=scenario_info, recorder_obj=env.game_recorder)
+              for player, player_context in zip(players, players_context)]
+    else:
+        agents = [Agent(name=player, data_folder=data_folder, agent_context=player_context,
+                        world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
+                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, recorder_obj=env.game_recorder, agent_id=player_context["id"][-1])
+                for player, player_context in zip(players, players_context)]
+        
     logger = CustomAdapter(logger, game_env=env)
     # We are setting args.prompts_source as a global variable to be used in the LLMModels class
     llm = LLMModels()

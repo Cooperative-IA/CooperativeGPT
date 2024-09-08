@@ -133,6 +133,10 @@ function MushroomEating:onEnter(enteringGameObject, contactName)
       self.gameObject:setState(self._waitState)
       -- Set the cumulant tracking that this mushroom was eaten.
       self:setCumulants(enteringGameObject)
+      -- Report the avatars that are frozen as soon as they ate a mushroom
+      local avatarsMovementStateObserver = self.gameObject.simulation:getSceneObject(
+          ):getComponent('AvatarsMovementStateObserver')
+      avatarsMovementStateObserver:updateWetherMovementIsAllowed()
     end
   end
 end
@@ -405,6 +409,59 @@ function AvatarsStateObserver:registerUpdaters(updaterRegistry)
   }
 end
 
+local AvatarsMovementStateObserver = class.Class(component.Component)
+
+function AvatarsMovementStateObserver:__init__(kwargs)
+  kwargs = args.parse(kwargs, {
+      {'name', args.default('AvatarsMovementStateObserver')},
+  })
+  AvatarsMovementStateObserver.Base.__init__(self, kwargs)
+
+  self._playerIndex = 1
+end
+
+function AvatarsMovementStateObserver:updateWetherMovementIsAllowed()
+  local avatars = self.gameObject.simulation:getGameObjectsByName("avatar")
+  local sceneObject = self.gameObject.simulation:getSceneObject()
+  local globalMovementStateTracker = sceneObject:getComponent('GlobalMovementStateTracker')
+  for index, avatar in ipairs(avatars) do
+      local avatarComp = avatar:getComponent("Avatar")
+      local isMovementAllowed = avatarComp:isMovementAllowed()
+      local numeric_state = 1
+      if isMovementAllowed == false then
+          numeric_state = 0
+      end
+      globalMovementStateTracker.movementStates(index):fill(numeric_state)
+  end
+end
+
+function AvatarsMovementStateObserver:registerUpdaters(updaterRegistry)
+  local observeMovementState = function()
+    self:updateWetherMovementIsAllowed()
+  end
+ updaterRegistry:registerUpdater{
+      updateFn = observeMovementState,
+      priority = 200,
+      probability = 1,
+  }
+end
+
+local GlobalMovementStateTracker = class.Class(component.Component)
+
+function GlobalMovementStateTracker:__init__(kwargs)
+  kwargs = args.parse(kwargs, {
+      {'name', args.default('GlobalMovementStateTracker')},
+      {'numPlayers', args.numberType},
+  })
+  GlobalMovementStateTracker.Base.__init__(self, kwargs)
+  self._config.numPlayers = kwargs.numPlayers
+  self.movementStates = tensor.Int32Tensor(self._config.numPlayers):fill(0)
+end
+
+function GlobalMovementStateTracker:reset()
+  self.movementStates = tensor.Int32Tensor(self._config.numPlayers):fill(0)
+end
+
 local GlobalStateTracker = class.Class(component.Component)
 
 function GlobalStateTracker:__init__(kwargs)
@@ -436,6 +493,8 @@ local allComponents = {
   -- Trackers
   AvatarsStateObserver = AvatarsStateObserver,
   GlobalStateTracker = GlobalStateTracker,
+  AvatarsMovementStateObserver = AvatarsMovementStateObserver,
+  GlobalMovementStateTracker = GlobalMovementStateTracker
 }
 
 component_registry.registerAllComponents(allComponents)

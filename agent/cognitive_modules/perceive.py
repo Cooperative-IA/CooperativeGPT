@@ -31,6 +31,8 @@ def should_react(name: str, world_context: str, observations: list[str], current
     if changes_in_state:
         changes_in_state = f'The following changes in the environment were observed:\n{changes_in_state}'
     actions_queue = ', '.join([f'{i+1}.{action}' for i, action in enumerate(actions_queue)]) if len(actions_queue) > 0 else 'None'
+    if not observation:
+        observation = "You couldn't observe anything interesting."
     response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, actions_queue, changes_in_state, curr_position, agent_bio])
     answers = extract_answers(response)
     answer = answers.get('Answer', False)
@@ -92,15 +94,22 @@ def create_memory(agent_name: str, curr_time: str, action: str|None, state_chang
 
     memory = ''
     if action is not None:
-        memory += f'I took the action "{action}" in my last turn. '
+        memory += f'After taking the action "{action}"'
+    else:
+        memory += 'I had not taken any action yet'
     if state_changes:
         state_changes = '\n'.join(state_changes)
-        memory += f'Since then, the following changes in the environment have been observed:\n{state_changes}\n'
-    memory += f'Now it\'s {curr_time} and the reward obtained by me is {reward}. I am at the position {position} looking to the {orientation}.'
+        if action is not None:
+            memory += f' I observed the following changes in the environment:\n{state_changes}\n'
+        else:
+            memory += f', but I observed the following changes in the environment:\n{state_changes}\n'
+        memory += f'Consequently, at {curr_time} my reward was {round(reward, 2)}, and I was positioned at {position} facing {orientation}.'
+    else:
+        memory += f', my reward was {round(reward, 2)}, and I was positioned at {position} facing {orientation} at {curr_time}.'
     if curr_observations:
         curr_observations = '\n'.join(curr_observations)
-        memory += f'\nI can currently observe the following:\n{curr_observations}'
+        memory += f'\nAdditionally, I observed the following:\n{curr_observations}'
     else:
-        memory += f'\nI can\'t currently observe anything.'
+        memory += f' I couldn\'t observed anything interesting from there.'
 
     return memory
