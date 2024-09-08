@@ -9,7 +9,7 @@ from utils.logging import CustomAdapter
 logger = logging.getLogger(__name__)
 logger = CustomAdapter(logger)
 
-def actions_sequence(name:str, world_context:str, current_plan:str, reflections: str, current_observations:list[str]|str, current_position:tuple, valid_actions:list[str], current_goals: str, agent_bio: str = "", prompts_folder="base_prompts_v0", known_objects = "", explored_map = "0%", stm: ShortTermMemory = None) -> list[str]:
+def actions_sequence(name:str, world_context:str, current_plan:str, reflections: str, current_observations:list[str]|str, current_position:tuple, valid_actions:list[str], current_goals: str, agent_bio: str = "", prompts_folder="base_prompts_v0", known_objects = "", explored_map = "0%", stm: ShortTermMemory = None, past_observations: str = None, last_step_executed: str = None, curr_orientation: str = None) -> list[str]:
     """
     Description: Returns the actions that the agent should perform given its name, the world context, the current plan, the memory statements and the current observations
 
@@ -27,6 +27,9 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
         known_objects (str, optional): String that says (for example) which trees are known, specifically it says info about structured objects. Defaults to "".
         explored_map (str, optional): String that says how much of the map has been explored. Defaults to "0%".
         stm (ShortTermMemory, optional): Short term memory. Defaults to None.
+        past_observations (str, optional): past_observations.
+        last_step_executed (str): last low level action executed.
+        curr_orientation (str): Current orientation of the agent.
     Returns:
         list[str]: Actions that the agent should perform
     """
@@ -43,11 +46,16 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
         previous_actions = f"You should consider that your previous actions were:  \n  -Action: {previous_actions[0]}: Reasoning: {previous_actions[1]}" 
     changes_in_state = stm.get_memory('changes_in_state')
     changes_in_state = '\n'.join(changes_in_state) if changes_in_state else None
+    if last_step_executed:
+        action_str = f' after taking action "{last_step_executed}"'
+    else:
+        action_str = ''
     # Actions have to be generated
     while actions_seq_queue.qsize() < 1:
         response = llm.completion(prompt=prompt_path, inputs=[name, world_context, str(current_plan), reflections, current_observations,
                                                               str(current_position), str(actions_seq_len), str(valid_actions), current_goals, agent_bio,
-                                                              known_objects, explored_map, previous_actions, changes_in_state])
+                                                              known_objects, explored_map, previous_actions, changes_in_state, past_observations, action_str,
+                                                              curr_orientation])
         response_dict = extract_answers(response.lower())
 
         try:

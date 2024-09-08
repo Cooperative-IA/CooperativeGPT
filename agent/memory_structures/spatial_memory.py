@@ -199,7 +199,7 @@ class SpatialMemory:
             
             return  (int(x), int(y))
         except :
-            self.logger.error(f'Action {action} does not contain a position')
+            self.logger.warn(f'Action {action} does not contain a position')
             return fall_back_pos
         
     

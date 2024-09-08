@@ -154,9 +154,9 @@ class SceneDescriptor:
         for avatar_id, avatar in self.avatars.items():
             if avatar.avatar_state == 0:
                 if avatar.just_died:
-                    obs_text = f"There are no observations: You were attacked by agent {avatar.murder} and currently you're out of the game."
+                    obs_text = f"There were no observations because you were attacked by agent {avatar.murder} and you were left out of the game."
                 else:
-                    obs_text = "There are no observations: you're out of the game."
+                    obs_text = "There were no observations because you were out of the game."
                 avatar.set_partial_observation(obs_text)
                 avatar.set_agents_in_observation({})
             else:

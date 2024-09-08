@@ -37,7 +37,6 @@ from game_environment.recorder.recorder import Recorder
 from meltingpot.python.utils.substrates import builder
 from game_environment.scene_descriptor.scene_descriptor import SceneDescriptor
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
-from utils.files import load_config
 from utils.logging import CustomAdapter
 from game_environment.bots import Bot
 from game_environment.utils import default_agent_actions_map, check_agent_out_of_game
@@ -394,8 +393,7 @@ class Game:
         self.game_display = game_display
         self.clock = clock
         self.observationsGenerator = ObservationsGenerator(game_ascii_map, player_prefixes, substrate_name)
-        self.time = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
-        self.dateFormat = load_config()['date_format']
+        self.time = datetime.timedelta()
         self.game_steps = 0 # Number of steps of the game
         self.bots = bots
         self.curr_scene_description = None
@@ -443,6 +441,9 @@ class Game:
             # Get the next action map
             game_actions = action_reader.various_agents_step(current_actions_map, self.player_prefixes)
             self.timestep = self.env.step(game_actions)
+
+            # Update the time: One hour per step
+            self.time += datetime.timedelta(days=1)
         else:
             self.first_move_done = True
         ## --------- END OF OUR CODE ---------
@@ -499,8 +500,6 @@ class Game:
             pygame.display.update()
             self.clock.tick(self.fps)
 
-            # Update the time: One hour per step
-            self.time += datetime.timedelta(hours=1)
         self.prev_global_map = curr_global_map
 
         # Get the raw observations from the environment after the actions are executed
@@ -543,7 +542,7 @@ class Game:
 
     def get_time(self) -> str:
         """Returns the current time of the game. The time will be formatted as specified in the config file."""
-        return self.time.strftime(self.dateFormat)
+        return f'step {self.time.days}'
 
     def get_agents_view_imgs(self) -> dict:
         """Returns the images of the agents' views."""

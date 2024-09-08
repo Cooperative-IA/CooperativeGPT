@@ -8,6 +8,9 @@ You have this information about an agent called <input1>:
 
 Current plan: <input3>
 
+Past observations:
+<input15>
+
 Analysis of past experiences:
 <input4>
 
@@ -18,7 +21,7 @@ Portion of the map explored by <input1>: <input12>
 Observed changes in the game state:
 <input14>
 
-You are currently viewing a portion of the map, and from your position at <input6> you observe the following:
+Now,<input16> you are positioned at <input6> facing <input17> from where you observe the following:
 <input5>
 
 Define what should be the next action for <input1> get closer to achieve its goals following the current plan.

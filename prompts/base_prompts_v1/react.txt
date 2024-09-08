@@ -1,13 +1,11 @@
 You have this information about an agent called <input1>:
 
-<input6>
-
 <input1>'s world understanding: <input2>
+
+<input6>
 
 <input1>'s current position is at coordinates <input7>, from which <input1> can observe the following:
 <input3>
-
-<input6>
 
 <input8>
 
