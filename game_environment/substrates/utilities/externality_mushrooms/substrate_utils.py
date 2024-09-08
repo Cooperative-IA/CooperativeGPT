@@ -4,7 +4,8 @@ import numpy as np
 from game_environment.server import get_scenario_map
 
 substrate_name = "externality_mushrooms"
-scenario_obstacles = ["W", "$", "n","S"]
+scenario_obstacles = {"impassable_obstacles": ["W", "$", "n","S"] + [str(i) for i in range(10)],
+                      "passable_obstacles": ["F", "H", "Z", "N"]}
 
 def load_scenario_info(players_context: list[str]):
     """

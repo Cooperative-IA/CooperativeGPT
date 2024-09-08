@@ -28,7 +28,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None ) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context_file: str, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None, agent_id="" ) -> None:
         """Initializes the agent.
 
         Args:
@@ -59,7 +59,7 @@ class Agent:
         ltm_folder = os.path.join(data_folder, 'ltm_database')
         self.ltm = LongTermMemory(agent_name=name, data_folder=ltm_folder)
         self.stm = ShortTermMemory( agent_context=agent_context_file, world_context_file=world_context_file)
-        self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
+        self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], agent_id = agent_id, scenario_obstacles=scenario_info['scenario_obstacles'])
         self.att_bandwidth = att_bandwidth
         self.understanding_umbral = understanding_umbral
         self.prompts_folder = prompts_folder
@@ -75,7 +75,7 @@ class Agent:
             self.ltm.load_memories_from_scene(scene_path = start_from_scene, agent_name=name)
             self.stm.load_memories_from_scene(scene_path = start_from_scene, agent_name=name)
 
-    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
+    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], current_global_map: list[list[str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
@@ -85,6 +85,7 @@ class Agent:
                 -> orientation (int): Current orientation of the agent. 0: North, 1: East, 2: South, 3: West.
                 -> observation (str): ascii representation of the scene.
             changes_in_state (list[tuple[str, str]]): List of changes in the state of the environment and its game time.
+            current_global_map (list[list[str]]): Current global map.
             game_time (str): Current game time.
             agent_reward (float, optional): Current reward of the agent. Defaults to 0.
             agent_is_out (bool, optional): True if the agent is out of the scenario (was taken), False otherwise. Defaults to False.
@@ -102,7 +103,7 @@ class Agent:
 
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
-                                                    agent_current_scene['observation'])
+                                                    agent_current_scene['observation'], current_global_map)
         react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward)
 
         
@@ -112,7 +113,7 @@ class Agent:
         
         self.reflect(filtered_observations)
         
-        step_action = self.get_actions_to_execute()
+        step_action = self.get_actions_to_execute(current_global_map, need_update=True)
             
         return step_action
     
@@ -324,7 +325,7 @@ class Agent:
         current_position = self.spatial_memory.position
         known_objects = substrate_utils.get_textually_known_objects(stm=self.stm)
 
-        percentage_explored = self.spatial_memory.get_percentage_explored()
+        percentage_explored = self.spatial_memory.get_percentage_known()
         
         # Generate new actions sequence and add it to the short term memory
         actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
@@ -338,11 +339,15 @@ class Agent:
 
 
 
-    def get_actions_to_execute(self) -> Queue:
+    def get_actions_to_execute(self, current_global_map, need_update:bool = False) -> Queue:
         """
         Executes the current actions of the agent. 
         If the current gameloop is empty, it generates a new one.
-            
+        
+        Args:
+            current_global_map (list[list[str]]): Current global map.
+            need_update (bool, optional): If True, the agent will generate a new steps sequence. Defaults to False.
+        
         Returns:
             Step to take: low level action to execute.
         """
@@ -359,27 +364,34 @@ class Agent:
             self.stm.add_memory(current_action, 'current_action')
             
             # Now defines a gameloop for the current action
-            steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
+            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
            
+        # We will update the steps sequence if need_update is True
+        # And only if we are doing already a steps sequence
+        if need_update and not self.stm.get_memory('actions_sequence').empty():
+            self.logger.info(f'{self.name} is updating the steps sequence')
+            current_action = self.stm.get_memory('current_action')
+            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
+            self.stm.add_memory(steps_sequence, 'current_steps_sequence')
+            self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
 
        
-        # We check if after the previous step the gameloop is still empty, if it is, we generate a new one,
-        # all the process above is repeated until we get a gameloop that is not empty
+        # We check if after the previous step the steps_sequence is still empty, if it is, we generate a new one,
+        # all the process above is repeated until we get a steps_sequence that is not empty
         # If actions sequence were all invalid, we send an explore sequence
         while self.stm.get_memory('current_steps_sequence').empty():
             if self.stm.get_memory('actions_sequence').empty():
-                self.logger.warn(f'{self.name} current gameloop is empty and there are no more actions to execute, agent will explore')
+                self.logger.warn(f'{self.name} current steps_sequence is empty and there are no more actions to execute, agent will explore')
                 steps_sequence = self.spatial_memory.generate_explore_sequence()
                 self.stm.add_memory(steps_sequence, 'current_steps_sequence')
                 break 
-            self.logger.warn(f'{self.name} current gameloop is empty, getting the next action')
+            self.logger.warn(f'{self.name} current steps_sequence is empty, getting the next action')
             current_action = self.stm.get_memory('actions_sequence').get()
             self.stm.add_memory(current_action, 'current_action')
-            steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
+            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
             self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
-    
         agent_steps = self.stm.get_memory('current_steps_sequence')
         self.logger.info(f'{self.name} is executing the action: {self.stm.get_memory("current_action")} with the steps sequence {agent_steps.queue}')
         step_to_take = agent_steps.get()

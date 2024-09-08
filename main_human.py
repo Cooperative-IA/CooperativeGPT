@@ -73,9 +73,9 @@ def game_loop(agents: list[Agent | HumanAgent], substrate_name:str, persist_memo
             agent_reward = env.score[agent.name]
             if check_agent_out_of_game(observations):
                 logger.info('Agent %s was taken out of the game', agent.name)
-                step_action = agent.move(observations, scene_description, state_changes, game_time, gui, agent_reward , agent_is_out=True)
+                step_action = agent.move(observations, scene_description, state_changes, env.get_current_global_map(), game_time, gui, agent_reward , agent_is_out=True)
             else:
-                step_action = agent.move(observations, scene_description, state_changes, game_time, gui, agent_reward)
+                step_action = agent.move(observations, scene_description, state_changes, env.get_current_global_map(), game_time, gui, agent_reward)
 
 
             # Update the actions map for the agent
@@ -149,10 +149,10 @@ if __name__ == "__main__":
     create_directory_if_not_exists (data_folder)
     # Create agents
     agents = [agentCreator(is_human_player=True, name=player_name, data_folder="data", agent_context=player_context, world_context_file=world_context_path, scenario_info=scenario_info, mode=mode, prompts_folder=args.prompts_source,
-                           substrate_name=args.substrate, start_from_scene = scene_path) for player_name, player_context in zip(players_names, players_context)]
+                           substrate_name=args.substrate, start_from_scene = scene_path, agent_id=player_context["id"][-1]) for player_name, player_context in zip(players_names, players_context)]
 
     # Start the game server
-    env = start_server(players_names, init_timestamp=logger_timestamp, record=(not args.not_record), game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
+    env = start_server(players_names, init_timestamp=logger_timestamp, game_name=  args.substrate, scenario=args.scenario, kind_experiment = args.kind_experiment)
     
     # Start the GUI 
     

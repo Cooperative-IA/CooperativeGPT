@@ -99,7 +99,7 @@ class PlayerGUI:
         execute_button.pack(pady=5)
         
     def add_action_buttons(self):
-        actions = ["go to", "immobilize player", "explore", "stay put"]
+        actions = ["go to", "immobilize player", "explore", "stay put", "not react"]
         if self.substrate_name == "clean_up":
             actions.append("clean river")
         for action in actions:
@@ -134,6 +134,9 @@ class PlayerGUI:
             label.pack()
         elif action == "stay put":
             label = tk.Label(self.left_panel, text="Staying put...")
+            label.pack()
+        elif action == "not_react":
+            label = tk.Label(self.left_panel, text="Not reacting...")
             label.pack()
         elif action == "clean river":
             entry = tk.Entry(self.left_panel)
