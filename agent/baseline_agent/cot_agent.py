@@ -130,7 +130,7 @@ class CoTAgent:
         while self.stm.get_memory('current_steps_sequence').empty():
             if self.stm.get_memory('actions_sequence').empty():
                 self.logger.warn(f'{self.name} current gameloop is empty and there are no more actions to execute, agent will explore')
-                steps_sequence = self.spatial_memory.generate_explore_sequence()
+                steps_sequence = self.spatial_memory.generate_explore_sequence(current_global_map)
                 self.stm.add_memory(steps_sequence, 'current_steps_sequence')
                 break 
             self.logger.warn(f'{self.name} current gameloop is empty, getting the next action')

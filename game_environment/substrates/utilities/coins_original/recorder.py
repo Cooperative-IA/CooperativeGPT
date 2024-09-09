@@ -25,7 +25,11 @@ def record(record_obj, timestep, description: dict):
     for agent, description in description.items():
         if description["effective_zap"]:
             record_obj.effective_attack_object[agent]['effective_attack'] += 1
-        
+    
+    
+    if not hasattr(record_obj, 'previous_map'):
+        record_obj.previous_map = None
+
         
 def record_game_state_before_actions(record_obj, initial_map: list[list[str]], current_map: list[list[str]], current_actions_map: dict, scene_description: dict, previous_map: list[list[str]]):
     """
@@ -75,7 +79,7 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
     for agent in record_obj.player_names:
         agent_id = record_obj.agents_ids[agent]
         agent_position = get_local_position_of_element(current_map, agent_id)
-        if agent_position is None:
+        if agent_position is None or previous_map is None:
             continue
         
         # Here we check events related to coins
