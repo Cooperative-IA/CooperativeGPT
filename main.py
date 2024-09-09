@@ -62,9 +62,9 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
             agent_reward = env.score[agent.name]
             if check_agent_out_of_game(observations):
                 logger.info('Agent %s was taken out of the game', agent.name)
-                step_action = agent.move(observations, scene_description, state_changes, game_time, agent_reward, agent_is_out=True)
+                step_action = agent.move(observations, scene_description, state_changes, env.get_current_global_map(), game_time, agent_reward, agent_is_out=True)
             else:
-                step_action = agent.move(observations, scene_description, state_changes, game_time, agent_reward)
+                step_action = agent.move(observations, scene_description, state_changes, env.get_current_global_map(), game_time, agent_reward)
 
 
             # Update the actions map for the agent
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     else:
         agents = [Agent(name=player, data_folder=data_folder, agent_context=player_context,
                         world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, recorder_obj=env.game_recorder) 
+                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, recorder_obj=env.game_recorder, agent_id=player_context["id"][-1])
                 for player, player_context in zip(players, players_context)]
         
     logger = CustomAdapter(logger, game_env=env)

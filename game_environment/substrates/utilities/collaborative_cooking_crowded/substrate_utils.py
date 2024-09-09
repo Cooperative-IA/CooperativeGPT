@@ -4,7 +4,8 @@ import numpy as np
 from game_environment.server import get_scenario_map
 
 substrate_name = "collaborative_cooking_crowded"
-scenario_obstacles = ["W", "$"]
+scenario_obstacles = {"impassable_obstacles": ["W", "$"] + [str(i) for i in range(10)],
+                      "passable_obstacles": []}
 
 def load_scenario_info(players_context: list[str] = None):
     return {'scenario_map': get_scenario_map(game_name=substrate_name), 

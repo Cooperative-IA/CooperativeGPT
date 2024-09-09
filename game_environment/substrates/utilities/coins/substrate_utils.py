@@ -5,7 +5,8 @@ import numpy as np
 from game_environment.server import get_scenario_map
 
 substrate_name = "coins"
-scenario_obstacles = ["W", "$"]
+scenario_obstacles = {"impassable_obstacles": ["W", "$"] + [str(i) for i in range(10)],
+                      "passable_obstacles": ["r, y"]}
 
 
 

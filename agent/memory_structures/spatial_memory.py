@@ -1,7 +1,8 @@
+from datetime import datetime
 import logging
 from queue import Queue
 import random
-from utils.route_plan import get_shortest_valid_route
+from utils.route_plan import shortest_valid_route
 import re
 from utils.queue_utils import queue_from_list, new_empty_queue
 from utils.math import manhattan_distance
@@ -12,7 +13,7 @@ class SpatialMemory:
     Class for the spacial memory. Memories are stored in a dictionary.
     """
 
-    def __init__ (self, scenario_map: str, scenario_obstacles: list[str] = ['W']  ) -> None:
+    def __init__ (self, scenario_map: str, agent_id: str, scenario_obstacles: list[str] = ['W'] ):
         """
         Initializes the spacial memory.
 
@@ -28,10 +29,17 @@ class SpatialMemory:
         self.orientation = 0
         self.current_observed_map = None
         self.mapSize = (len(self.scenario_map), len(self.scenario_map[0]))
-        self.scenario_obstacles = scenario_obstacles 
-        self.explored_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
+        self.scenario_obstacles = scenario_obstacles  
         
-    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str) -> None:
+        self.known_map = ["?"*self.mapSize[1] for _ in range(self.mapSize[0])]
+        #TODO: Change the timestamp to step_number
+        self.timestamp_map = [[datetime.now() for _ in range(self.mapSize[1])] for _ in range(self.mapSize[0])]
+        self.updated_frequency_map = [[0 for _ in range(self.mapSize[1])] for _ in range(self.mapSize[0])]
+        self.explored_map_per_round = [0]
+        self.updated_map_per_round = [0]
+        self.agent_id = agent_id
+        
+    def update_current_scene(self, new_position: tuple, orientation:int, current_observed_map:str, current_global_map) -> None:
         """
         Updates the spatial information of the agent.
 
@@ -46,42 +54,52 @@ class SpatialMemory:
         self.orientation = orientation
         self.current_observed_map = current_observed_map
         
-        # By using the current observed map, we can update the explored map
-        self.update_explored_map()
+        # By using the current observed map, we can update the known map
+        self.update_known_map()
+        self.explored_map_per_round.append(self.get_percentage_known())
 
-
-    def update_explored_map(self) -> None:
+    def update_known_map(self) -> None:
         """
         Updates the map with a new current map.
         """
+        self.near_agents = list()
+        timestamp = datetime.now()
         for i, row in enumerate(self.current_observed_map.split('\n')):
             for j, element in enumerate(row):
                 if element != '-':
+                    if re.match(r'^[0-9]$', element):
+                        self.near_agents.append(element)
+                    if element == "#":
+                        element = self.agent_id
                     try:
                         global_position = self.get_global_position((i,j), self.get_local_self_position())
-                        if self.explored_map[global_position[0]][global_position[1]] == '?':
-                            # Replaces the char of the string global_position[0] at that is in the list of strings
-                            self.explored_map[global_position[0]] = self.explored_map[global_position[0]][:global_position[1]] + element + self.explored_map[global_position[0]][global_position[1]+1:]
-
+                        self.update_pixel_if_newer(global_position[0], global_position[1], element, timestamp)
                     except:
                         self.logger.error(f'Error updating the explored map with the element {element} {(i,j)} at position {global_position}')
                         continue
-    def get_percentage_explored(self) -> float:
+        for i, row in enumerate(self.known_map):
+            for j, element in enumerate(row):
+                if element in self.near_agents or element == self.agent_id:
+                    self.update_pixel_if_newer(i, j, "?", timestamp)
+
+    def get_percentage_known(self) -> float:
         """
-        Returns the percentage of the map that has been explored.
+        Returns the percentage of the map that has been known.
 
         Returns:
-            float: Percentage of the map that has been explored.
+            float: Percentage of the map that has been known.
         """
-        n_explored = sum([row.count('?') for row in self.explored_map])
-        percentage = (1 - n_explored / (self.mapSize[0] * self.mapSize[1])) * 100
+        n_known = sum([row.count('?') for row in self.known_map])
+        percentage = (1 - n_known / (self.mapSize[0] * self.mapSize[1])) * 100
         return float("{:.2f}".format(percentage))
+    
 
-    def find_route_to_position(self, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True ) -> Queue[str] | list[str]:
+    def find_route_to_position(self, current_global_map, position_end: tuple, orientation:int, return_list: bool = False, include_last_pos=True ) -> Queue[str] | list[str]:
         """
         Finds the shortest route to a position.
 
         Args:
+            current_global_map (str): Current global map.
             position_end (tuple): End position of the route.
             orientation (int): Orientation of the agent. 0: North, 1: East, 2: South, 3: West.
             return_list (bool, optional): If True, returns a list instead of a queue. Defaults to False.
@@ -90,11 +108,11 @@ class SpatialMemory:
         Returns:
             Queue(str): Steps sequence for the route.
         """
-        self.logger.info(f'Finding route from {self.scenario_map} to {position_end}')
+        self.logger.info(f'Finding route from {current_global_map} to {position_end}')
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
             return queue_from_list(['stay put'])
-        route = get_shortest_valid_route(self.scenario_map, self.position, position_end, invalid_symbols=self.scenario_obstacles, orientation=orientation)
+        route = shortest_valid_route(current_global_map, self.position, position_end, scenario_obstacles=self.scenario_obstacles, orientation=orientation)
 
 
         if not include_last_pos and len(route) > 0:
@@ -136,38 +154,54 @@ class SpatialMemory:
 
 
 
-    def get_steps_sequence(self, current_action) -> Queue[str]:
+    def get_steps_sequence(self, current_global_map, current_action) -> Queue[str]:
         """
         Returns a new steps sequence for the current action.
 
         Args:
+            current_global_map list[str]: Current global map.
             current_action (str): Current action of the agent.
 
         Returns:
             Queue(str): Steps sequence for the current action.
         """
-
         sequence_steps = new_empty_queue()
 
         if current_action.startswith(('grab ')) or current_action.startswith(('consume ')) or "go to " in current_action:
             end_position = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(end_position, self.orientation) 
+            sequence_steps = self.find_route_to_position(current_global_map, end_position, self.orientation) 
 
         elif current_action.startswith('attack ') or current_action.startswith('immobilize '):
             agent2attack_pos = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(agent2attack_pos, self.orientation, include_last_pos=False)
+            is_in_beam_range = self.check_in_beam_range(agent2attack_pos)
+
+            # Only attack if the agent is not in the beam range, we need to move to the position
+            if not is_in_beam_range:       
+                list_sequence = self.find_route_to_position(current_global_map,agent2attack_pos, self.orientation, return_list=True, include_last_pos=True)
+
+                # We need to put needed rotations to face the agent first: 
+                new_orientation = 'turn '+ list_sequence[-1].split(' ')[1]
+                # If the new orientation is the same as the current one, we do not need to change it, if down we need to turn twice
+                if new_orientation == 'turn down':
+                    # We need to to add two rotations to face the agent add the beginning
+                    list_sequence.insert(0, 'turn right')
+                    list_sequence.insert(0, 'turn right')
+                else: 
+                    list_sequence.insert(0, new_orientation)
+                sequence_steps = queue_from_list(list_sequence)
+
             sequence_steps.put('attack')
 
         elif current_action.startswith('clean '):
             dirt_pos = self.get_position_from_action(current_action)
-            sequence_steps = self.find_route_to_position(dirt_pos, self.orientation, include_last_pos=False)
+            sequence_steps = self.find_route_to_position(current_global_map, dirt_pos, self.orientation, include_last_pos=False)
             sequence_steps.put('clean')
 
         elif current_action.startswith('explore'):
             explore_pos = self.get_position_from_action(current_action)
             if not self.is_position_valid(explore_pos):
                 explore_pos = None
-            sequence_steps = self.generate_explore_sequence(explore_pos)
+            sequence_steps = self.generate_explore_sequence(current_global_map, explore_pos)
             
         elif current_action.startswith('avoid consuming') or current_action.startswith('stay put'):
             sequence_steps.put('stay put')
@@ -175,7 +209,33 @@ class SpatialMemory:
         self.logger.info(f'The steps sequence is: {list(sequence_steps.queue)}')
         return sequence_steps
         
+    def check_in_beam_range(self, agent2attack_pos: tuple) -> bool:
+        """
+        We check the current observed map to see if the agent is in the range of the ray beam
+        If the agent is not in the range of the ray beam, the agent needs to move to the position, else we just attack
+        Ray beam range is one position at the left, one position at the right, and two positions in front of the agent.
+        It means, three ahead left side, tree ahead right side, and 3 ahead in the middle: 
+        
+        Args:
+            agent2attack_pos (tuple): Position of the agent to attack.
+            
+        Returns:
+            bool: True if the agent is in the beam range, False otherwise.
+        """    
+        #Agent Local position
+        alp = self.get_local_self_position()
+        beam_init_positions = [(alp[0], alp[1]-1), (alp[0]-1, alp[1]), (alp[0], alp[1]+1)]
+        
+        # Local position of the agent to attack
+        agent_attack_lp = self.get_local_position_from_global(agent2attack_pos, alp)
 
+        for pos in beam_init_positions:
+            for i in range(3):
+                #Beam Current Local Position
+                beam_clp = ( pos[0]-i , pos[1] )
+                if beam_clp == agent_attack_lp:
+                    return True
+        return False
 
 
 
@@ -248,6 +308,35 @@ class SpatialMemory:
 
         return element_global
     
+    def get_local_position_from_global(self, global_dest_pos: tuple[int, int], local_self_pos: tuple[int, int]) -> tuple[int, int]:
+        """Get the local position of an element given its global position on the map.
+
+        Args:
+            global_dest_pos (tuple[int, int]): Global position of the destination on the map.
+            local_self_pos (tuple[int, int]): Local position of the agent on the observed map.
+
+        Returns:
+            tuple[int, int]: Local position of the element.
+        """
+        # North
+        if self.orientation == 0:
+            element_local =      (global_dest_pos[0] - self.position[0]) + local_self_pos[0], \
+                                 (global_dest_pos[1] - self.position[1]) + local_self_pos[1]
+        # East
+        elif self.orientation == 1:
+            element_local = -1 * (global_dest_pos[1] - self.position[1]) + local_self_pos[0], \
+                                 (global_dest_pos[0] - self.position[0]) + local_self_pos[1]
+        # South
+        elif self.orientation == 2:
+            element_local = -1 * (global_dest_pos[0] - self.position[0]) + local_self_pos[0], \
+                            -1 * (global_dest_pos[1] - self.position[1]) + local_self_pos[1]
+        # West
+        elif self.orientation == 3:
+            element_local =      (global_dest_pos[1] - self.position[1]) + local_self_pos[0], \
+                            -1 * (global_dest_pos[0] - self.position[0]) + local_self_pos[1]
+
+        return element_local
+    
     def get_local_self_position(self) -> tuple[int, int]:
         """Get the local position of the agent on the observed map. Yhe agent is represented as # on the observed map.
 
@@ -255,19 +344,16 @@ class SpatialMemory:
             tuple[int, int]: Local position of the agent on the observed map.
         """
         # TODO  retrieve from the map initial config.
-        #observed_map = self.current_observed_map.split('\n')[1:-1]
-        #for i, row in enumerate(observed_map):
-        #    if '#' in row:
-        #        return (i, row.index('#'))
         return (9,5)
 
-    def generate_explore_sequence(self, position: str = None) -> Queue[str]:
+    def generate_explore_sequence(self, current_global_map, position: str = None) -> Queue[str]:
         """
         Generates a sequence of steps to explore the map.
         Takes a random position from the current_observed map
         then finds the shortest route to that position and returns the steps sequence.
 
         Args:
+            current_global_map List(str): Current global map.
             position (str, optional): Position to explore. Defaults to None.
 
         Returns:
@@ -295,7 +381,7 @@ class SpatialMemory:
 
         # Finds the shortest route to that position
         self.logger.info(f"Finding route to {destination} from {self.position} with orientation {self.orientation} using the map {self.scenario_map}")
-        sequence_steps = self.find_route_to_position(destination, self.orientation)
+        sequence_steps = self.find_route_to_position(current_global_map, destination, self.orientation)
         if sequence_steps.qsize() < 1:
             self.logger.error(f'Could not find a route from {position} to the destination {destination}')
             return new_empty_queue()
@@ -362,3 +448,27 @@ class SpatialMemory:
             return 'West'
         else:
             raise Exception(f'Orientation {orientation} is not valid')
+
+    def update_pixel_if_newer(self, x, y, new_value, new_timestamp):
+        """
+        Update the pixel at position (x, y) with the new value and timestamp only if the new timestamp is more recent than the current one.
+
+        :param x: X-coordinate of the pixel to update.
+        :param y: Y-coordinate of the pixel to update.
+        :param new_value: The new value for the pixel.
+        :param new_timestamp: The new timestamp for the pixel.
+        """
+        current_timestamp = self.timestamp_map[x][y]
+        if  new_timestamp > current_timestamp:
+            self.known_map[x] = self.known_map[x][:y] + new_value + self.known_map[x][y+1:]
+            self.timestamp_map[x][y] = new_timestamp
+            self.updated_frequency_map[x][y] += 1
+
+    def get_percentage_map_is_updated(self, current_global_map):
+        updated_cells = 0
+        current_global_map = "\n".join(["".join(row) for row in current_global_map]).split('\n')
+        for i, row in enumerate(self.known_map):
+            for j, element in enumerate(row):
+                if element == current_global_map[i][j]:
+                    updated_cells += 1
+        return updated_cells / (len(current_global_map) * len(current_global_map[0])) * 100

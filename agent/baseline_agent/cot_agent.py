@@ -14,7 +14,7 @@ class CoTAgent:
     """Agent class.
     """
 
-    def __init__(self, name: str, agent_context: dict, world_context_file: str, scenario_info:dict, recorder_obj = None) -> None:
+    def __init__(self, name: str, agent_context: dict, world_context_file: str, scenario_info:dict, recorder_obj = None, agent_id = "") -> None:
         """Initializes the agent.
 
         Args:
@@ -31,7 +31,7 @@ class CoTAgent:
 
         self.name = name
         self.stm = ShortTermMemory( agent_context=agent_context, world_context_file=world_context_file)
-        self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], scenario_obstacles=scenario_info['scenario_obstacles'])
+        self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], agent_id=agent_id, scenario_obstacles=scenario_info['scenario_obstacles'])
         self.prompts_folder = 'cot_agent_prompts'
         self.stm.add_memory(memory = self.name, key = 'name')
         
@@ -39,7 +39,7 @@ class CoTAgent:
         self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
         self.stm.add_memory(memory=scenario_info['valid_actions'], key='valid_actions')
 
-    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
+    def move(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], current_global_map: list[list[str]], game_time: str, agent_reward: float = 0, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence of the agent to decide an action to take
 
         Args:
@@ -49,6 +49,7 @@ class CoTAgent:
                 -> orientation (int): Current orientation of the agent. 0: North, 1: East, 2: South, 3: West.
                 -> observation (str): ascii representation of the scene.
             changes_in_state (list[tuple[str, str]]): List of changes in the state of the environment and its game time.
+            current_global_map (list[list[str]]): Current global map of the game.
             game_time (str): Current game time.
             agent_reward (float, optional): Current reward of the agent. Defaults to 0.
             agent_is_out (bool, optional): True if the agent is out of the scenario (was taken), False otherwise. Defaults to False.
@@ -63,7 +64,7 @@ class CoTAgent:
 
         #Updates the position of the agent in the spatial memory 
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
-                                                    agent_current_scene['observation'])
+                                                    agent_current_scene['observation'], current_global_map)
         self.stm.add_memory(observations, 'current_observation')
         changes = []
         for change, obs_time in changes_in_state:
@@ -74,7 +75,7 @@ class CoTAgent:
             self.logger.info(f'{self.name} is frozen and cannot move.')
             return None
         
-        step_action = self.get_actions_to_execute()
+        step_action = self.get_actions_to_execute(current_global_map)
             
         return step_action
     
@@ -97,7 +98,7 @@ class CoTAgent:
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')
         self.stm.add_memory(Queue(), 'current_steps_sequence') # Initialize steps sequence in empty queue
 
-    def get_actions_to_execute(self) -> Queue:
+    def get_actions_to_execute(self, current_global_map: list[list[str]]) -> Queue:
         """
         Executes the current actions of the agent. 
         If the current gameloop is empty, it generates a new one.
@@ -120,7 +121,7 @@ class CoTAgent:
                 self.recorder.record_action(player=self.name, curr_action=current_action)
             
             # Now defines a gameloop for the current action
-            steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
+            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
        
         # We check if after the previous step the gameloop is still empty, if it is, we generate a new one,
@@ -137,7 +138,7 @@ class CoTAgent:
             self.stm.add_memory(current_action, 'current_action')
             if self.recorder:
                 self.recorder.record_action(player=self.name, curr_action=current_action)
-            steps_sequence = self.spatial_memory.get_steps_sequence(current_action = current_action)
+            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
             self.logger.info(f'{self.name} is {current_action}, the steps sequence  is: {list(steps_sequence.queue)}')
     
