@@ -1,8 +1,9 @@
 from game_environment.scene_descriptor.observations_generator import ObservationsGenerator
 from game_environment.substrates.python.commons_harvest_open import ASCII_MAP
 from agent.memory_structures.spatial_memory import SpatialMemory
+from unittest.mock import patch
 
-spatial_memory = SpatialMemory(ASCII_MAP)
+spatial_memory = SpatialMemory(ASCII_MAP, '0')
 orientation_map = {0: 'North', 1: 'East', 2: 'South', 3: 'West'}
 
 def test_get_global_position():
@@ -56,5 +57,26 @@ def test_get_global_position():
     expected_output = (17,20)
     element_global_pos = spatial_memory.get_global_position(el_local_pos, self_local_pos)
     assert  element_global_pos == expected_output, f'Expected {expected_output}, got {element_global_pos}.Failed with agent_orientation = {spatial_memory.orientation}: {orientation_map[spatial_memory.orientation]}'
-    
-    print("All test cases pass")
+
+@patch('agent.memory_structures.spatial_memory.shortest_valid_route')
+def test_find_route_to_position(mock_shortest_valid_route):
+    spatial_memory.position = (1, 1)
+    spatial_memory.orientation = 0
+
+
+    # Test case 1: Position is the same as the current one
+    result = spatial_memory.find_route_to_position("WWWW\nW..W\nW..W\nWWWW", (1, 1), 0)
+    assert list(result.queue) == ['stay put'], f'Expected ["stay put"], got {list(result.queue)}'
+
+    # Test case 2: Normal route
+    mock_shortest_valid_route.return_value = ['move down', 'move right']
+    result = spatial_memory.find_route_to_position("WWWW\nW..W\nW..W\nWWWW", (2, 2), 0)
+    expected_route = ['move down', 'move right', 'turn right']
+    assert list(result.queue) == expected_route, f'Expected {expected_route}, got {list(result.queue)}'
+
+    # Test case 3: End should end facing north, but it is already facing north. So, it should just move up without turning
+    spatial_memory.position = (2, 1)
+    mock_shortest_valid_route.return_value = ['move up']
+    result = spatial_memory.find_route_to_position("WWWW\nW..W\nW..W\nWWWW", (1, 1), 0)
+    expected_route = ['move up']
+    assert list(result.queue) == expected_route, f'Expected {expected_route}, got {list(result.queue)}'
