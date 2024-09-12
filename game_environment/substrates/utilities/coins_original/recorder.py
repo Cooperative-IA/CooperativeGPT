@@ -90,7 +90,26 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
         elif previous_map[agent_position[0]][agent_position[1]] == 'r':
             record_obj.collected_coins_object[agent]['red_coins'] += 1
 
+def record_action(record_obj, **kwargs):
+    """
+    Record the actions of the agents
 
+    Args:
+        record_obj (Recorder): Recorder object
+    """
+    player = kwargs['player']
+    curr_action = kwargs['curr_action']
+
+    # Create the actions_taken object if it does not exist
+    if not hasattr(record_obj, 'actions_taken'):
+        record_obj.actions_taken = {agent: {} for agent in record_obj.player_names}
+
+    # Parse the action
+    if 'go to position' in curr_action:
+        curr_action = 'go to'
+    elif 'immobilize' in curr_action:
+        curr_action = 'immobilize'
+    record_obj.actions_taken[player][curr_action] = record_obj.actions_taken[player].get(curr_action, 0) + 1
 
 def save_custom_indicators(record_obj):
     """
@@ -116,7 +135,8 @@ def save_custom_indicators(record_obj):
     custom_indicators = {
         'times_decide_to_attack': times_decide_to_attack,
         'effective_attack': effective_attack,
-        'collected_coins': collected_coins
+        'collected_coins': collected_coins,
+        'actions_taken': record_obj.actions_taken
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:
