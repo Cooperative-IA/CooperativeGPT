@@ -120,11 +120,14 @@ class SpatialMemory:
         
         # Adds a change on orientation on the last step of the route
         if len(route) > 0:
+            # if down we need to turn twice
             new_orientation = 'turn '+ route[-1].split(' ')[1]
-            # If the new orientation is the same as the current one, we do not need to change it, if down we need to turn twice
             if new_orientation == 'turn down':
                 route.append('turn right')
                 route.append('turn right')
+            # If the new orientation is the same as the current one, we do not need to change it
+            elif new_orientation == 'turn up':
+                pass
             else: 
                 route.append(new_orientation)
 
