@@ -80,7 +80,7 @@ def get_shortest_valid_route(matrix: list[list[str]], start: tuple[int, int], en
                 nx, ny = x + dx[d], y + dy[d]
                 
                 if 0 <= nx < len(matrix) and 0 <= ny < len(matrix[0]) and not visited[nx][ny]:
-                    if matrix[nx][ny] not in invalid_symbols:
+                    if matrix[nx][ny] not in invalid_symbols or (nx,ny) == end:
                         queue.append((nx, ny))
                         visited[nx][ny] = True
                         prev[nx][ny] = (x, y, directions[d])

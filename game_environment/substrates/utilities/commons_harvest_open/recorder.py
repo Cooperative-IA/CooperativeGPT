@@ -161,6 +161,27 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
                 record_obj.last_apple_object[agent]['last_apple_pos'] = None
                 record_obj.last_apple_object[agent]['distance'] = 0
 
+def record_action(record_obj, **kwargs):
+    """
+    Record the actions of the agents
+
+    Args:
+        record_obj (Recorder): Recorder object
+    """
+    player = kwargs['player']
+    curr_action = kwargs['curr_action']
+
+    # Create the actions_taken object if it does not exist
+    if not hasattr(record_obj, 'actions_taken'):
+        record_obj.actions_taken = {agent: {} for agent in record_obj.player_names}
+
+    # Parse the action
+    if 'go to position' in curr_action:
+        curr_action = 'go to'
+    elif 'immobilize' in curr_action:
+        curr_action = 'immobilize'
+    record_obj.actions_taken[player][curr_action] = record_obj.actions_taken[player].get(curr_action, 0) + 1
+
 def save_custom_indicators(record_obj):
     """
     Save the custom indicators for the substrate
@@ -198,7 +219,8 @@ def save_custom_indicators(record_obj):
         'portion_move_towards_last_apple': portion_move_towards_last_apple,
         'times_took_last_apple': times_took_last_apple,
         'times_decide_to_attack': times_decide_to_attack,
-        'effective_attack': effective_attack
+        'effective_attack': effective_attack,
+        'actions_taken': record_obj.actions_taken
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:

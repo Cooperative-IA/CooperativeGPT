@@ -9,7 +9,7 @@ def test_add_memory():
     ltm = LongTermMemory('test_agent', 'data')
 
     memory = 'This is a test memory'
-    created_at = '2021-01-01 00:00:00'
+    created_at = 'step 1'
     poignancy = 10
     ltm.add_memory(memory, created_at, poignancy)
     memories = ltm.get_memories()
@@ -19,7 +19,7 @@ def test_add_memory():
 
     # Add single memory with additional metadata
     memory = 'This is a test memory'
-    created_at = '2021-01-01 00:00:00'
+    created_at = 'step 1'
     poignancy = 10
     additional_metadata = {'test': 'test'}
     ltm.add_memory(memory, created_at, poignancy, additional_metadata)
@@ -30,7 +30,7 @@ def test_add_memory():
     assert memories['metadatas'][0]['test'] == additional_metadata['test'], f'The additional metadata of the memory {memory} is not correct'
 
     memory = ['This is a test memory', 'This is another test memory']
-    created_at = ['2021-01-01 00:00:00', '2021-01-02 00:00:00']
+    created_at = ['step 1', 'step 2']
     poignancy = [10, 20]
     ltm.add_memory(memory, created_at, poignancy)
     memories = ltm.get_memories()
@@ -43,7 +43,7 @@ def test_add_memory():
 
     # Add multiple memories with the same metadata
     memory = ['This is a test memory', 'This is another test memory']
-    created_at = '2021-01-01 00:00:00'
+    created_at = 'step 1'
     poignancy = 10
     ltm.add_memory(memory, created_at, poignancy)
     memories = ltm.get_memories()
@@ -56,7 +56,7 @@ def test_add_memory():
 
     # Add multiple memories with additional metadata
     memory = ['This is a test memory', 'This is another test memory']
-    created_at = '2021-01-01 00:00:00'
+    created_at = 'step 1'
     poignancy = 10
     additional_metadata = [{'test': 'test1'}, {'test': 'test2'}]
     ltm.add_memory(memory, created_at, poignancy, additional_metadata)
@@ -74,7 +74,7 @@ def test_get_relevant_memories():
     ltm = LongTermMemory('test_agent', 'data')
 
     memory = ['This is a test memory', 'This is another test memory']
-    created_at = '2021-01-01 00:00:00'
+    created_at = 'step 1'
     poignancy = 10
     ltm.add_memory(memory, created_at, poignancy)
     relevant_memories = ltm.get_relevant_memories('test')
@@ -82,7 +82,7 @@ def test_get_relevant_memories():
     assert memory[1] in relevant_memories, f'The memory {memory[1]} is not in the relevant memories'
 
     memory = ['This is a test memory', 'This is another test memory']
-    created_at = '2021-01-01 00:00:00'
+    created_at = 'step 1'
     poignancy = 10
     ltm.add_memory(memory, created_at, poignancy)
     relevant_memories = ltm.get_relevant_memories('test', return_metadata=True)
@@ -95,10 +95,10 @@ def test_get_relevant_memories():
 
     # Test filter
     memory = ['This is a test memory 1', 'This is another test memory 2']
-    created_at = ['2021-01-02 00:00:00', '2021-01-01 00:00:00']
+    created_at = ['step 2', 'step 1']
     poignancy = [10, 10]
     ltm.add_memory(memory, created_at, poignancy)
-    relevant_memories = ltm.get_relevant_memories('test', filter={'created_at': '2021-01-01 00:00:00'})
+    relevant_memories = ltm.get_relevant_memories('test', filter={'created_at': 'step 1'})
     assert memory[1] in relevant_memories, f'The memory {memory[1]} is not in the relevant memories'
     assert memory[0] not in relevant_memories, f'The memory {memory[0]} is in the relevant memories'
 
