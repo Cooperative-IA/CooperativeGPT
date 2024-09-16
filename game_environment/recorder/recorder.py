@@ -119,10 +119,16 @@ class Recorder:
         if self._record_action:
             self._record_action(self, **kwargs)
 
-    def save_log(self):
+    def save_log(self, game_steps):
+        """
+        Save the log of the game
+
+        Args:
+            game_steps (int): Number of steps of the game
+        """
         recreate_simulation.recreate_records(record_path=self.log_path, players=self.substrate_config.player_names, is_focal_player=self.substrate_config.is_focal_player)
         if self._save_custom_indicators:
-            self._save_custom_indicators(self)
+            self._save_custom_indicators(self, game_steps=game_steps)
 
     @staticmethod
     def save_image(image, path):

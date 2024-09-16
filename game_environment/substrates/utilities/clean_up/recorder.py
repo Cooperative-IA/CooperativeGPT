@@ -55,7 +55,7 @@ def record_game_state_before_actions(record_obj, initial_map: list[list[str]], c
                 record_obj.attack_object[agent]['decide_to_attack'] += 1
 
 
-def save_custom_indicators(record_obj):
+def save_custom_indicators(record_obj, **kwargs):
     """
     Save the custom indicators for the substrate
 

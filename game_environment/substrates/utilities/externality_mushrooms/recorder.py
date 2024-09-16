@@ -4,6 +4,7 @@ import re
 
 from game_environment.utils import connected_elems_map, get_local_position_of_element
 from utils.math import manhattan_distance
+from utils.time import str_to_timestamp
 
 
 def record(record_obj, timestep, description: dict):
@@ -83,14 +84,27 @@ def record_observations(record_obj, **kwargs):
     if not hasattr(record_obj, 'mushroom_consumption'):
         record_obj.mushroom_consumption = {agent:{'red':0,  'blue':0,  'green':0,  'orange':0, } for agent in record_obj.player_names}
 
+    # Create mushroom_consumption_by_step object if it does not exist
+    if not hasattr(record_obj, 'mushroom_consumption_by_step'):
+        record_obj.mushroom_consumption_by_step = {}
+
     # Check if the agent consumed a mushroom
     # The changes are in the form of 'I took a/an <mushroom_type>'
     pattern = re.compile(r'I took a(n)? (\w+)')
-    for change, timestamp in changes:
+    for change, game_time in changes:
         match = pattern.match(change)
         if match:
             mushroom_type = match.group(2)
+            step = str_to_timestamp(game_time)
             record_obj.mushroom_consumption[player][mushroom_type] += 1
+
+            if not step in record_obj.mushroom_consumption_by_step:
+                record_obj.mushroom_consumption_by_step[step] = {}
+
+            if not hasattr(record_obj.mushroom_consumption_by_step[step], player):
+                record_obj.mushroom_consumption_by_step[step][player] = {}
+
+            record_obj.mushroom_consumption_by_step[step][player][mushroom_type] = 1
 
 def record_action(record_obj, **kwargs):
     """
@@ -111,7 +125,7 @@ def record_action(record_obj, **kwargs):
         curr_action = 'go to'
     record_obj.actions_taken[player][curr_action] = record_obj.actions_taken[player].get(curr_action, 0) + 1
 
-def save_custom_indicators(record_obj):
+def save_custom_indicators(record_obj, **kwargs):
     """
     Save the custom indicators for the substrate
 
@@ -130,20 +144,22 @@ def save_custom_indicators(record_obj):
     mushrooms_consumption = record_obj.mushroom_consumption
 
     # Calculate time spent digesting mushrooms
+    total_steps = kwargs['game_steps']
     digesting_time_by_mushroom = {
         'red': 0,
         'blue': 15,
         'green': 10,
         'orange': 15
     }
-    digesting_time = {agent: sum([mushrooms_consumption[agent][mushroom] * digesting_time_by_mushroom[mushroom] for mushroom in mushrooms_consumption[agent]]) for agent in mushrooms_consumption}
+    digesting_time = {agent: sum([mushrooms_consumption[agent][mushroom] * digesting_time_by_mushroom[mushroom] for mushroom in mushrooms_consumption[agent]])/total_steps for agent in mushrooms_consumption}
 
     custom_indicators = {
         'times_decide_to_attack': times_decide_to_attack,
         'effective_attack': effective_attack,
         'mushrooms_consumption': mushrooms_consumption,
         'digesting_spent_time': digesting_time,
-        'actions_taken': record_obj.actions_taken
+        'actions_taken': record_obj.actions_taken,
+        'mushroom_consumption_by_step': record_obj.mushroom_consumption_by_step
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:
