@@ -402,11 +402,12 @@ class Game:
 
     def end_game(self):
         """Ends the game. This function is called when the game is finished."""
+        game_steps = self.game_steps
         self.env.close()
         self.env = None
         self.pygame.quit()
         self.pygame = None
-        self.game_recorder.save_log()
+        self.game_recorder.save_log(game_steps)
 
         for prefix in self.player_prefixes:
             logger.info('Player %s: score is %g' % (prefix, self.score[prefix]))
@@ -533,7 +534,7 @@ class Game:
         else:
             # When the agent is out, do not get the state changes to accumulate them until the agent is revived
             state_changes = self.observationsGenerator.get_observed_changes_per_agent(player_prefix)
-        self.game_recorder.record_observations(player=player_prefix, observations=curr_state, changes=state_changes)
+        self.game_recorder.record_observations(player=player_prefix, observations=curr_state, changes=state_changes, game_step=self.game_steps)
         return {
             'curr_state': curr_state,
             'scene_description': scene_description,

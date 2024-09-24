@@ -111,7 +111,7 @@ def record_action(record_obj, **kwargs):
         curr_action = 'immobilize'
     record_obj.actions_taken[player][curr_action] = record_obj.actions_taken[player].get(curr_action, 0) + 1
 
-def save_custom_indicators(record_obj):
+def save_custom_indicators(record_obj, **kwargs):
     """
     Save the custom indicators for the substrate
 

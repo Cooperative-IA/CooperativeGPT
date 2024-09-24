@@ -93,7 +93,7 @@ def record_elements_status(record_obj, initial_map: list[list[str]], current_map
             record_obj.collected_coins_object[agent]['red_coins'] += 1
 
 
-def save_custom_indicators(record_obj):
+def save_custom_indicators(record_obj, **kwargs):
     """
     Save the custom indicators for the substrate
 
