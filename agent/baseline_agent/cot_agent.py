@@ -1,10 +1,13 @@
 import logging
 from queue import Queue
 from typing import Union, Literal
+import os
 
+from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
 from agent.cognitive_modules.act import actions_sequence
+from agent.cognitive_modules.perceive import create_memory
 from utils.logging import CustomAdapter
 
 # Define a custom type to determine the congnitive modules to use
@@ -14,7 +17,7 @@ class CoTAgent:
     """Agent class.
     """
 
-    def __init__(self, name: str, agent_context: dict, world_context_file: str, scenario_info:dict, recorder_obj = None, agent_id = "") -> None:
+    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, recorder_obj = None, agent_id = "") -> None:
         """Initializes the agent.
 
         Args:
@@ -30,6 +33,8 @@ class CoTAgent:
         self.recorder = recorder_obj
 
         self.name = name
+        ltm_folder = os.path.join(data_folder, 'ltm_database')
+        self.ltm = LongTermMemory(agent_name=name, data_folder=ltm_folder)
         self.stm = ShortTermMemory( agent_context=agent_context, world_context_file=world_context_file)
         self.spatial_memory = SpatialMemory(scenario_map=scenario_info['scenario_map'], agent_id=agent_id, scenario_obstacles=scenario_info['scenario_obstacles'])
         self.prompts_folder = 'cot_agent_prompts'
@@ -66,10 +71,15 @@ class CoTAgent:
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
                                                     agent_current_scene['observation'], current_global_map)
         self.stm.add_memory(observations, 'current_observation')
+        action_executed = self.stm.get_memory('step_to_take')
+        sorted_observations = self.spatial_memory.sort_observations_by_distance(observations)
+        observations = sorted_observations[:10]
         changes = []
         for change, obs_time in changes_in_state:
             changes.append(f'{change} At {obs_time}')
         self.stm.add_memory(changes, 'changes_in_state')
+        memory = create_memory(self.name, game_time, action_executed, changes, agent_reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name())
+        self.ltm.add_memory(memory, game_time, 10, {'type': 'perception'})
 
         if not agent_current_scene['is_movement_allowed']:
             self.logger.info(f'{self.name} is frozen and cannot move.')

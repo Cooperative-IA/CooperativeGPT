@@ -1,0 +1,12 @@
+Below is an instruction that describes a task, along with information like past observations and the action taken by an agent that provides further context. Write a response that appropriately completes the request.
+
+### Instruction:
+Predict what would be the more probable changes and observations to perceive following the past observations and action taken.
+
+### Past observations:
+<input1>
+
+### Action taken:
+<input2>
+
+### Predicted observations:

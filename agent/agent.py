@@ -13,9 +13,9 @@ from agent.cognitive_modules.perceive import should_react, update_known_agents, 
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
-from agent.cognitive_modules.act import actions_sequence
+from agent.cognitive_modules.act import actions_sequence, actions_options, actions_sequence_with_consequences
 from agent.cognitive_modules.retrieve import retrieve_relevant_memories
-from agent.cooperative_modules.understanding import update_understanding, update_understanding_2, update_understanding_4
+from agent.cooperative_modules.understanding import update_understanding, update_understanding_2, update_understanding_4, analyze_consequences
 from utils.queue_utils import list_from_queue
 from utils.logging import CustomAdapter
 from utils.time import str_to_timestamp
@@ -97,7 +97,7 @@ class Agent:
             action to execute: Low level action to execute.
         """
         if self.mode == 'cooperative':
-            return self.move_cooperative(observations, agent_current_scene, changes_in_state, game_time, agent_reward, agent_is_out)
+            return self.move_cooperative(observations, agent_current_scene, changes_in_state, current_global_map, game_time, agent_reward, agent_is_out)
 
         # If the agent is out of the game, it does not take any action
         if agent_is_out:
@@ -124,7 +124,7 @@ class Agent:
 
         return step_action
 
-    def move_cooperative(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], game_time: str, reward: float, agent_is_out:bool = False) -> Queue:
+    def move_cooperative(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], current_global_map: list[list[str]], game_time: str, reward: float, agent_is_out:bool = False) -> Queue:
         """Use all the congnitive sequence (including the cooperative modules) of the agent to decide an action to take
 
         Args:
@@ -150,27 +150,27 @@ class Agent:
 
         #Updates the position of the agent in the spatial memory
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
-                                                    agent_current_scene['observation'])
-        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward)
+                                                    agent_current_scene['observation'], current_global_map)
+        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward, is_movement_allowed=agent_current_scene['is_movement_allowed'])
 
-        self.understand(filtered_observations, state_changes)
+        # self.understand(filtered_observations, state_changes)
 
         if not agent_current_scene['is_movement_allowed']:
             self.logger.info(f'{self.name} is frozen and cannot move.')
-            self.reflect(filtered_observations)
+            # self.reflect(filtered_observations)
             return None
 
         if react:
             self.plan()
             self.generate_new_actions()
 
-        self.reflect(filtered_observations)
+        # self.reflect(filtered_observations)
 
-        step_actions = self.get_actions_to_execute()
+        step_actions = self.get_actions_to_execute(current_global_map, need_update=True)
 
         return step_actions
 
-    def perceive(self, observations: list[str], changes_in_state: list[tuple[str, str]], game_time: str, reward: float, is_agent_out: bool = False) -> tuple[bool, list[str], list[str]]:
+    def perceive(self, observations: list[str], changes_in_state: list[tuple[str, str]], game_time: str, reward: float, is_agent_out: bool = False, is_movement_allowed=True) -> tuple[bool, list[str], list[str]]:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
         It also filters the observations to only store the closest ones, and asign a poignancy to the observations.
         Game time is also stored in the short term memory.
@@ -185,7 +185,7 @@ class Agent:
         """
         action_executed = self.stm.get_memory('step_to_take')
         if is_agent_out:
-            memory = create_memory(self.name, game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name(), True)
+            memory = create_memory(self.name, game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name())
             self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
             current_observation = '\n'.join(observations)
             self.stm.add_memory(current_observation, 'current_observation')
@@ -233,9 +233,14 @@ class Agent:
         current_action = self.stm.get_memory('current_action')
         if current_action and not self.stm.get_memory('current_steps_sequence').empty():
             actions_sequence.insert(0, current_action)
-        react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, position, agent_bio_str, self.prompts_folder)
-        self.stm.add_memory(reasoning, 'reason_to_react')
-        self.logger.info(f'{self.name} should react to the observation: {react}')
+        if is_movement_allowed:
+            react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, position, agent_bio_str, self.prompts_folder)
+            self.stm.add_memory(reasoning, 'reason_to_react')
+            self.logger.info(f'{self.name} should react to the observation: {react}')
+        else:
+            react = False
+            self.stm.add_memory('The agent is frozen and cannot move.', 'reason_to_react')
+            self.logger.info(f'{self.name} should not react to the observation because it is frozen and cannot move.')
         return react, observations, changes
 
     def plan(self,) -> None:
@@ -326,8 +331,6 @@ class Agent:
         # Add the last reflection to the short term memory
         self.stm.add_memory(game_time, 'last_reflection')
 
-
-
     def generate_new_actions(self) -> None:
         """
         Acts in the environment given the observations, the current plan and the current goals.
@@ -353,10 +356,16 @@ class Agent:
         percentage_explored = self.spatial_memory.get_percentage_known()
 
         # Generate new actions sequence and add it to the short term memory
-        actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
+        actions_opts = actions_options(self.name, world_context, current_plan, reflections, observations,
                                                   current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
                                                   known_objects, percentage_explored, self.stm, past_observations=past_observations, last_step_executed=last_step_executed, curr_orientation=curr_orientation)
-        self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
+        self.logger.info(f'{self.name} generated new actions options: {actions_opts}')
+
+        consequences = analyze_consequences(self.ltm, actions_opts, self.prompts_folder)
+
+        actions_sequence_queue = actions_sequence_with_consequences(self.name, world_context, current_plan, reflections, observations,
+                                                  current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
+                                                  known_objects, percentage_explored, self.stm, past_observations=past_observations, last_step_executed=last_step_executed, curr_orientation=curr_orientation, consequences=consequences, actions_opts=actions_opts)
 
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')
         self.stm.add_memory(Queue(), 'current_steps_sequence') # Initialize steps sequence in empty queue

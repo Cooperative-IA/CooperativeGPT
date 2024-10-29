@@ -107,7 +107,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Define the simulation mode
-    mode = None # cooperative or None, if cooperative the agents will use the cooperative modules
+    mode = 'cooperative' # cooperative or None, if cooperative the agents will use the cooperative modules
 
     global substrate_utils
     substrate_utils = import_module(f'game_environment.substrates.utilities.{args.substrate}.substrate_utils')
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # Create agents
     if args.cot_agent:
-        agents = [CoTAgent(name=player, agent_context=player_context,
+        agents = [CoTAgent(name=player, data_folder=data_folder, agent_context=player_context,
                     world_context_file=world_context_path, scenario_info=scenario_info, recorder_obj=env.game_recorder)
               for player, player_context in zip(players, players_context)]
     else:

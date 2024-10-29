@@ -1,0 +1,2 @@
+I am in a mysterious grid world. In this world, three types of mushrooms are spread around the map and can be consumed for a reward.
+The grid world is composed of 14 rows and 23 columns. The tiles start from the [0, 0] position located at the top left and finish at the [13, 22] position located at the bottom right.

@@ -1,0 +1,45 @@
+You have this information about an agent called <input1>:
+
+<input10>
+
+<input1>'s world understanding: <input2>
+
+<input1>'s goals: <input9>
+
+Current plan: <input3>
+
+Past observations:
+<input15>
+
+Analysis of past experiences:
+<input4>
+
+<input11>
+
+Portion of the map explored by <input1>: <input12>
+
+Observed changes in the game state:
+<input14>
+
+Now,<input16> you are positioned at <input6> facing <input17> from where you observe the following:
+<input5>
+
+Define what should be the next action for <input1> get closer to achieve its goals following the current plan.
+Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
+Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
+
+Valid actions:
+<input8>
+
+Remember that going to positions near the edge of the portion of the map you are seeing will allow you to get new observations, and ADD VARIETY to the options you select.
+<input13>
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
+```json
+{
+    "Opportunities": string \\ What are the most relevant opportunities? those that can yield the best benefit for you in the long term
+    "Threats": string \\ What are the biggest threats?, what observations you should carefully follow to avoid potential harm in your welfare in the long term?
+    "Option_1": string \\ What would be the first action to choose? answer only with the name of the action and the position replaced if needed,
+    "Option_2": string \\ What would be the second action to choose? answer only with the name of the action and the position replaced if needed,
+    "Option_3": string \\ What would be the third action to choose? answer only with the name of the action and the position replaced if needed
+}```

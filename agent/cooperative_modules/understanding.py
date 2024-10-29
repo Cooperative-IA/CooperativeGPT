@@ -1,7 +1,9 @@
 import os
+import re
 from llm import LLMModels
 from utils.time import str_to_timestamp
 from utils.llm import extract_answers, extract_text, extract_tags
+from agent.memory_structures.long_term_memory import LongTermMemory
 
 def update_understanding(current_observations: list[str], agent, game_time: str, understanding_umbral = 30, prompts_folder = "base_prompts_v0") -> None:
     """Updates the agent understanding about the world and the other agents. Updates the understanding only if the accumulated poignancy of the recent reflections is greater than the umbral, or 
@@ -324,3 +326,28 @@ def save_new_hypotheses(hypotheses: str | None, agent) -> list[str]:
         agent.stm.add_memory(world_hypotheses, 'world_hypotheses')
 
     return [item['value'] for item in world_hypotheses.values()]
+
+def analyze_consequences(ltm: LongTermMemory, action_options: list[str], prompts_folder: str) -> list[str]:
+    """Analyzes the consequences of the possible actions.
+
+    Args:
+        ltm (LongTermMemory): Long term memory.
+        action_options (list[str]): List of the possible actions.
+
+    Returns:
+        list[str]: List of the consequences of the possible actions.
+    """
+    # Retrieve the the 3 most recent memories of the agent
+    recent_memories = ltm.get_memories(limit=3, reversed_order=True, filter={'type': 'perception'})['documents']
+    recent_memories = '\n'.join(recent_memories)
+
+    llm = LLMModels().get_causal_model()
+    prompt_path = os.path.join(prompts_folder, 'consequences.txt')
+
+    inputs = []
+    for action in action_options:
+        inputs.append([recent_memories, action])
+
+    consequences = llm.batch_completion(prompt=prompt_path, inputs=inputs)
+
+    return consequences

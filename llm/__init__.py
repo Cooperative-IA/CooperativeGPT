@@ -1,5 +1,6 @@
 from llm.openai import GPT4oMini, GPT4o, Embedding
 from llm.base_llm import BaseLLM
+from llm.causal_llm import FinetunedCausal
 
 class LLMModels():
     """Class to define the available LLM models"""
@@ -12,11 +13,13 @@ class LLMModels():
             self.instance.llm_models: dict[str, BaseLLM] = {
             "gpt-4o-mini": GPT4oMini(),
             "gpt-4o": GPT4o(),
-            "embedding": Embedding()
+            "embedding": Embedding(),
+            "finetuned-causal": FinetunedCausal()
             }
             self.instance.main_model = "gpt-4o-mini"
             self.instance.best_model = "gpt-4o"
             self.instance.longer_context_fallback = "gpt-4o-mini"
+            self.instance.causal_model = "finetuned-causal"
             self.instance.embedding_model = "embedding"
         return self.instance
 
@@ -40,6 +43,13 @@ class LLMModels():
             BaseLLM: Longer context fallback model
         """
         return self.llm_models[self.longer_context_fallback]
+    
+    def get_causal_model(self) -> BaseLLM:
+        """Get the causal model
+        Returns:
+            BaseLLM: Causal model
+        """
+        return self.llm_models[self.causal_model]
     
     def get_best_model(self) -> BaseLLM:
         """Get the best model

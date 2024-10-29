@@ -181,17 +181,20 @@ class SpatialMemory:
             # Only attack if the agent is not in the beam range, we need to move to the position
             if not is_in_beam_range:       
                 list_sequence = self.find_route_to_position(current_global_map,agent2attack_pos, self.orientation, return_list=True, include_last_pos=True)
-
-                # We need to put needed rotations to face the agent first: 
-                new_orientation = 'turn '+ list_sequence[-1].split(' ')[1]
-                # If the new orientation is the same as the current one, we do not need to change it, if down we need to turn twice
-                if new_orientation == 'turn down':
-                    # We need to to add two rotations to face the agent add the beginning
-                    list_sequence.insert(0, 'turn right')
-                    list_sequence.insert(0, 'turn right')
-                else: 
-                    list_sequence.insert(0, new_orientation)
-                sequence_steps = queue_from_list(list_sequence)
+                # If list_sequence is a queue, we need to convert it to a list
+                if isinstance(list_sequence, Queue):
+                    list_sequence = list(list_sequence.queue)
+                # We need to put needed rotations to face the agent first:
+                if isinstance(list_sequence, list) and len(list_sequence) > 0:
+                    new_orientation = 'turn '+ list_sequence[-1].split(' ')[1]
+                    # If the new orientation is the same as the current one, we do not need to change it, if down we need to turn twice
+                    if new_orientation == 'turn down':
+                        # We need to to add two rotations to face the agent add the beginning
+                        list_sequence.insert(0, 'turn right')
+                        list_sequence.insert(0, 'turn right')
+                    else: 
+                        list_sequence.insert(0, new_orientation)
+                    sequence_steps = queue_from_list(list_sequence)
 
             sequence_steps.put('attack')
 
