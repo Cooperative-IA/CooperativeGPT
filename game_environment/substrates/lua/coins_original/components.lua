@@ -327,8 +327,86 @@ function PartnerTracker:reportMismatch()
   self._trackerOfPartner.partnerCollectedMismatch = 1
 end
 
+function PartnerTracker:getPartnerMismatch()
+  if self._trackerOfPartner == nil then
+    return 0
+  end
+  return self._trackerOfPartner.partnerCollectedMismatch
+end
+
+-- AdditionalObserver handles exposing several additional observations.
+local AdditionalObserver = class.Class(component.Component)
+
+function AdditionalObserver:__init__(kwargs)
+  kwargs = args.parse(kwargs, {
+      {'name', args.default('AdditionalObserver')},
+      {'num_players', args.numberType},
+  })
+  AdditionalObserver.Base.__init__(self, kwargs)
+  self.numPlayers = kwargs.num_players
+end
+
+function AdditionalObserver:getNumPlayers()
+  return self.numPlayers
+end
+
+function AdditionalObserver:addObservations(tileSet,
+                                           world,
+                                           observations,
+                                           avatarCount)
+
+                                           
+  --Write in a file the value of avatarComponent in .lua
+  local playerIndex = self.gameObject:getComponent('Avatar'):getIndex()
+  -- parse to number
+  playerIndex = tonumber(playerIndex)
+  local archivo = io.open("nuevo_archivo.txt", "w")
+  local avatars = self.gameObject.simulation:getGameObjectsByName("avatar")
+  if avatars == nil then
+    archivo:write("avatars is nil\n")
+  end
+  for index, avatar in ipairs(avatars) do
+    local partnerTrackerComponent = avatar:getComponent("PartnerTracker")
+
+    if partnerTrackerComponent == nil then
+      archivo:write("avatar id: ")
+      archivo:write(index)
+      archivo:write("\npartnerTrackerComponent is nil\n")
+
+    else
+      archivo:write("avatar id: ")
+      archivo:write(index)
+      archivo:write("\npartnerTrackerComponent is not nil\n")
+
+      if index == playerIndex then
+        archivo:write("index == playerIndex\n")
+        local stringPlayerIdx = tostring(playerIndex)
+        archivo:write("partnerTrackerComponent:getPartnerMismatch(): ")
+        --archivo:write(partnerTrackerComponent:getPartnerMismatch())
+        local partnerValue = 0
+        if partnerTrackerComponent:getPartnerMismatch() == 1 then
+          partnerValue = 1
+        end
+        archivo:write("\npartnerValue: ")
+        archivo:write(partnerValue)
+        -- Observation for each agent's private inventory.
+        observations[#observations + 1] = {
+            name = stringPlayerIdx .. '.MISMATCHED_COIN_COLLECTED_BY_PARTNER',
+            type = 'Doubles',
+            shape = {},
+            func = function(grid)
+              return partnerValue
+            end
+          }
+      end
+    end
 
 
+  end
+
+  
+  archivo:close()
+end
 
 local AvatarsStateObserver = class.Class(component.Component)
 
@@ -387,6 +465,7 @@ local allComponents = {
     GlobalCoinCollectionTracker = GlobalCoinCollectionTracker,
     Role = Role,
     PartnerTracker = PartnerTracker,
+    AdditionalObserver = AdditionalObserver,
 
     AvatarsStateObserver = AvatarsStateObserver,
     GlobalStateTracker = GlobalStateTracker,

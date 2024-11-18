@@ -26,7 +26,7 @@ def load_config() -> dict:
         config_file = json.load(json_file)
     return config_file
 
-def get_players_contexts(agents_bio_dir: str) -> list[str]:
+def get_players_contexts(agents_bio_dir: str, include_bots:bool=False) -> list[str]:
     """
     Get the paths of the players context files from the agents bio directory.
     The players context files are the .json files that contain the players context.
@@ -45,6 +45,10 @@ def get_players_contexts(agents_bio_dir: str) -> list[str]:
     
     # Now sort the list by the player's id
     sorted_evaluated_data = sorted(evaluated_data, key=lambda x: x["id"])
+    if include_bots:
+        return sorted_evaluated_data
+    # Now we only get the ones which name does not start with bot_
+    sorted_evaluated_data = [player for player in sorted_evaluated_data if not player["name"].startswith("bot_")]
     
     return sorted_evaluated_data
     

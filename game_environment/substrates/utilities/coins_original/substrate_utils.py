@@ -1,4 +1,5 @@
 import json
+import re
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from game_environment.utils import connected_elems_map, get_element_global_pos, check_agent_out_of_game, get_matrix, process_observed_matrices
 import numpy as np
@@ -10,7 +11,7 @@ scenario_obstacles = {"impassable_obstacles": ["W", "$"] + [str(i) for i in rang
 
 
 
-def load_scenario_info(players_context: list[str]):
+def load_scenario_info(players_context: list[str], **kwargs):
     """
     Description: Load the scenario information for the substrate
     And set the agents context given from the main file
@@ -21,6 +22,26 @@ def load_scenario_info(players_context: list[str]):
     """
     global agents_context
     agents_context = players_context
+    
+    # In coins we need to replace the second string in the form [num, num] with the actual height and width of the map
+    world_context_path = kwargs['world_context_path']
+    height, width = get_map_dimensions()
+    with open(world_context_path, 'r') as f:
+        world_context = f.read()
+        
+    # Update the map dimensions by replacing [digits, digits] except [0, 0]
+    world_context = re.sub(r'\[(?!1, 1)(\d+), (\d+)\]', f'[{height-1}, {width-1}]', world_context)
+
+    # Also replace the strings <n_rows> and <n_cols> with the actual height and width of the map
+    world_context = world_context.replace('<n_rows>', str(height)).replace('<n_cols>', str(width))
+    
+    # Write the updated world context
+    with open(world_context_path, 'w') as f:
+        f.write(world_context)
+        
+    # Save the updated world context
+    with open(world_context_path, 'w') as f:
+        f.write(world_context)
     
     return {'scenario_map': get_scenario_map(substrate_name), 
             'valid_actions': get_defined_valid_actions(), 
@@ -53,7 +74,27 @@ def default_agent_actions_map():
         'fireZap': 0
     }
 
-
+def get_map_dimensions():
+    """
+    Description: Get the dimensions of the map
+    Coins have a random map so we need to get the dimensions from the scenario map
+    
+    Returns:
+        tuple: Tuple with the height and width of the map
+    """
+    map_dimensions = get_scenario_map(substrate_name).split('\n')[1:-1]
+    height = len(map_dimensions)
+    width = len(map_dimensions[0])
+    for i in range(height):
+        if map_dimensions[i][0] != 'W':
+            height = i-1
+            break
+    for j in range(width):
+        if map_dimensions[0][j] != 'W':
+            width = j-1
+            break
+    
+    return height, width
 def get_defined_valid_actions():
     """
     Description: Returns the defined valid actions for the substrate
@@ -61,9 +102,9 @@ def get_defined_valid_actions():
     Returns:
         list: List of valid actions that will be given to the agent action module.
     """
-    map_dimensions = get_scenario_map(substrate_name).split('\n')[1:-1]
-    height, width = len(map_dimensions) -1 , len(map_dimensions[0]) -1
-    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is a coin in the position the coin would be taken. You can choose any position on the map from the top left [0, 0] to the bottom right [{height}, {width}].',
+    height, width = get_map_dimensions()
+    
+    return  [f'go to position (x,y): This action takes the agent to the position specified, if there is a coin in the position the coin would be taken. You can choose any position on the map from the top left [1, 1] to the bottom right [{height-1}, {width-1}].',
                 'stay put: This action keep the agent in the same position.',
                 'explore: This action makes the agent to explore the map, it moves to a random position on the observed portion of the map.',
                 ]

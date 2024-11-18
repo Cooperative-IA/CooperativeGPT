@@ -405,7 +405,11 @@ class SpatialMemory:
         Returns:
             tuple[int, int, int, int]: Bounds of the current observed map.
         """
-
+        # First we replace all blank spaces with '-'
+        # TODO this is only for coins.
+        for i in range(len(current_map_matrix)):
+            current_map_matrix[i] = current_map_matrix[i].replace(' ', '-')
+            
         found_row_min, found_col_min = False, False 
         min_row, min_col = 0, 0
         max_row, max_col  =  len(current_map_matrix) - 1, len(current_map_matrix[0]) - 1

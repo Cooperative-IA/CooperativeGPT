@@ -18,7 +18,10 @@ def parse_string_to_matrix(input_string:str):
     Returns:
         np.array: Matrix
     """
-    rows = input_string.strip().split('\n')
+    # Check that maps do not contain caracter
+    rows = input_string.split('\n')
+    # Delete rows with empty strings and that has not the same length as the first row
+    rows = [row for row in rows if row != '' and len(row) == len(rows[0])]
     matrix = np.array([list(row) for row in rows])
     return matrix
 
@@ -134,7 +137,35 @@ def get_element_global_pos( element_local_pos, local_position, global_position, 
 
     return list(element_global)
 
+def get_local_position_from_global(orientation, global_dest_pos: tuple[int, int], global_self_pos: tuple[int, int], local_self_pos: tuple[int, int]):
+    
+    """Get the local position of an element given its global position on the map.
 
+        Args:
+            global_dest_pos (tuple[int, int]): Global position of the destination on the map.
+            local_self_pos (tuple[int, int]): Local position of the agent on the observed map.
+
+        Returns:
+            tuple[int, int]: Local position of the element.
+    """
+    # North
+    if orientation == 0:
+        element_local =      (global_dest_pos[0] - global_self_pos[0]) + local_self_pos[0], \
+                                (global_dest_pos[1] - global_self_pos[1]) + local_self_pos[1]
+    # East
+    elif orientation == 1:
+        element_local = -1 * (global_dest_pos[1] - global_self_pos[1]) + local_self_pos[0], \
+                                (global_dest_pos[0] - global_self_pos[0]) + local_self_pos[1]
+    # South
+    elif orientation == 2:
+        element_local = -1 * (global_dest_pos[0] - global_self_pos[0]) + local_self_pos[0], \
+                        -1 * (global_dest_pos[1] - global_self_pos[1]) + local_self_pos[1]
+    # West
+    elif orientation == 3:
+        element_local =      (global_dest_pos[1] - global_self_pos[1]) + local_self_pos[0], \
+                        -1 * (global_dest_pos[0] - global_self_pos[0]) + local_self_pos[1]
+
+    return element_local
 
 def check_agent_out_of_game(observations:list[str]):
    """

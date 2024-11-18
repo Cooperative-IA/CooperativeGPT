@@ -31,7 +31,7 @@ PrefabConfig = game_object_utils.PrefabConfig
 # Warning: setting `_ENABLE_DEBUG_OBSERVATIONS = True` may cause slowdown.
 _ENABLE_DEBUG_OBSERVATIONS = False
 
-MANDATED_NUM_PLAYERS = 2  # TODO
+MANDATED_NUM_PLAYERS = 4  # TODO
 
 COIN_PALETTES = {
     "coin_red": shapes.get_palette((238, 102, 119)),    # Red.
@@ -39,35 +39,6 @@ COIN_PALETTES = {
     "coin_yellow": shapes.get_palette((204, 187, 68)),  # Yellow.
     #"coin_green": shapes.get_palette((34, 136, 51)),    # Green.
     #"coin_purple": shapes.get_palette((170, 51, 119))   # Purple.
-}
-
-FLOOR = {
-    "name": "floor",
-    "components": [
-        {
-            "component": "StateManager",
-            "kwargs": {
-                "initialState": "floor",
-                "stateConfigs": [{
-                    "state": "floor",
-                    "layer": "background",
-                    "sprite": "Floor",
-                }],
-            }
-        },
-        {"component": "Transform",},
-        {
-            "component": "Appearance",
-            "kwargs": {
-                "renderMode": "ascii_shape",
-                "spriteNames": ["Floor"],
-                "spriteShapes": [shapes.GRAINY_FLOOR],
-                "palettes": [{"*": (0, 0, 0, 255),
-                              "+": (30, 30, 30, 255),}],
-                "noRotates": [False]
-            }
-        },
-    ]
 }
 
 def get_ascii_map(
@@ -91,9 +62,11 @@ def get_ascii_map(
     if row == 1:
       # Add top-right spawn point.
       ascii_map[-3] = "_"
+      ascii_map[width+3] = "_"
     elif row == height - 2:
-      # Add bottom-left spawn point.
-      ascii_map[-width] = "_"
+      # Add bottom-right spawn point.
+      ascii_map[-width - 4] = "_"
+      ascii_map[-2* width -3 ] = "_"
 
     # Pad to max width.
     ascii_map += [" "] * (max_width - width)
@@ -107,19 +80,18 @@ def get_ascii_map(
 
   # Join list of strings into single string.
   ascii_map = "".join(ascii_map)
-
-  # Append \n at the beginning and at the end of the string
+  
+  # Add a blank line at the beginning and end of the map. All maps are formatted this way.
   ascii_map = "\n" + ascii_map + "\n"
-
+  
   return ascii_map
 
 # `prefab` determines which prefab game object to use for each `char` in the
 # ascii map.
 CHAR_PREFAB_MAP = {
-    "_": {"type": "all", "list": ["floor", "spawn_point"]},
+    "_": "spawn_point",
     "W": "wall",
-    "C": {"type": "all", "list": ["floor", "coin"]},
-    
+    "C": "coin",
 }
 
 _COMPASS = ["N", "E", "S", "W"]
@@ -190,9 +162,9 @@ SCENE = {
         {
             "component": "StochasticIntervalEpisodeEnding",
             "kwargs": {
-                "minimumFramesPerEpisode": 300,
-                "intervalLength": 100,  # Set equal to unroll length.
-                "probabilityTerminationPerInterval": 0.05
+                "minimumFramesPerEpisode": 3000000,
+                "intervalLength": 1000000,  # Set equal to unroll length.
+                "probabilityTerminationPerInterval": 0.001
             }
         }
     ]
@@ -425,7 +397,21 @@ def get_avatar(coin_type: str,
           {
               "component": "AvatarIdsInViewObservation"
           },
-
+          {
+              "component": "Zapper",
+              "kwargs": {
+                  "cooldownTime": 10,
+                  "beamLength": 3,
+                  "beamRadius": 1,
+                  "framesTillRespawn": 50,
+                  "penaltyForBeingZapped": 0,
+                  "rewardForZapping": 0,
+                  "removeHitPlayer": True,
+              }
+          },
+          {
+              "component": "ReadyToShootObservation",
+          },
           {
               "component": "LocationObserver",
               "kwargs": {"objectIsAvatar": True, "alsoReportOrientation": True},
@@ -517,7 +503,7 @@ def get_prefabs(
                   reward_self_for_mismatch=reward_self_for_mismatch,
                   reward_other_for_match=reward_other_for_match,
                   reward_other_for_mismatch=reward_other_for_mismatch)
-  return {"wall": WALL, "spawn_point": SPAWN_POINT, "coin": coin, "floor": FLOOR}
+  return {"wall": WALL, "spawn_point": SPAWN_POINT, "coin": coin}
 
 
 # `player_color_palettes` is a list with each entry specifying the color to use
@@ -574,10 +560,10 @@ def get_config(players:list[str]):
   # Action set configuration.
   config.action_set = ACTION_SET
 
-
   # Observation format configuration.
   config.individual_observation_names = [
       "RGB",
+      "READY_TO_SHOOT",
       # Global switching signals for puppeteers.
       "MISMATCHED_COIN_COLLECTED_BY_PARTNER",
   ]
@@ -589,11 +575,13 @@ def get_config(players:list[str]):
   config.action_spec = specs.action(len(ACTION_SET))
   config.timestep_spec = specs.timestep({
       "RGB": specs.OBSERVATION["RGB"],
+      "READY_TO_SHOOT": specs.OBSERVATION["READY_TO_SHOOT"],
       # Switching signals for puppeteers.
       "MISMATCHED_COIN_COLLECTED_BY_PARTNER": specs.float64(),
       # Debug only (do not use the following observations in policies).
       "WORLD.RGB": specs.rgb(136, 136),
   })
+
   # The roles assigned to each player.
   config.valid_roles = frozenset({"default"})
   config.default_player_roles = ("default",) * MANDATED_NUM_PLAYERS
@@ -644,7 +632,7 @@ def build(
 
   # Build the substrate definition.
   substrate_definition = dict(
-      levelName="coins_original",
+      levelName="coins",
       levelDirectory="meltingpot/lua/levels",
       numPlayers=num_players,
       # Define upper bound of episode length since episodes end stochastically.

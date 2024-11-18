@@ -69,6 +69,10 @@ class Bot:
         Returns:
             The action for the bot
         """
+        additional_observation = None
+        if self.policy._puppeteer._partner_defection_signal:
+            additional_observation = self.policy._puppeteer._partner_defection_signal
+
         bot_timestep = dm_env.TimeStep(
             step_type=timestep.step_type,
             reward=timestep.observation[f'{self.player_index}.REWARD'],
@@ -79,6 +83,8 @@ class Bot:
                 'READY_TO_SHOOT': timestep.observation[f'{self.player_index}.READY_TO_SHOOT'],
                 'POSITION': timestep.observation[f'{self.player_index}.POSITION'],
                 'WORLD.RGB': timestep.observation['WORLD.RGB'],
+                # Add additional_observation if it exists
+                **({additional_observation: timestep.observation[f'{self.player_index}.{additional_observation}']} if additional_observation else {})
             }
         )
         action, state = self.policy.step(bot_timestep, self.state)

@@ -190,9 +190,9 @@ SCENE = {
         {
             "component": "StochasticIntervalEpisodeEnding",
             "kwargs": {
-                "minimumFramesPerEpisode": 300,
-                "intervalLength": 100,  # Set equal to unroll length.
-                "probabilityTerminationPerInterval": 0.05
+                "minimumFramesPerEpisode": 3000000,
+                "intervalLength": 1000000,  # Set equal to unroll length.
+                "probabilityTerminationPerInterval": 0.001
             }
         }
     ]
@@ -425,7 +425,21 @@ def get_avatar(coin_type: str,
           {
               "component": "AvatarIdsInViewObservation"
           },
-
+          {
+              "component": "Zapper",
+              "kwargs": {
+                  "cooldownTime": 10,
+                  "beamLength": 3,
+                  "beamRadius": 1,
+                  "framesTillRespawn": 50,
+                  "penaltyForBeingZapped": 0,
+                  "rewardForZapping": 0,
+                  "removeHitPlayer": True,
+              }
+          },
+          {
+              "component": "ReadyToShootObservation",
+          },
           {
               "component": "LocationObserver",
               "kwargs": {"objectIsAvatar": True, "alsoReportOrientation": True},
@@ -448,7 +462,6 @@ def get_avatar(coin_type: str,
           },
           {
               "component": "PartnerTracker",
-              "kwargs": {}
           },
       ]
   }

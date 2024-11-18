@@ -31,7 +31,8 @@ PrefabConfig = game_object_utils.PrefabConfig
 # Warning: setting `_ENABLE_DEBUG_OBSERVATIONS = True` may cause slowdown.
 _ENABLE_DEBUG_OBSERVATIONS = False
 
-MANDATED_NUM_PLAYERS = 2  # TODO
+MANDATED_NUM_PLAYERS = 2
+
 
 COIN_PALETTES = {
     "coin_red": shapes.get_palette((238, 102, 119)),    # Red.
@@ -69,7 +70,6 @@ FLOOR = {
         },
     ]
 }
-
 def get_ascii_map(
     min_width: int, max_width: int, min_height: int, max_height: int) -> str:
   """Procedurally generate ASCII map."""
@@ -81,8 +81,8 @@ def get_ascii_map(
   height = random.randint(min_height, max_height)
 
   # Make top row (walls). Pad to max width to ensure all maps are same size.
-  ascii_map = ["W"] * (width + 2) + [" "] * (max_width - width)
-
+  #ascii_map = ["W"] * (width + 2) + ["-"] * (max_width - width)
+  ascii_map = ["W"] * (width + 2) 
   # Make middle rows (navigable interior).
   for row in range(height):
     # Add walls and coins.
@@ -96,22 +96,20 @@ def get_ascii_map(
       ascii_map[-width] = "_"
 
     # Pad to max width.
-    ascii_map += [" "] * (max_width - width)
+    #ascii_map += ["-"] * (max_width - width)
 
   # Make bottom row (walls). Pad to max width.
-  ascii_map += ["\n"] + ["W"] * (width + 2) + [" "] * (max_width - width)
-
-  # Pad with extra rows to reach max height.
-  for _ in range(max_height - height):
-    ascii_map += ["\n"] + [" "] * max_width
-
+  #ascii_map += ["\n"] + ["W"] * (width + 2) + ["-"] * (max_width - width)
+  ascii_map += ["\n"] + ["W"] * (width + 2)
+  
+  # Append \n at the beginning and at the end of the string
+  ascii_map =  ["\n"] + ascii_map +  ["\n"]
   # Join list of strings into single string.
   ascii_map = "".join(ascii_map)
 
-  # Append \n at the beginning and at the end of the string
-  ascii_map = "\n" + ascii_map + "\n"
 
   return ascii_map
+
 
 # `prefab` determines which prefab game object to use for each `char` in the
 # ascii map.
@@ -190,9 +188,9 @@ SCENE = {
         {
             "component": "StochasticIntervalEpisodeEnding",
             "kwargs": {
-                "minimumFramesPerEpisode": 3000000,
-                "intervalLength": 1000000,  # Set equal to unroll length.
-                "probabilityTerminationPerInterval": 0.001
+                "minimumFramesPerEpisode": 300,
+                "intervalLength": 100,  # Set equal to unroll length.
+                "probabilityTerminationPerInterval": 0.05
             }
         }
     ]
@@ -341,8 +339,8 @@ def get_coin(
           },
       ]
   }
-
-
+  
+  
 human_readable_colors = list(colors.human_readable)
 TARGET_SPRITE_SELF = {
     "name": "Self",
@@ -350,11 +348,12 @@ TARGET_SPRITE_SELF = {
     "palette": shapes.get_palette(human_readable_colors.pop(0)),
     "noRotate": True,
 }
+
 def get_avatar(coin_type: str, 
                player_idx: int,
                target_sprite_self: Dict[str, Any],
                palete_type: Dict[str, Any],
-               ) -> Dict[str, Any]:
+               ):
   """Create an avatar object."""
   
     # Lua is 1-indexed.
@@ -365,6 +364,7 @@ def get_avatar(coin_type: str,
   custom_sprite_map = {source_sprite_self: target_sprite_self["name"]}
 
   live_state_name = "player{}".format(lua_index)
+  
   avatar_object = {
       "name": "avatar",
       "components": [
@@ -384,9 +384,7 @@ def get_avatar(coin_type: str,
                   ]
               }
           },
-          {
-              "component": "Transform",
-          },
+          {"component": "Transform",},
           {
               "component": "Appearance",
               "kwargs": {
@@ -405,13 +403,10 @@ def get_avatar(coin_type: str,
                   "aliveState": live_state_name,
                   "waitState": "playerWait",
                   "spawnGroup": "spawnPoints",
-                  "actionOrder": ["move", 
-                                  "turn",
-                                  "fireZap"],
+                  "actionOrder": ["move", "turn",],
                   "actionSpec": {
                       "move": {"default": 0, "min": 0, "max": len(_COMPASS)},
                       "turn": {"default": 0, "min": -1, "max": 1},
-                      "fireZap": {"default": 0, "min": 0, "max": 1},
                   },
                   "view": {
                       "left": 5,
@@ -419,7 +414,7 @@ def get_avatar(coin_type: str,
                       "forward": 9,
                       "backward": 1,
                       "centered": False
-                  }
+                  },
               }
           },
           {
@@ -439,6 +434,12 @@ def get_avatar(coin_type: str,
           },
           {
               "component": "ReadyToShootObservation",
+          },
+          {
+                "component": "AdditionalObserver",
+                "kwargs": {
+                    "num_players": MANDATED_NUM_PLAYERS,
+                        }
           },
           {
               "component": "LocationObserver",
@@ -476,7 +477,7 @@ def get_avatar(coin_type: str,
           "variable": "partnerCollectedMismatch",
       },
   ]
-  if _ENABLE_DEBUG_OBSERVATIONS:
+  if True:
     avatar_object["components"].append({
         "component": "LocationObserver",
         "kwargs": {"objectIsAvatar": True, "alsoReportOrientation": True},
@@ -512,6 +513,7 @@ def get_avatar(coin_type: str,
 
   return avatar_object
 
+
 # `prefabs` is a dictionary mapping names to template game objects that can
 # be cloned and placed in multiple locations accoring to an ascii map.
 def get_prefabs(
@@ -545,14 +547,13 @@ def get_player_color_palettes(
 # Primitive action components.
 # pylint: disable=bad-whitespace
 # pyformat: disable
-NOOP       = {"move": 0, "turn":  0, "fireZap": 0}
-FORWARD    = {"move": 1, "turn":  0, "fireZap": 0}
-STEP_RIGHT = {"move": 2, "turn":  0, "fireZap": 0}
-BACKWARD   = {"move": 3, "turn":  0, "fireZap": 0}
-STEP_LEFT  = {"move": 4, "turn":  0, "fireZap": 0}
-TURN_LEFT  = {"move": 0, "turn": -1, "fireZap": 0}
-TURN_RIGHT = {"move": 0, "turn":  1, "fireZap": 0}
-FIRE_ZAP   = {"move": 0, "turn":  0, "fireZap": 1}
+NOOP       = {"move": 0, "turn":  0,}
+FORWARD    = {"move": 1, "turn":  0,}
+STEP_RIGHT = {"move": 2, "turn":  0,}
+BACKWARD   = {"move": 3, "turn":  0,}
+STEP_LEFT  = {"move": 4, "turn":  0,}
+TURN_LEFT  = {"move": 0, "turn": -1,}
+TURN_RIGHT = {"move": 0, "turn":  1,}
 # pyformat: enable
 # pylint: enable=bad-whitespace
 
@@ -564,25 +565,22 @@ ACTION_SET = (
     STEP_RIGHT,
     TURN_LEFT,
     TURN_RIGHT,
-    FIRE_ZAP,
 )
 
 
 def get_config(players:list[str]):
   """Default configuration for the Coins substrate."""
   
-  
   # Error if the player list is empty.
   if not players:
     raise ValueError("Must specify at least one player.")   
 
-
   config = configdict.ConfigDict()
 
   # Set the size of the map.
-  config.min_width = 15
+  config.min_width = 10
   config.max_width = 15
-  config.min_height = 15
+  config.min_height = 10
   config.max_height = 15
 
   # Action set configuration.
@@ -591,7 +589,6 @@ def get_config(players:list[str]):
   # Observation format configuration.
   config.individual_observation_names = [
       "RGB",
-      "READY_TO_SHOOT",
       # Global switching signals for puppeteers.
       "MISMATCHED_COIN_COLLECTED_BY_PARTNER",
   ]
@@ -603,7 +600,6 @@ def get_config(players:list[str]):
   config.action_spec = specs.action(len(ACTION_SET))
   config.timestep_spec = specs.timestep({
       "RGB": specs.OBSERVATION["RGB"],
-      "READY_TO_SHOOT": specs.OBSERVATION["READY_TO_SHOOT"],
       # Switching signals for puppeteers.
       "MISMATCHED_COIN_COLLECTED_BY_PARTNER": specs.float64(),
       # Debug only (do not use the following observations in policies).
@@ -615,10 +611,7 @@ def get_config(players:list[str]):
   config.default_player_roles = ("default",) * MANDATED_NUM_PLAYERS
   config.num_players = len(players)
   config.player_names = players
-
   return config
-
-
 
 
 def create_avatar_objects(num_players, coin_types, paletes):
@@ -632,31 +625,26 @@ def create_avatar_objects(num_players, coin_types, paletes):
   
   return avatar_objects
 
-
 config = get_config([""]*MANDATED_NUM_PLAYERS)
-ASCII_MAP = get_ascii_map(min_width=config.min_width,
+ascii_map = get_ascii_map(min_width=config.min_width,
                                max_width=config.max_width,
                                min_height=config.min_height,
                                max_height=config.max_height)    
+ASCII_MAP = ascii_map
+
 def build(
     config: configdict.ConfigDict,
 ) -> Mapping[str, Any]:
   """Build the coins substrate given player roles."""
-  #assert len(roles) == MANDATED_NUM_PLAYERS, "Wrong number of players"
-  ### Randomly choose colors.
-  #coin_type_a, coin_type_b = random.sample(tuple(COIN_PALETTES), k=2)
-  #Select coin_type_a as the yellow coin and coin_type_b as the red coin
+  # Randomly choose colors.
   coin_type_a, coin_type_b =  "coin_yellow", "coin_red"
+
   # Manually build avatar config.
   num_players = MANDATED_NUM_PLAYERS
   player_color_palettes = get_player_color_palettes(
       coin_type_a=coin_type_a, coin_type_b=coin_type_b)
   
   avatar_objects = create_avatar_objects(MANDATED_NUM_PLAYERS, [coin_type_a, coin_type_b], player_color_palettes)
-  #avatar_objects = game_object_utils.build_avatar_objects(
-  #    num_players, {"avatar": created_avatars}, player_color_palettes)  # pytype: disable=wrong-arg-types  # allow-recursive-types
-  #game_object_utils.get_first_named_component(
-  #    avatar_objects[1], "PlayerCoinType")["kwargs"]["coinType"] = coin_type_b
 
   # Build the substrate definition.
   substrate_definition = dict(
@@ -668,10 +656,7 @@ def build(
       spriteSize=8,
       topology="BOUNDED",  # Choose from ["BOUNDED", "TORUS"],
       simulation={
-          "map": get_ascii_map(min_width=config.min_width,
-                               max_width=config.max_width,
-                               min_height=config.min_height,
-                               max_height=config.max_height),
+          "map": ASCII_MAP,
           "scene": SCENE,
           "prefabs": get_prefabs(coin_type_a=coin_type_a,
                                  coin_type_b=coin_type_b),

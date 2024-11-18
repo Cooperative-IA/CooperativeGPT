@@ -1,5 +1,5 @@
 from agent.agent import Agent
-from agent.human_agent import HumanAgent
+from agent.human_agent_v2 import HumanAgent
 
 def agentCreator(is_human_player:bool, *args, **kwargs) -> Agent | HumanAgent:
     """
