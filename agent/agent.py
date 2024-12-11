@@ -9,7 +9,8 @@ from typing import Union, Literal
 from agent.memory_structures.long_term_memory import LongTermMemory
 from agent.memory_structures.short_term_memory import ShortTermMemory
 from agent.memory_structures.spatial_memory import SpatialMemory
-from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory, update_known_objects
+# from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory, update_known_objects
+from agent.cognitive_modules.perceive import create_agent_action_memory, create_environment_memory, should_react, update_known_agents, update_known_objects, update_observed_agents_actions, update_own_actions
 from agent.cognitive_modules.plan import plan
 from agent.cognitive_modules.reflect import reflect_questions
 from agent.cognitive_modules.reflect import reflect_insights
@@ -19,6 +20,8 @@ from agent.cooperative_modules.understanding import update_understanding, update
 from utils.queue_utils import list_from_queue
 from utils.logging import CustomAdapter
 from utils.time import str_to_timestamp
+from agent.cognitive_modules.communicate import CommunicationMode, communicate_observed_actions_to_agent, communicate_environment_observations_to_agent, communicate_own_actions_to_agent, communicate_reflection_to_agent, get_agents_to_communicate_reflection, whom_to_communicate
+
 
 # Define a custom type to determine the congnitive modules to use
 Mode = Union[Literal['normal'], Literal['cooperative']]
@@ -28,7 +31,7 @@ class Agent:
     """Agent class.
     """
 
-    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None, recorder_obj = None, agent_id="" ) -> None:
+    def __init__(self, name: str, data_folder: str, agent_context: dict, world_context_file: str, scenario_info:dict, att_bandwidth: int = 10, reflection_umbral: int = 10*5, mode: Mode = 'normal', understanding_umbral = 30, observations_poignancy = 10, prompts_folder = "base_prompts_v0", substrate_name = "commons_harvest_open", start_from_scene = None, recorder_obj = None, agent_id="", agent_registry=None) -> None:
         """Initializes the agent.
 
         Args:
@@ -58,6 +61,7 @@ class Agent:
         self.mode = mode
         self.att_bandwidth = att_bandwidth
         self.reflection_umbral = reflection_umbral
+        self.agent_registry = agent_registry
         self.observations_poignancy = observations_poignancy
         ltm_folder = os.path.join(data_folder, 'ltm_database')
         self.ltm = LongTermMemory(agent_name=name, data_folder=ltm_folder)
@@ -67,6 +71,10 @@ class Agent:
         self.understanding_umbral = understanding_umbral
         self.prompts_folder = prompts_folder
         self.stm.add_memory(memory = self.name, key = 'name')
+        self.reflections = dict()
+
+        if self.agent_registry is not None:
+            self.agent_registry.register_agent(self)
 
         # Initialize steps sequence in empty queue
         self.stm.add_memory(memory=Queue(), key='current_steps_sequence')
@@ -97,7 +105,7 @@ class Agent:
             action to execute: Low level action to execute.
         """
         if self.mode == 'cooperative':
-            return self.move_cooperative(observations, agent_current_scene, changes_in_state, current_global_map, game_time, agent_reward, agent_is_out)
+            return self.move_cooperative(observations, agent_current_scene, changes_in_state, current_global_map, game_time, agent_reward, agent_is_out, communicate=True, world_understanding=True)
 
         # If the agent is out of the game, it does not take any action
         if agent_is_out:
@@ -107,7 +115,7 @@ class Agent:
         #Updates the position of the agent in the spatial memory
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
                                                     agent_current_scene['observation'], current_global_map)
-        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, agent_reward)
+        react, filtered_observations, state_changes, _ = self.perceive(observations, changes_in_state, game_time, agent_reward)
 
         if not agent_current_scene['is_movement_allowed']:
             self.logger.info(f'{self.name} is frozen and cannot move.')
@@ -124,7 +132,7 @@ class Agent:
 
         return step_action
 
-    def move_cooperative(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], current_global_map: list[list[str]], game_time: str, reward: float, agent_is_out:bool = False) -> Queue:
+    def move_cooperative(self, observations: list[str], agent_current_scene:dict, changes_in_state: list[tuple[str, str]], current_global_map: list[list[str]], game_time: str, reward: float, agent_is_out:bool = False, communicate=False, world_understanding=False) -> Queue:
         """Use all the congnitive sequence (including the cooperative modules) of the agent to decide an action to take
 
         Args:
@@ -141,9 +149,16 @@ class Agent:
         Returns:
             Queue: Steps sequence for the current action.
         """
-
+        rounds_count = str_to_timestamp(game_time)
         # If the agent is out of the game, it does not take any action
         if agent_is_out:
+            if communicate:
+                self.communicate_environment_observations()
+                self.communicate_observed_actions(observations, changes_in_state, rounds_count)
+            # self.reacted_times_per_round.append(self.reacted_times)
+            self.spatial_memory.explored_map_per_round.append(self.spatial_memory.get_percentage_known())
+            self.spatial_memory.known_trees_per_round.append(self.spatial_memory.get_known_trees())
+            self.spatial_memory.updated_map_per_round.append(self.spatial_memory.get_percentage_map_is_updated(current_global_map))
             self.logger.info(f'{self.name} is out of the game, skipping its turn.')
             step_actions = Queue()
             return step_actions
@@ -151,7 +166,7 @@ class Agent:
         #Updates the position of the agent in the spatial memory
         self.spatial_memory.update_current_scene(agent_current_scene['global_position'], agent_current_scene['orientation'],\
                                                     agent_current_scene['observation'], current_global_map)
-        react, filtered_observations, state_changes = self.perceive(observations, changes_in_state, game_time, reward, is_movement_allowed=agent_current_scene['is_movement_allowed'])
+        react, filtered_observations, state_changes, summarized_observations = self.perceive(observations, changes_in_state, game_time, reward, is_movement_allowed=agent_current_scene['is_movement_allowed'])
 
         # self.understand(filtered_observations, state_changes)
 
@@ -162,11 +177,27 @@ class Agent:
 
         if react:
             self.plan()
-            self.generate_new_actions()
-
-        # self.reflect(filtered_observations)
+            self.generate_new_actions(world_understanding=world_understanding)
+        
+        reflections = self.reflect(filtered_observations)
+        if communicate:
+            self.communicate_environment_observations()
+            self.communicate_observed_actions(observations, state_changes, rounds_count, summarized_observations=summarized_observations)
+            self.communicate_own_actions(state_changes, rounds_count)
+            if reflections:
+                for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+                    # communicate_reflection_to_agent(self.name, agent_name, self.agent_registry, answer["Reflection"], game_time, self.observations_poignancy)
+                    for reflection in reflections:
+                        if reflection:
+                            communicate_reflection_to_agent(self.name, agent_name, self.agent_registry, reflection, game_time, str_to_timestamp(game_time), self.observations_poignancy)
+                            if agent_name in self.reflections:
+                                self.reflections[agent_name] += 1
+                            else:
+                                self.reflections[agent_name] = 1
 
         step_actions = self.get_actions_to_execute(current_global_map, need_update=True)
+
+        self.stm.reset_known_agent_interactions()
 
         return step_actions
 
@@ -184,23 +215,30 @@ class Agent:
             tuple[bool, list[str], list[str]]: Tuple with True if the agent should react to the observation, False otherwise, the filtered observations and the changes in the state of the environment.
         """
         action_executed = self.stm.get_memory('step_to_take')
+        known_agent_interactions = self.stm.describe_known_agents_interactions()
         if is_agent_out:
-            memory = create_memory(self.name, game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name())
-            self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
-            current_observation = '\n'.join(observations)
-            self.stm.add_memory(current_observation, 'current_observation')
+            # memory = create_memory(self.name, game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name())
+            # self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+            # current_observation = '\n'.join(observations)
+            # self.stm.add_memory(current_observation, 'current_observation')
+            environment_memory = create_environment_memory(game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name())
+            self.ltm.add_memory(environment_memory, game_time, self.observations_poignancy, {'type': 'perception'})
+            agent_action_memory = create_agent_action_memory(game_time, known_agent_interactions)
+            self.ltm.add_memory(agent_action_memory, game_time, self.observations_poignancy, {'type': 'perception'})
             return False, observations, changes_in_state
 
         # Add the game time to the short term memory
         self.stm.add_memory(game_time, 'game_time')
         # Observations are filtered to only store the closest ones. The att_bandwidth defines the number of observations that the agent can attend to at the same time
-        sorted_observations = self.spatial_memory.sort_observations_by_distance(observations)
-        observations = sorted_observations[:self.att_bandwidth]
+        # sorted_observations = self.spatial_memory.sort_observations_by_distance(observations)
+        # observations = sorted_observations[:self.att_bandwidth]
+        sorted_observations = self.spatial_memory.sort_observations_by_distance(observations, self.att_bandwidth)
+        summarized_observations = self.spatial_memory.summarize_observations(observations)
 
         # Update the agent known agents
-        update_known_agents(observations, self.stm)
+        update_known_agents(sorted_observations, self.stm)
         # Update the agent known objects
-        update_known_objects(observations, self.stm, self.substrate_name)
+        update_known_objects(sorted_observations, self.stm, self.substrate_name)
 
         # Parse the changes in the state of the environment observed by the agent
         changes = []
@@ -210,10 +248,14 @@ class Agent:
         # Create a memory from the observations, the changes in the state of the environment and the reward, and add it to the long term memory
         position = self.spatial_memory.position
         orientation = self.spatial_memory.get_orientation_name()
-        memory = create_memory(self.name, game_time, action_executed, changes, reward, observations, position, orientation)
-        self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+        # memory = create_memory(self.name, game_time, action_executed, changes, reward, observations, position, orientation)
+        # self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+        environment_memory = create_environment_memory(self.name, game_time, action_executed, changes, reward, summarized_observations, position, orientation)
+        self.ltm.add_memory(environment_memory, game_time, self.observations_poignancy, {'type': 'perception'})
+        agent_action_memory = create_agent_action_memory(game_time, known_agent_interactions)
+        self.ltm.add_memory(agent_action_memory, game_time, self.observations_poignancy, {'type': 'perception'})
 
-        current_observation = '\n'.join(observations)
+        current_observation = '\n'.join(sorted_observations)
         self.stm.add_memory(current_observation, 'current_observation')
         self.stm.add_memory(changes, 'changes_in_state')
 
@@ -234,14 +276,14 @@ class Agent:
         if current_action and not self.stm.get_memory('current_steps_sequence').empty():
             actions_sequence.insert(0, current_action)
         if is_movement_allowed:
-            react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, position, agent_bio_str, self.prompts_folder)
+            react, reasoning = should_react(self.name, world_context, sorted_observations, current_plan, actions_sequence, changes, position, agent_bio_str, self.prompts_folder, stm=self.stm)
             self.stm.add_memory(reasoning, 'reason_to_react')
             self.logger.info(f'{self.name} should react to the observation: {react}')
         else:
             react = False
             self.stm.add_memory('The agent is frozen and cannot move.', 'reason_to_react')
             self.logger.info(f'{self.name} should not react to the observation because it is frozen and cannot move.')
-        return react, observations, changes
+        return react, sorted_observations, changes, summarized_observations
 
     def plan(self,) -> None:
         """Plans the next actions of the agent and its main goals.
@@ -265,7 +307,8 @@ class Agent:
         curr_orientation = self.stm.get_memory('current_orientation')
         assert reason_to_react is not None, 'Reason to react is None. This should not happen because the agent only plans if it should react to the observation'
 
-        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str, self.prompts_folder, changes_in_state=changes_in_state, past_observations=past_observations, last_step_executed=last_step_executed, position=current_position, orientation=curr_orientation)
+        new_plan, new_goals = plan(self.name, world_context, current_observation, current_plan, reflections, reason_to_react, agent_bio_str, self.prompts_folder, changes_in_state=changes_in_state, past_observations=past_observations, last_step_executed=last_step_executed, position=current_position, orientation=curr_orientation,
+                                   stm=self.stm)
         self.logger.info(f'{self.name} new plan: {new_plan}, new goals: {new_goals}')
         if new_plan is None or new_goals is None:
             self.logger.warn(f'{self.name} could not generate a new plan or new goals')
@@ -306,9 +349,10 @@ class Agent:
 
         world_context = self.stm.get_memory('world_context')
         agent_bio_str = self.stm.get_memory('bio_str')
+        known_agent_interactions = self.stm.describe_known_agents_interactions() or ''
 
         # Get the relevant questions
-        relevant_questions = reflect_questions(self.name, world_context, observations_str, agent_bio_str, self.prompts_folder)
+        relevant_questions = reflect_questions(self.name, world_context, observations_str, agent_bio_str, self.prompts_folder, known_agent_interactions)
         self.logger.info(f'{self.name} relevant questions: {relevant_questions}')
         # Get the relevant memories for each question, relevant memories is a list of lists
         relevant_memories_list = []
@@ -321,7 +365,7 @@ class Agent:
         # Convert the relevant memories list to a list of strings
         self.logger.info(f'{self.name} relevant memories: {relevant_memories_list}')
         # Get the insights reflections
-        reflections = reflect_insights(self.name, world_context, relevant_memories_list, relevant_questions, agent_bio_str, self.prompts_folder)
+        reflections = reflect_insights(self.name, world_context, relevant_memories_list, relevant_questions, agent_bio_str, self.prompts_folder, known_agent_interactions)
         self.logger.info(f'{self.name} reflections: {reflections}')
         # Add the reflections to the long term memory, checks if the reflection  is not empty
         for reflection in reflections:
@@ -331,7 +375,32 @@ class Agent:
         # Add the last reflection to the short term memory
         self.stm.add_memory(game_time, 'last_reflection')
 
-    def generate_new_actions(self) -> None:
+        agents_memories = dict()
+        for agent in self.agent_registry.get_all_agents():
+            if agent != self.name:
+                agent_memories = retrieve_relevant_memories(self, query=f"What do I know about {agent} Agent?", max_memories=3)
+                agents_memories[agent] = agent_memories
+
+        #for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+        # answer = get_agents_to_communicate_reflection(name=self.name, reflections=reflections, world_context=world_context, agent_bio=agent_bio_str, current_plan=self.stm.get_memory('current_plan'), agents_memories=agents_memories, prompts_folder=self.prompts_folder)
+        # for agent_name in answer['Agents']:
+        return reflections
+
+    def communicate_environment_observations(self) -> None:
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+            communicate_environment_observations_to_agent(self.name, agent_name, self.agent_registry, CommunicationMode.What.ALL)
+
+    def communicate_observed_actions(self, observations:list[str], state_changes: list[str], rounds_count, summarized_observations=[]) -> None:
+        update_observed_agents_actions(self.name, self.stm, observations, state_changes, rounds_count, self.agent_registry)
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+            communicate_observed_actions_to_agent(self.name, agent_name, self.agent_registry, observations, state_changes, self.stm.get_memory('game_time'), rounds_count, self.observations_poignancy, summarized_observations=summarized_observations)
+
+    def communicate_own_actions(self, actions: list[str], rounds_count) -> None:
+        update_own_actions(self.name, self.stm, actions, rounds_count, self.agent_registry)
+        for agent_name in whom_to_communicate(self, self.agent_registry, CommunicationMode.Who.ALL):
+            communicate_own_actions_to_agent(self.name, agent_name, self.agent_registry, actions, rounds_count, self.stm.get_memory('game_time'), self.observations_poignancy)
+
+    def generate_new_actions(self, world_understanding=False) -> None:
         """
         Acts in the environment given the observations, the current plan and the current goals.
         Stores the actions sequence in the short term memory.
@@ -355,17 +424,21 @@ class Agent:
 
         percentage_explored = self.spatial_memory.get_percentage_known()
 
-        # Generate new actions sequence and add it to the short term memory
-        actions_opts = actions_options(self.name, world_context, current_plan, reflections, observations,
+        if not world_understanding:
+            actions_sequence_queue = actions_sequence(self.name, world_context, current_plan, reflections, observations,
                                                   current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
                                                   known_objects, percentage_explored, self.stm, past_observations=past_observations, last_step_executed=last_step_executed, curr_orientation=curr_orientation)
-        self.logger.info(f'{self.name} generated new actions options: {actions_opts}')
+        else:
+            actions_opts = actions_options(self.name, world_context, current_plan, reflections, observations,
+                                                      current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
+                                                      known_objects, percentage_explored, self.stm, past_observations=past_observations, last_step_executed=last_step_executed, curr_orientation=curr_orientation)
+            self.logger.info(f'{self.name} generated new actions options: {actions_opts}')
 
-        consequences = analyze_consequences(self.ltm, actions_opts, self.prompts_folder)
+            consequences = analyze_consequences(self.ltm, actions_opts, self.prompts_folder)
 
-        actions_sequence_queue = actions_sequence_with_consequences(self.name, world_context, current_plan, reflections, observations,
-                                                  current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
-                                                  known_objects, percentage_explored, self.stm, past_observations=past_observations, last_step_executed=last_step_executed, curr_orientation=curr_orientation, consequences=consequences, actions_opts=actions_opts)
+            actions_sequence_queue = actions_sequence_with_consequences(self.name, world_context, current_plan, reflections, observations,
+                                                      current_position, valid_actions, current_goals, agent_bio_str, self.prompts_folder,
+                                                      known_objects, percentage_explored, stm=self.stm, past_observations=past_observations, last_step_executed=last_step_executed, curr_orientation=curr_orientation, consequences=consequences, actions_opts=actions_opts)
 
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')
         self.stm.add_memory(Queue(), 'current_steps_sequence') # Initialize steps sequence in empty queue

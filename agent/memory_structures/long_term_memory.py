@@ -26,6 +26,8 @@ class LongTermMemory:
         self.logger = logging.getLogger(__name__)
         self.logger = CustomAdapter(self.logger)
 
+        self.name = agent_name
+
         # Delete collection if it already exists
         if agent_name in [c.name for c in self.chroma_client.list_collections()]:
             self.chroma_client.delete_collection(agent_name)

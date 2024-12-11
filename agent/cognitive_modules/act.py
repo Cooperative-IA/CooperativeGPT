@@ -38,6 +38,8 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
     prompt_path = os.path.join(prompts_folder, 'act.txt')
     if isinstance(current_observations, list):
         current_observations = "\n".join(current_observations)
+    if not current_observations:
+        current_observations = "You couldn't observe anything interesting."
     actions_seq_len = 1
     actions_seq_queue= Queue()
 
@@ -50,12 +52,15 @@ def actions_sequence(name:str, world_context:str, current_plan:str, reflections:
         action_str = f' after taking action "{last_step_executed}"'
     else:
         action_str = ''
+
+    known_agent_interactions = stm.describe_known_agents_interactions() or ''
+
     # Actions have to be generated
     while actions_seq_queue.qsize() < 1:
         response = llm.completion(prompt=prompt_path, inputs=[name, world_context, str(current_plan), reflections, current_observations,
                                                               str(current_position), str(actions_seq_len), str(valid_actions), current_goals, agent_bio,
                                                               known_objects, explored_map, previous_actions, changes_in_state, past_observations, action_str,
-                                                              curr_orientation])
+                                                              curr_orientation, known_agent_interactions])
         response_dict = extract_answers(response.lower())
 
         try:
@@ -114,13 +119,15 @@ def actions_options(name:str, world_context:str, current_plan:str, reflections: 
     else:
         action_str = ''
 
+    known_agent_interactions = stm.describe_known_agents_interactions() or ''
+
     action_options = []
     # Actions have to be generated
     while len(action_options) == 0:
         response = llm.completion(prompt=prompt_path, inputs=[name, world_context, str(current_plan), reflections, current_observations,
                                                                 str(current_position), str(1), str(valid_actions), current_goals, agent_bio,
                                                                 known_objects, explored_map, previous_actions, changes_in_state, past_observations, action_str,
-                                                                curr_orientation])
+                                                                curr_orientation, known_agent_interactions])
         response_dict = extract_answers(response.lower())
         for action_num in range(3):
 
@@ -186,12 +193,14 @@ def actions_sequence_with_consequences(name:str, world_context:str, current_plan
         scenarios += predictions
         scenarios += '</scenario>'
 
+    known_agent_interactions = stm.describe_known_agents_interactions() or ''
+
     # Actions have to be generated
     while actions_seq_queue.qsize() < 1:
         response = llm.completion(prompt=prompt_path, inputs=[name, world_context, str(current_plan), reflections, current_observations,
                                                               str(current_position), str(actions_seq_len), str(valid_actions), current_goals, agent_bio,
                                                               known_objects, explored_map, previous_actions, changes_in_state, past_observations, action_str,
-                                                              curr_orientation, scenarios])
+                                                              curr_orientation, scenarios, known_agent_interactions])
         response_dict = extract_answers(response.lower())
 
         try:

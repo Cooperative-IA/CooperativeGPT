@@ -4,6 +4,8 @@ You have this information about an agent called <input1>:
 
 <input1>'s world understanding: <input2>
 
+<input5>
+
 Here you have a list of statements:
 <input3>
 

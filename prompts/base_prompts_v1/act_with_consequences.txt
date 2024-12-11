@@ -8,11 +8,12 @@ You have this information about an agent called <input1>:
 
 Current plan: <input3>
 
+<input19>
+
 You have the following predictions for three different scenarios that depend on the action you choose:
 <input18>
 
 Define what should be the next action for <input1> get closer to achieve its goals following the current plan.
-Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
 Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:
 
 Valid actions:
@@ -23,6 +24,6 @@ Select the action that you consider is the most beneficial to you, focus not onl
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```", answer as if you were <input1>:
 ```json
 {
-    "Final analysis: string \\ Analyze the three scenarios and reason about what is the best action to take
+    "Final analysis: string \\ Analyze the three scenarios and determine the best course of action. You are not limited to the options provided within each scenario; if you identify a superior action to take based on the available information, feel free to take it.
     "Answer": string \\ Answer with the action the agent should take (must be one of the valid actions with the position replaced)
 }```

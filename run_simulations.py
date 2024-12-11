@@ -7,11 +7,11 @@ def run_simulation(simulation_id, start_delay):
     time.sleep(start_delay)  # Delay for the staggered start time
     command = [
         "python", "main.py",
-        "--substrate=externality_mushrooms",
-        # "--scenario=",
-        "--agents_bio_config=no_bio_5p",
-        "--cot_agent=True",
-        "--world_context=simple_definitions",
+        # "--substrate=externality_mushrooms",
+        "--scenario=commons_harvest__open_0",
+        "--agents_bio_config=no_bio",
+        # "--cot_agent=True",
+        "--world_context=world_info_v2",
         # "--llm_model=gpt-3.5",
         f"--simulation_id=sim_prueba_{str(simulation_id).format(2)}",
     ]

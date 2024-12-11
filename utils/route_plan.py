@@ -1,8 +1,10 @@
-
+import logging
 
 
 from collections import deque
 from typing import Dict
+
+logger = logging.getLogger(__name__)
 
 def shortest_valid_route(matrix: list[list[str]], start: tuple[int, int], end: tuple[int, int],
                             scenario_obstacles: Dict[str, list], orientation:int = 0):
@@ -88,8 +90,12 @@ def get_shortest_valid_route(matrix: list[list[str]], start: tuple[int, int], en
         path = []
         at = end
         while at != start:
-            if prev[at[0]][at[1]] is None:
-                return []  # No hay camino
+            try:
+                if prev[at[0]][at[1]] is None:
+                    return []  # No hay camino
+            except IndexError:
+                logger.error(f"Position {at} is out of the matrix")
+                return []
             x, y, d = prev[at[0]][at[1]]
             path.append(d)
             at = (x, y)

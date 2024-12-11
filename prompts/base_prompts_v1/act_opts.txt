@@ -24,6 +24,8 @@ Observed changes in the game state:
 Now,<input16> you are positioned at <input6> facing <input17> from where you observe the following:
 <input5>
 
+<input18>
+
 Define what should be the next action for <input1> get closer to achieve its goals following the current plan.
 Remember that the current observations are ordered by closeness, being the first the closest observation and the last the farest one.
 Each action you determinate can only be one of the following, make sure you assign a valid position from the current observations and a valid name for each action:

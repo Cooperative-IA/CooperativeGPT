@@ -2,7 +2,7 @@ from llm import LLMModels
 from utils.llm import extract_answers
 import os
 
-def plan(name: str, world_context: str, observation: str, current_plan: str, reflections: str, reason_to_react: str, agent_bio: str = "", prompts_folder = "base_prompts_v0", changes_in_state: str = None, past_observations: str = None, last_step_executed: str = None, position: str = None, orientation: str = None) -> tuple[str, str]:
+def plan(name: str, world_context: str, observation: str, current_plan: str, reflections: str, reason_to_react: str, agent_bio: str = "", prompts_folder = "base_prompts_v0", changes_in_state: str = None, past_observations: str = None, last_step_executed: str = None, position: str = None, orientation: str = None, stm = None) -> tuple[str, str]:
     """Creates a plan for the agent and its goals.
 
     Args:
@@ -23,6 +23,8 @@ def plan(name: str, world_context: str, observation: str, current_plan: str, ref
         tuple[str, str]: New plan and new goals for the agent.
     """
     llm = LLMModels().get_main_model()
+
+    known_agent_interactions = stm.describe_known_agents_interactions() or ''
     
     prompt_path = os.path.join(prompts_folder, 'plan.txt')
     if last_step_executed:
@@ -31,7 +33,7 @@ def plan(name: str, world_context: str, observation: str, current_plan: str, ref
         action_str = ''
     if not observation:
         observation = "You couldn't observe anything interesting."
-    response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, reflections, reason_to_react, agent_bio, changes_in_state, past_observations, action_str, position, orientation], system_prompt='plan_system_prompt.txt')
+    response = llm.completion(prompt=prompt_path, inputs=[name, world_context, observation, current_plan, reflections, reason_to_react, agent_bio, changes_in_state, past_observations, action_str, position, orientation, known_agent_interactions], system_prompt='plan_system_prompt.txt')
     answers = extract_answers(response)
 
     plan = answers.get('Plan', None)

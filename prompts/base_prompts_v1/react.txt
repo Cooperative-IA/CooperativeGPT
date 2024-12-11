@@ -9,6 +9,8 @@ You have this information about an agent called <input1>:
 
 <input8>
 
+<input9>
+
 Current plan: <input4>
 
 Actions to execute: <input5>

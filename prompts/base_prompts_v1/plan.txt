@@ -16,6 +16,8 @@ Observed changes in the game state:
 Now,<input10> you are positioned at <input11> facing <input12> from where you observe the following:
 <input3>
 
+<input13>
+
 Current plan: <input4>
 This is the reason to change the current plan: <input6>
 

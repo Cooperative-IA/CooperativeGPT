@@ -269,7 +269,7 @@ class SpatialMemory:
             return fall_back_pos
         
     
-    def sort_observations_by_distance(self, observations: list[str]) -> list[str]:
+    def sort_observations_by_distance(self, observations: list[str], att_bandwidth:int) -> list[str]:
         """
         Sorts the observations by distance to the agent in ascending order.
 
@@ -283,7 +283,16 @@ class SpatialMemory:
         observations_positions = [self.get_position_from_action(observation, self.position) for observation in observations]
         observations_distances = [manhattan_distance(self.position, position) for position in observations_positions]
 
-        return sorted(observations, key=lambda x: observations_distances[observations.index(x)])
+        return sorted(observations, key=lambda x: observations_distances[observations.index(x)])[:att_bandwidth]
+    
+    def summarize_observations(self, observations: list[str]) -> str:
+        summarized_observations = []
+        for observation in observations:
+            if "Observed tree" in observation:
+                summarized_observations.append(observation)
+            elif "Observed agent" in observation:
+                summarized_observations.append(observation)
+        return summarized_observations
     
     def get_global_position(self, local_dest_pos: tuple[int, int], local_self_pos: tuple[int, int]) -> tuple[int, int]:
         """Get the global position of an element given its local position on the observed map.

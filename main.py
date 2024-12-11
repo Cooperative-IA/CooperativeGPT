@@ -14,6 +14,7 @@ from llm import LLMModels
 from utils.queue_utils import new_empty_queue
 from utils.args_handler import get_args
 from utils.files import extract_players, get_players_contexts, persist_short_term_memories, create_directory_if_not_exists
+from agent.management.agent_registry import AgentRegistry
 
 # Set up logging timestamp
 logger_timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -126,6 +127,9 @@ if __name__ == "__main__":
     players_context = get_players_contexts(agents_bio_dir)
     players = extract_players(players_context)
 
+    # Create the agent registry
+    agent_registry = AgentRegistry(players)
+
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
 
     # Load the scenario map, the valid actions and the scenario obstacles
@@ -145,7 +149,8 @@ if __name__ == "__main__":
     else:
         agents = [Agent(name=player, data_folder=data_folder, agent_context=player_context,
                         world_context_file=world_context_path, scenario_info=scenario_info, mode=mode,
-                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, recorder_obj=env.game_recorder, agent_id=player_context["id"][-1])
+                        prompts_folder=str(args.prompts_source), substrate_name=args.substrate, start_from_scene = scene_path, recorder_obj=env.game_recorder, agent_id=player_context["id"][-1],
+                        agent_registry=agent_registry)
                 for player, player_context in zip(players, players_context)]
         
     logger = CustomAdapter(logger, game_env=env)

@@ -16,7 +16,7 @@ class FinetunedCausal(BaseLLM):
             prompt_token_cost (float): Cost of a token in the prompt
             response_token_cost (float): Cost of a token in the response
         """
-        super().__init__(0, 0, 2048, 0.6)
+        super().__init__(0, 0, 3000, 0.6)
 
         self.logger.info("Loading finetuned causal model...")
 
@@ -55,8 +55,8 @@ class FinetunedCausal(BaseLLM):
             # response = requests.post(self.completion_endpoint, json=prompt)
             response = requests.post("http://localhost:11434/api/generate", json={
                 "prompt": prompt,
-                # "model": "model3_q4",
-                "model": "mushrooms",
+                "model": "model3_q4",
+                # "model": "mushrooms",
                 "stream": False,
                 "raw": True,
                 # "keep_alive": '60s',
