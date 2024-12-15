@@ -1,8 +1,12 @@
 import os
 from llm import LLMModels
 from utils.llm import extract_answers
+import logging
+import traceback
+from utils.logging import CustomAdapter
 
-
+logger = logging.getLogger(__name__)
+logger = CustomAdapter(logger)
 
 def reflect_questions(name: str , world_context:str, statements: list[str]|str, agent_bio: str = "",  prompts_folder = "base_prompts_v0" ) -> list[str]:
     """
@@ -35,7 +39,8 @@ def reflect_questions(name: str , world_context:str, statements: list[str]|str, 
             relevant_questions_dict = extract_answers(response)
             relevant_questions = [q['Question'] for q in relevant_questions_dict.values()]
         else:
-            raise e
+            logger.error('Error making the reflections: %s', traceback.format_exc())
+            relevant_questions = []
    
     return relevant_questions
 
@@ -72,7 +77,11 @@ def reflect_insights(name, world_context, memory_statements, questions: list[str
             insights_dict = extract_answers(response)
             insights = [i['Insight'] for i in insights_dict.values()]
         else:
-            raise e
+            logger.error('Error making the reflections: %s', traceback.format_exc())
+            insights = []
+    except Exception as e:
+        logger.error('Error making the reflections: %s', traceback.format_exc())
+        insights = []
    
     return insights
 
