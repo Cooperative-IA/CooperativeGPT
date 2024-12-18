@@ -74,7 +74,7 @@ def get_recency_scores(memories: list[list]) -> list[float]:
     # Get the created_at date of each memory
     mem_dates = [m[1] for m in memories]
     # Get last memory date
-    last_date = str_to_timestamp(mem_dates[0])
+    last_date = str_to_timestamp(mem_dates[0]) if len(mem_dates) > 0 else 0
     # Calculate the days since the last memory
     days_since_last_memory = [int(last_date - str_to_timestamp(mem_date)) for mem_date in mem_dates]
     # Calculate the recency score for each memory

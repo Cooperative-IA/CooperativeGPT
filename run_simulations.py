@@ -16,12 +16,18 @@ def run_simulation(simulation_id, start_delay):
     command = [
         "python", "main.py",
         "--substrate=coins_original",
+        # "--substrate=externality_mushrooms",
         "--scenario=coins_1",
+        # "--scenario=commons_harvest__open_0",
+        # "--scenario=externality_mushrooms__dense_1",
         "--agents_bio_config=1_human_1_bot",
+        # "--agents_bio_config=no_bio",
+        # "--agents_bio_config=no_bio_1p",
         f"--world_context={new_world_context_name}",
-        "--llm_model=gpt-4o",
-        #"--cot_agent=True",
-        #f"--simulation_id=coins1__gpt4o__{str(simulation_id).format(2)}",
+        # f"--world_context=world_info_v2",
+        # f"--world_context=definitions_v2",
+        "--llm_model=gpt-3.5",
+        f"--simulation_id=sim_prueba_{str(simulation_id).format(2)}",
     ]
     subprocess.run(command)
         #"--cot_agent=True",

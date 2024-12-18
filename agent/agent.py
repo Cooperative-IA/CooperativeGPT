@@ -115,7 +115,7 @@ class Agent:
             return None
 
         if react:
-            self.plan()
+            # self.plan()
             self.generate_new_actions()
 
         self.reflect(filtered_observations)
@@ -185,6 +185,7 @@ class Agent:
         """
         action_executed = self.stm.get_memory('step_to_take')
         if is_agent_out:
+            # memory = '\n'.join(observations)
             memory = create_memory(self.name, game_time, action_executed, [], reward, observations, self.spatial_memory.position, self.spatial_memory.get_orientation_name(), True)
             self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
             current_observation = '\n'.join(observations)
@@ -211,7 +212,9 @@ class Agent:
         position = self.spatial_memory.position
         orientation = self.spatial_memory.get_orientation_name()
         memory = create_memory(self.name, game_time, action_executed, changes, reward, observations, position, orientation)
-        self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
+        # if len(observations) > 0:
+        #     memory = '\n'.join(observations)
+        #     self.ltm.add_memory(memory, game_time, self.observations_poignancy, {'type': 'perception'})
 
         current_observation = '\n'.join(observations)
         self.stm.add_memory(current_observation, 'current_observation')
@@ -233,6 +236,9 @@ class Agent:
         current_action = self.stm.get_memory('current_action')
         if current_action and not self.stm.get_memory('current_steps_sequence').empty():
             actions_sequence.insert(0, current_action)
+        # react = self.stm.get_memory('current_steps_sequence').empty()
+        # if react:
+        #     self.stm.add_memory('Action completed', 'reason_to_react')
         react, reasoning = should_react(self.name, world_context, observations, current_plan, actions_sequence, changes, position, agent_bio_str, self.prompts_folder)
         self.stm.add_memory(reasoning, 'reason_to_react')
         self.logger.info(f'{self.name} should react to the observation: {react}')
@@ -380,18 +386,26 @@ class Agent:
         if self.stm.get_memory('current_steps_sequence').empty():
             # If the current gameloop is empty, we need to generate a new one
 
-            # If the actions sequence is empty, we generate actions sequence
-            if self.stm.get_memory('actions_sequence').empty():
-                self.generate_new_actions()
-
-            # We get next action from the actions sequence
-            current_action = self.stm.get_memory('actions_sequence').get()
-            self.stm.add_memory(current_action, 'current_action')
-            if self.recorder:
-                self.recorder.record_action(player=self.name, curr_action=current_action)
-
             # Now defines a gameloop for the current action
-            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
+            steps_sequence = None
+            while True:
+                try:
+                    # If the actions sequence is empty, we generate actions sequence
+                    if self.stm.get_memory('actions_sequence').empty():
+                        self.generate_new_actions()
+
+                    # We get next action from the actions sequence
+                    current_action = self.stm.get_memory('actions_sequence').get()
+                    self.stm.add_memory(current_action, 'current_action')
+                    
+                    steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
+
+                    break
+                except Exception as e:
+                    self.logger.error('Error getting the steps for {}')
+                    pass
+            if self.recorder:
+                        self.recorder.record_action(player=self.name, curr_action=current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
 
         # We will update the steps sequence if need_update is True

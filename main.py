@@ -37,7 +37,7 @@ def game_loop(agents: list[Agent], substrate_name:str, persist_memories:bool) ->
     actions = None
 
     # Define bots number of steps per action
-    rounds_count, steps_count, max_rounds = 0, 0, 250
+    rounds_count, steps_count, max_rounds = 0, 0, 1000
 
     # Get the initial observations and environment information
     env.step(actions)
@@ -129,7 +129,9 @@ if __name__ == "__main__":
     world_context_path = os.path.join(experiment_path, "world_context", f'{args.world_context}.txt')
 
     # Load the scenario map, the valid actions and the scenario obstacles
+    # scenario_info = substrate_utils.load_scenario_info(get_players_contexts(agents_bio_dir, include_bots=True))
     scenario_info = substrate_utils.load_scenario_info(get_players_contexts(agents_bio_dir, include_bots=True), world_context_path=world_context_path)
+
 
     data_folder = "data" if not args.simulation_id else f"data/databases/{args.simulation_id}"
     create_directory_if_not_exists (data_folder)

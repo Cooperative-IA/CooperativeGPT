@@ -9,7 +9,10 @@ def normalize_values(values: list[float]) -> list[float]:
     Returns:
         list[float]: List of normalized values.
     """
-    range_ = max(values) - min(values)
+    if len(values) == 0:
+        range_ = 0
+    else:
+        range_ = max(values) - min(values)
 
     if range_ == 0:
        return [0 for _ in values]

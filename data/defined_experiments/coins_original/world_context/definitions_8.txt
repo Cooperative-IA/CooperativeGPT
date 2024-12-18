@@ -9,4 +9,4 @@ Floor (Symbol: F): Represents the basic terrain of the grid world where red and 
 
 Wall (Symbols: n, W, S): These tiles delimit the grid world at the top, the left, the bottom, and the right. Walls are impassable and define the boundaries of the playable area.
 
-The grid world is composed of rows and columns. The tiles start from the [1, 1] position located at the top left and finish at the [12, 14] position located at the bottom right. Players have a limited window of observation of the world.
+The grid world is composed of rows and columns. The tiles start from the [1, 1] position located at the top left and finish at the [15, 15] position located at the bottom right. Players have a limited window of observation of the world.

@@ -1,4 +1,6 @@
 from llm.openai import GPT4oMini, GPT4o, Embedding
+# from llm.groq import Llama31_8B
+from llm.friendli import Llama31_8B, Llama31_70B
 from llm.base_llm import BaseLLM
 
 class LLMModels():
@@ -10,13 +12,15 @@ class LLMModels():
         if not hasattr(self, 'instance'):
             self.instance = super(LLMModels, self).__new__(self)
             self.instance.llm_models: dict[str, BaseLLM] = {
-            "gpt-4o-mini": GPT4oMini(),
-            "gpt-4o": GPT4o(),
+            # "llama3.1-8B": Llama31_8B(),
+            # "llama3.1-70B": Llama31_70B(),
+            # "gpt-4o": GPT4o(),
+            "gpt4o-mini": GPT4oMini(),
             "embedding": Embedding()
             }
-            self.instance.main_model = "gpt-4o-mini"
-            self.instance.best_model = "gpt-4o"
-            self.instance.longer_context_fallback = "gpt-4o-mini"
+            self.instance.main_model = "gpt4o-mini"
+            self.instance.best_model = "gpt4o-mini"
+            self.instance.longer_context_fallback = "gpt4o-mini"
             self.instance.embedding_model = "embedding"
         return self.instance
 
