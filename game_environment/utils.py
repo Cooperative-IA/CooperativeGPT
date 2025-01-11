@@ -394,3 +394,34 @@ def process_observed_matrices(curr_m: np.ndarray, last_m: np.ndarray, agent_loca
     assert last_m.shape == curr_m.shape, 'The shapes of the last observation map and current observation map must be identical'
 
     return curr_m, last_m, agent_local_position, agent_moved, agent_turned
+
+def get_local_position_from_global(orientation: int, global_dest_pos: tuple[int, int], global_self_pos: tuple[int, int], local_self_pos: tuple[int, int]) -> tuple[int, int]:
+    """Get the local position of an element given its global position on the map.
+
+    Args:
+        orientation (int): The orientation of the agent.
+        global_dest_pos (tuple[int, int]): Global position of the destination on the map.
+        global_self_pos (tuple[int, int]): Global position of the agent on the map.
+        local_self_pos (tuple[int, int]): Local position of the agent on the observed map.
+
+    Returns:
+        tuple[int, int]: Local position of the element.
+    """
+    # North
+    if orientation == 0:
+        element_local =      (global_dest_pos[0] - global_self_pos[0]) + local_self_pos[0], \
+                                (global_dest_pos[1] - global_self_pos[1]) + local_self_pos[1]
+    # East
+    elif orientation == 1:
+        element_local = -1 * (global_dest_pos[1] - global_self_pos[1]) + local_self_pos[0], \
+                                (global_dest_pos[0] - global_self_pos[0]) + local_self_pos[1]
+    # South
+    elif orientation == 2:
+        element_local = -1 * (global_dest_pos[0] - global_self_pos[0]) + local_self_pos[0], \
+                        -1 * (global_dest_pos[1] - global_self_pos[1]) + local_self_pos[1]
+    # West
+    elif orientation == 3:
+        element_local =      (global_dest_pos[1] - global_self_pos[1]) + local_self_pos[0], \
+                        -1 * (global_dest_pos[0] - global_self_pos[0]) + local_self_pos[1]
+
+    return element_local

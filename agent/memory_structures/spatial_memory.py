@@ -111,7 +111,10 @@ class SpatialMemory:
         self.logger.info(f'Finding route from {current_global_map} to {position_end}')
         # If the position is the same as the current one, return an empty queue
         if self.position == position_end:
-            return queue_from_list(['stay put'])
+            route = ['stay put']
+            if return_list:
+                return route
+            return queue_from_list(route)
         route = shortest_valid_route(current_global_map, self.position, position_end, scenario_obstacles=self.scenario_obstacles, orientation=orientation)
 
 

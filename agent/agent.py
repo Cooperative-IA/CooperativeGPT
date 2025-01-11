@@ -380,18 +380,26 @@ class Agent:
         if self.stm.get_memory('current_steps_sequence').empty():
             # If the current gameloop is empty, we need to generate a new one
 
-            # If the actions sequence is empty, we generate actions sequence
-            if self.stm.get_memory('actions_sequence').empty():
-                self.generate_new_actions()
-
-            # We get next action from the actions sequence
-            current_action = self.stm.get_memory('actions_sequence').get()
-            self.stm.add_memory(current_action, 'current_action')
-            if self.recorder:
-                self.recorder.record_action(player=self.name, curr_action=current_action)
-
             # Now defines a gameloop for the current action
-            steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
+            steps_sequence = None
+            while True:
+                try:
+                    # If the actions sequence is empty, we generate actions sequence
+                    if self.stm.get_memory('actions_sequence').empty():
+                        self.generate_new_actions()
+
+                    # We get next action from the actions sequence
+                    current_action = self.stm.get_memory('actions_sequence').get()
+                    self.stm.add_memory(current_action, 'current_action')
+                    
+                    steps_sequence = self.spatial_memory.get_steps_sequence(current_global_map, current_action)
+
+                    break
+                except Exception as e:
+                    self.logger.error('Error getting the steps for {}')
+                    pass
+            if self.recorder:
+                        self.recorder.record_action(player=self.name, curr_action=current_action)
             self.stm.add_memory(steps_sequence, 'current_steps_sequence')
 
         # We will update the steps sequence if need_update is True

@@ -11,17 +11,16 @@ def run_simulation(simulation_id, start_delay):
     new_world_context_name = f"{world_context_name}_{str(simulation_id).format(2)}"
     world_context_path = f"data/defined_experiments/{substrate}/world_context/{world_context_name}.txt"
     new_world_context_path = f"data/defined_experiments/{substrate}/world_context/{new_world_context_name}.txt"
-    
+
     subprocess.run(["cp", world_context_path, new_world_context_path])
     command = [
         "python", "main.py",
-        "--substrate=coins_original",
-        "--scenario=coins_1",
-        "--agents_bio_config=1_human_1_bot",
-        f"--world_context={new_world_context_name}",
-        "--llm_model=gpt-4o",
-        #"--cot_agent=True",
-        #f"--simulation_id=coins1__gpt4o__{str(simulation_id).format(2)}",
+        "--substrate=externality_mushrooms",
+        "--scenario=externality_mushrooms__dense_1",
+        "--agents_bio_config=no_bio_1p",
+        "--world_context=definitions_v2",
+        "--llm_model=gpt-3.5",
+        f"--simulation_id=sim_prueba_{str(simulation_id).format(2)}",
     ]
     subprocess.run(command)
         #"--cot_agent=True",
@@ -32,13 +31,13 @@ def run_simulation(simulation_id, start_delay):
 def main(simulations_count):
     start_timestamp = datetime.now()
     print(f"The first simulation started at: {start_timestamp}")
-    
+
     with ProcessPoolExecutor() as executor:
         futures = [executor.submit(run_simulation, i, i*5) for i in range(1, simulations_count + 1)]
         # Wait until all simulations are completed
         for future in futures:
             future.result()
-    
+
     print("All simulations have been completed.")
 
 if __name__ == "__main__":
