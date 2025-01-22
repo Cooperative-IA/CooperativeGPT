@@ -8,7 +8,7 @@ from utils.player_gui import PlayerGUI
 from agent.cognitive_modules.perceive import update_known_objects
 from agent.cognitive_modules.perceive import should_react, update_known_agents, create_memory, update_known_objects
 from utils.communication_handler import CommunicationHandler
-class HumanAgentV2(Agent):
+class HumanAgentArrowsMov(Agent):
     """HumanAgent class.
     """
 
@@ -65,13 +65,9 @@ class HumanAgentV2(Agent):
             self.logger.info(f'{self.name} is out of the game, skipping its turn.')
             return None
         
-        react = self.generate_new_actions(changes_in_state, communication_handler)
-        if react == "not react":
-            step_actions = self.get_actions_to_execute(current_global_map, need_update=True)
-            return step_actions
-        else:
-            step_actions = self.get_actions_to_execute(current_global_map, need_update=True)
-            return step_actions
+        # Generate the prompt for the agent
+        prompt = self.generate_prompt(changes_in_state, communication_handler)
+        self.send_prompt(prompt, communication_handler)
 
     def perceive(self, observations: list[str], changes_in_state: list[tuple[str, str]], game_time: str, reward: float, is_agent_out: bool = False) -> tuple[bool, list[str], list[str]]:
         """Perceives the environment and stores the observation in the long term memory. Decide if the agent should react to the observation.
@@ -127,11 +123,10 @@ class HumanAgentV2(Agent):
         self.stm.add_memory(last_position, 'last_position')
         self.stm.add_memory(orientation, 'current_orientation')
 
-  
-    def generate_new_actions(self, state_changes: list[str], communication_handler: CommunicationHandler) -> None:
+    
+    def generate_prompt(self, state_changes: list[str], communication_handler: CommunicationHandler) -> None: 
         """
-        Acts in the environment given the observations, the current plan and the current goals.
-        Stores the actions sequence in the short term memory.
+        Generate the prompt for the agent to react to the observations.
         """
         world_context = self.stm.get_memory('world_context')
         agent_bio_str = self.stm.get_memory('bio_str')
@@ -140,7 +135,6 @@ class HumanAgentV2(Agent):
         observations = self.stm.get_memory('current_observation') or 'None'
         current_goals = self.stm.get_memory('current_goals')
         
-        # Generate new actions sequence and add it to the short term memory
         if isinstance(observations, list):
             observations = "\n".join(observations)
         #state_changes = '\n'.join(state_changes) if state_changes else 'None'
@@ -153,20 +147,24 @@ class HumanAgentV2(Agent):
         prompt = load_prompt(prompt_path)
         prompt = replace_inputs_in_prompt(prompt, [self.name, world_context, current_plan, state_changes, observations, self.spatial_memory.position, 1, valid_actions, current_goals, agent_bio_str,
                                                    known_trees, percentage_explored, previous_actions])
+        return prompt
+    
+    def send_prompt(self, prompt: str, communication_handler: CommunicationHandler) -> None:
+        """
+        Send the prompt to the communication handler.
+        """
+        self.logger.info(f'Sending prompt to {self.agent_id}')
         self.logger.info(f'Prompt: {prompt}')
-        #gui.update_text(prompt)
         communication_handler.publish_data_topic_from_agent(self.agent_id, prompt)
-        #user_action = input("What action would you like to perform? ")
-
-        # Espera la acción del usuario desde 'topic/actions'
-        while True:
-            print(f"Waiting for action from {self.agent_id}")
-            agent_id, user_action = communication_handler.get_next_action(timeout=None)
-            if agent_id == self.agent_id:
-                break
-            else:
-                # Ignora acciones que no son para este agente
-                continue
+    
+    
+    
+    
+    def generate_new_actions(self, user_action: str) -> None:
+        """
+        Acts in the environment given the observations, the current plan and the current goals.
+        Stores the actions sequence in the short term memory.
+        """
 
         self.logger.info(f'User action: {user_action}')
         print(f"Received action: {user_action}")
@@ -194,5 +192,8 @@ class HumanAgentV2(Agent):
         actions_sequence_queue.put(user_action)
         self.logger.info(f'{self.name} generated new actions sequence: {actions_sequence_queue.queue}')
         self.stm.add_memory(actions_sequence_queue, 'actions_sequence')
-
-        return "react"
+        
+        current_global_map = self.stm.get_memory('current_global_map')
+        step_actions = self.get_actions_to_execute(current_global_map, need_update=True)
+        
+        return step_actions

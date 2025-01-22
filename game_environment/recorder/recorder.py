@@ -167,3 +167,7 @@ class Recorder:
         if os.path.exists(directory_path):
             shutil.rmtree(directory_path)
         os.makedirs(directory_path)
+
+    def record_game_actions(self, actions):
+        with open(os.path.join(self.log_path, "actions_history.txt"), "a") as f:
+            f.write(f"{self.step}: {actions}\n")

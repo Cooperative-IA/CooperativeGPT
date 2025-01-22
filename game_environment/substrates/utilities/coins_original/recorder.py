@@ -112,8 +112,7 @@ def save_custom_indicators(record_obj, **kwargs):
 
     custom_indicators = {
         'collected_coins': collected_coins,
-        'actions_taken': record_obj.actions_taken
-
+        'actions_taken': record_obj.actions_taken if hasattr(record_obj, 'actions_taken') else {}
     }
 
     with open(os.path.join(record_obj.log_path, "custom_indicators.json"), "w") as f:

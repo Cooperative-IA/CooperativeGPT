@@ -92,5 +92,12 @@ def get_args():
         help="Whether to use the simple CoT agent. True/False."
     )
     
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8084,
+        help="The port to use for the communication handler"
+    )   
+    
     args = parser.parse_args()
     return args

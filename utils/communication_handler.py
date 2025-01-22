@@ -5,7 +5,7 @@ import paho.mqtt.client as mqtt
 import cv2
 
 class CommunicationHandler:
-    def __init__(self, player_images, player_names, substrate_name):
+    def __init__(self, player_images, player_names, substrate_name, port):
         self.player_images = player_images
         self.player_names = player_names
         self.substrate_name = substrate_name
@@ -32,7 +32,7 @@ class CommunicationHandler:
         self.client.on_message = self.on_message_received
 
         # Inicia la conexión al broker
-        self.client.connect(self.BROKER_ADDRESS)
+        self.client.connect(self.BROKER_ADDRESS, port, 60)
         self.client.loop_start()
 
     def on_connect(self, client, userdata, flags, rc):
@@ -100,6 +100,16 @@ class CommunicationHandler:
             return agent_id, agent_action
         except Empty:
             return None, None
+
+
+    def wait_for_agents_to_start(self):
+        agents_started = set()
+        while len(agents_started) < len([player_name for player_name in self.player_names if "bot" not in player_name]):
+            agent_id, action = self.get_next_action(timeout=1)
+            if agent_id is not None and action == "start":
+                agents_started.add(agent_id)
+                print(f"Agent {agent_id} ready to start")
+        print("All agents ready to start")
 
     def stop(self):
         self.client.loop_stop()

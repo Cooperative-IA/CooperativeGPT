@@ -416,6 +416,13 @@ class Agent:
         # all the process above is repeated until we get a steps_sequence that is not empty
         # If actions sequence were all invalid, we send an explore sequence
         while self.stm.get_memory('current_steps_sequence').empty():
+            
+            if self.stm.get_memory('actions_sequence').empty():
+                # Add a stay put action to the actions sequence
+                actions_sequence_queue = self.stm.get_memory('actions_sequence')
+                actions_sequence_queue.put("stay put")
+                self.stm.add_memory(actions_sequence_queue, 'actions_sequence')
+             
             if self.stm.get_memory('actions_sequence').empty():
                 self.logger.warn(f'{self.name} current steps_sequence is empty and there are no more actions to execute, agent will explore')
                 steps_sequence = self.spatial_memory.generate_explore_sequence(current_global_map)

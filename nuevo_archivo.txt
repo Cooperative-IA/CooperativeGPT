@@ -1,0 +1,7 @@
+avatar id: 1
+partnerTrackerComponent is not nil
+avatar id: 2
+partnerTrackerComponent is not nil
+index == playerIndex
+partnerTrackerComponent:getPartnerMismatch(): 
+partnerValue: 0
