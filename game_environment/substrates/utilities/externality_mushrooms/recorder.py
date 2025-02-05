@@ -158,7 +158,7 @@ def save_custom_indicators(record_obj, **kwargs):
         'effective_attack': effective_attack,
         'mushrooms_consumption': mushrooms_consumption,
         'digesting_spent_time': digesting_time,
-        'actions_taken': record_obj.actions_taken,
+        'actions_taken': record_obj.actions_taken if hasattr(record_obj, 'actions_taken') else {},
         'mushroom_consumption_by_step': record_obj.mushroom_consumption_by_step
     }
 

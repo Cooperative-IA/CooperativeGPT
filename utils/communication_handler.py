@@ -83,7 +83,7 @@ class CommunicationHandler:
             agent_id = msg.get("agent_id")
             agent_action = msg.get("action")
 
-            print(f"Acción recibida - Agente: {agent_id}, Acción: {agent_action}")
+            #print(f"Acción recibida - Agente: {agent_id}, Acción: {agent_action}")
 
             self.process_agent_action(agent_id, agent_action)
         
