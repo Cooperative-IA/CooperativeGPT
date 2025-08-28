@@ -75,7 +75,7 @@ class Bot:
                 additional_observation = self.policy._puppeteer._partner_defection_signal
         except AttributeError:
             pass
-
+        
         bot_timestep = dm_env.TimeStep(
             step_type=timestep.step_type,
             reward=timestep.observation[f'{self.player_index}.REWARD'],

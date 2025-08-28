@@ -95,7 +95,7 @@ def game_loop(agents: list[Agent | HumanAgentArrowsMov], substrate_name:str, per
         
         print("Waiting for actions")
         # Collect actions for 2.5 seconds
-        while time.time() - round_start_time < 0.1:
+        while time.time() - round_start_time < 0.5:
             try:
                 agent_id, action = communication_handler.get_next_action(timeout=0.05)
                 if agent_id is not None:
