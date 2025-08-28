@@ -70,8 +70,11 @@ class Bot:
             The action for the bot
         """
         additional_observation = None
-        if self.policy._puppeteer._partner_defection_signal:
-            additional_observation = self.policy._puppeteer._partner_defection_signal
+        try:
+            if hasattr(self.policy, '_puppeteer') and hasattr(self.policy._puppeteer, '_partner_defection_signal'):
+                additional_observation = self.policy._puppeteer._partner_defection_signal
+        except AttributeError:
+            pass
 
         bot_timestep = dm_env.TimeStep(
             step_type=timestep.step_type,

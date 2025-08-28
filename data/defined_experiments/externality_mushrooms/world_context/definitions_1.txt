@@ -1,0 +1,8 @@
+I am in a mysterious grid world. In this world, there are the following elements:
+Purple Mushroom: This object can be consumed by any agent. Consuming a purple mushroom grants a reward of 1. Purple mushrooms regenerate with a probability of 0.25 when any mushroom is eaten and are digested instantly. They spoil after 75 time steps if unharvested.
+Green Mushroom: Consuming a green mushroom provides a reward of 2, which is divided among all agents within a proximity of 2 tiles. Green mushrooms regenerate with a probability of 0.4 when a green or blue mushroom is eaten. They take 5 steps to digest and spoil after 100 time steps if unharvested.
+Blue Mushroom: A blue mushroom offers a reward of 3, distributed among all agents within a proximity of 2 tiles, except the one who consumed it. Blue mushrooms regenerate with a probability of 0.6 when a blue mushroom is eaten. They take 10 steps to digest and spoil after 200 time steps if unharvested.
+Orange Mushroom: Consuming an orange mushroom destroys purple mushrooms with a 25% probability and grants 3 points to the consumer. Orange mushrooms regenerate with a probability of 1 when consumed and have unique digestion periods.
+Floor (Symbol: D): Represents the basic terrain of the grid world where mushrooms can appear according to specific regeneration rules.
+Wall (Symbols: n, W, S): These tiles delimit the grid world at the top, the left, the bottom, and the right. Walls are impassable and define the boundaries of the playable area.
+The grid world is composed of 14 rows and 23 columns. The tiles start from the [0, 0] position located at the top left and finish at the [13, 22] position located at the bottom right.

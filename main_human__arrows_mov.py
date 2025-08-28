@@ -97,7 +97,7 @@ def game_loop(agents: list[Agent | HumanAgentArrowsMov], substrate_name:str, per
         # Collect actions for 2.5 seconds
         while time.time() - round_start_time < 0.1:
             try:
-                agent_id, action = communication_handler.get_next_action(timeout=0.1)
+                agent_id, action = communication_handler.get_next_action(timeout=0.05)
                 if agent_id is not None:
                     received_actions.append((agent_id, action))
             except:
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     #gui.start_gui_thread()
     
     
-    communication_handler = CommunicationHandler(player_images, players_names, args.substrate, args.port)
+    communication_handler = CommunicationHandler(player_images, players_names, args.substrate, args.port, logger_timestamp)
     
     logger = CustomAdapter(logger, game_env=env)
     # We are setting args.prompts_source as a global variable to be used in the LLMModels class
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     logger.info("Execution time: %.2f minutes", (end_time - start_time)/60)
 
     logger.info("Program finished")
-    
+    communication_handler.send_end_game_message()
     # If there's a simulation_id, we will change the logs/{logger_timestamp} name to logs/{logger_timestamp}__{simulation_id}
     if args.simulation_id:
         os.system(f"mv logs/{logger_timestamp} logs/{logger_timestamp}__{args.simulation_id}")

@@ -710,7 +710,7 @@ def build(
     num_players = config.num_players
     
     # Load config variables for the experiment. Path is config/start_variables.txt
-    with open('config/start_variables.txt') as f:
+    with open('config/start_variables_copy.txt') as f:
         start_variables = eval(f.readlines()[0])
 
     events_times = start_variables['events_times']

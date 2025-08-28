@@ -7,7 +7,7 @@ substrate_name = "externality_mushrooms"
 scenario_obstacles = {"impassable_obstacles": ["W", "$", "n","S"] + [str(i) for i in range(10)],
                       "passable_obstacles": ["F", "H", "Z", "N"]}
 
-def load_scenario_info(players_context: list[str]):
+def load_scenario_info(players_context: list[str], **kwargs):
     """
     Description: Load the scenario information for the substrate
     And set the agents context given from the main file

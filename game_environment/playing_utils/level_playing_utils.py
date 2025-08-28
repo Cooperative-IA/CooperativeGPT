@@ -368,7 +368,7 @@ class Game:
         self.record_counter = record_counter
 
         self.first_move_done = False
-        self.interactive = interactive
+        self.interactive = False
         self.player_prefixes = player_prefixes
         self.player_count = player_count
         self.action_map = action_map
